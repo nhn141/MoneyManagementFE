@@ -4,32 +4,19 @@ import Composables.BottomNavItem
 import Composables.BottomNavigationBar
 import Composables.Category_SpecificType_Body
 import Composables.Category_SpecificType_Header
+import Composables.GeneralTemplate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -41,7 +28,7 @@ fun MainScreen() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = Color(0xFF53dba9),
+//        containerColor = Color(0xFF53dba9),
         bottomBar = { BottomNavigationBar(navController) },
         contentWindowInsets = WindowInsets.safeDrawing
     ) { paddingValues ->
@@ -88,38 +75,6 @@ fun MainScreen() {
     }
 }
 
-
-
-@Composable
-fun GeneralTemplate(contentHeader: @Composable () -> Unit, contentBody: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.32f),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF53dba9)),
-                shape = RectangleShape
-            ) {
-                contentHeader()
-            }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxSize(),
-                shape = RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF1FFF3))
-            ) {
-                contentBody()
-            }
-        }
-    }
-}
 
 @Composable
 fun HomeHeader() {
