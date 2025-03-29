@@ -12,7 +12,6 @@ import androidx.activity.viewModels
 import androidx.core.view.WindowCompat
 
 import dagger.hilt.android.AndroidEntryPoint
-
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val profileViewModel: ProfileViewModel by viewModels()
@@ -22,8 +21,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
            MainScreen(viewModel = profileViewModel)
-            val authViewModel: AuthViewModel by viewModels() // Inject ViewModel using Hilt
-            AuthActivityScreen(authViewModel)
+//            val authViewModel: AuthViewModel by viewModels() // Inject ViewModel using Hilt
+//            AuthActivityScreen(authViewModel)
         }
     }
 }

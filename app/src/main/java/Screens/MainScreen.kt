@@ -10,8 +10,8 @@ import Composables.HeaderSection
 import Composables.ProfileHeaderSection
 import Composables.ProfileScreen
 import Composables.ProfileViewModel
-import androidx.activity.viewModels
 import Composables.GeneralTemplate
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
