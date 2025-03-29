@@ -1,9 +1,16 @@
 package Screens
 
+import Composables.BalanceInfo
 import Composables.BottomNavItem
 import Composables.BottomNavigationBar
+import Composables.Category
 import Composables.Category_SpecificType_Body
 import Composables.Category_SpecificType_Header
+import Composables.HeaderSection
+import Composables.ProfileHeaderSection
+import Composables.ProfileScreen
+import Composables.ProfileViewModel
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,14 +36,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.moneymanagement_frontend.R
 
 @Composable
-fun MainScreen() {
+fun MainScreen(viewModel: ProfileViewModel) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -72,16 +81,29 @@ fun MainScreen() {
             }
 
             composable(BottomNavItem.Category.route) {
+                val categories = mutableListOf(
+                    Category("Food", R.drawable.ic_food),
+                    Category("Transport", R.drawable.ic_transport),
+                    Category("Medicine", R.drawable.ic_medicine),
+                    Category("Groceries", R.drawable.ic_groceries),
+                    Category("Rent", R.drawable.ic_rent),
+                    Category("Gifts", R.drawable.ic_gifts),
+                    Category("Savings", R.drawable.ic_savings),
+                    Category("Entertainment", R.drawable.ic_entertainment),
+                    Category("More", R.drawable.ic_more)
+                )
                 GeneralTemplate(
-                    contentHeader = { Category_SpecificType_Header(navController) },
-                    contentBody = { Category_SpecificType_Body() }
+                    //contentHeader = { Category_SpecificType_Header(navController) },
+                    //contentBody = { Category_SpecificType_Body() }
+                    contentHeader = { Composables.HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00")) },
+                    contentBody = { Composables.CategoriesGrid(categories) }
                 )
             }
 
             composable(BottomNavItem.Profie.route) {
                 GeneralTemplate(
-                    contentHeader = { ProfileHeader() },
-                    contentBody = { ProfieScreen() }
+                    contentHeader = { ProfileHeaderSection() },
+                    contentBody = { ProfileScreen(viewModel) }
                 )
             }
         }
@@ -205,4 +227,10 @@ fun ProfieScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text = "Profie Screen", fontSize = 24.sp)
     }
+}
+
+@Preview
+@Composable
+fun PreviewHeaderSection() {
+    HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00"))
 }
