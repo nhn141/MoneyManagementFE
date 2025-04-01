@@ -83,10 +83,10 @@ fun MainScreen(viewModel: ProfileViewModel) {
                     Category("More", R.drawable.ic_more)
                 )
                 GeneralTemplate(
-                    //contentHeader = { Category_SpecificType_Header(navController) },
-                    //contentBody = { Category_SpecificType_Body() }
-                    contentHeader = { Composables.HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00")) },
-                    contentBody = { Composables.CategoriesGrid(categories) }
+                    contentHeader = { Category_SpecificType_Header(navController) },
+                    contentBody = { Category_SpecificType_Body() }
+//                    contentHeader = { Composables.HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00")) },
+//                    contentBody = { Composables.CategoriesGrid(categories) }
                 )
             }
 

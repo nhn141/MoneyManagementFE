@@ -2,7 +2,6 @@ package Composables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,17 +36,17 @@ import androidx.compose.ui.text.style.TextAlign
 import com.example.moneymanagement_frontend.R
 
 
-data class ExpenseItem (val title: String, val timestamp: String, val amount: String)
-fun getExpenseData() : List<ExpenseItem> {
+data class TransactionItem (val title: String, val timestamp: String, val amount: String)
+fun getTransactionData() : List<TransactionItem> {
     return listOf(
-        ExpenseItem("Dinner", "18:27 - April 30", "-$26,00"),
-        ExpenseItem("Dinner", "18:27 - April 30", "-$26,00"),
-        ExpenseItem("Dinner", "18:27 - April 30", "-$26,00"),
-        ExpenseItem("Dinner", "18:27 - April 30", "-$26,00"),
-        ExpenseItem("Delivery Pizza", "15:00 - April 24", "-$18,35"),
-        ExpenseItem("Lunch", "12:30 - April 15", "-$15,40"),
-        ExpenseItem("Brunch", "9:30 - April 08", "-$12,13"),
-        ExpenseItem("Dinner", "20:50 - March 31", "-$27,20")
+        TransactionItem("Dinner", "18:27 - April 30", "-$26,00"),
+        TransactionItem("Dinner", "18:27 - April 30", "-$26,00"),
+        TransactionItem("Dinner", "18:27 - April 30", "-$26,00"),
+        TransactionItem("Dinner", "18:27 - April 30", "-$26,00"),
+        TransactionItem("Delivery Pizza", "15:00 - April 24", "-$18,35"),
+        TransactionItem("Lunch", "12:30 - April 15", "-$15,40"),
+        TransactionItem("Brunch", "9:30 - April 08", "-$12,13"),
+        TransactionItem("Dinner", "20:50 - March 31", "-$27,20")
     )
 }
 
@@ -70,7 +68,7 @@ fun Category_SpecificType_Body() {
                 // 🔹 April Section
                 MonthSection("April")
                 Spacer(modifier = Modifier.height(5.dp))
-                TransactionList(getExpenseData().filter { it.timestamp.contains("April") })
+                TransactionList(getTransactionData().filter { it.timestamp.contains("April") })
 
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -78,7 +76,7 @@ fun Category_SpecificType_Body() {
                 // 🔹 March Section
                 MonthSection("March")
                 Spacer(modifier = Modifier.height(5.dp))
-                TransactionList(getExpenseData().filter { it.timestamp.contains("March") })
+                TransactionList(getTransactionData().filter { it.timestamp.contains("March") })
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -122,16 +120,16 @@ fun MonthSection(month: String) {
 }
 
 @Composable
-fun TransactionList(transactions: List<ExpenseItem>) {
+fun TransactionList(transactions: List<TransactionItem>) {
     Column {
-        transactions.forEach { expense ->
-            TransactionRow(expense)
+        transactions.forEach { transaction ->
+            TransactionRow(transaction)
         }
     }
 }
 
 @Composable
-fun TransactionRow(transaction: ExpenseItem) {
+fun TransactionRow(transaction: TransactionItem) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -156,7 +154,7 @@ fun TransactionRow(transaction: ExpenseItem) {
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // 🔹 Expense Details
+        // 🔹 Transaction Details
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = transaction.title,
@@ -172,7 +170,7 @@ fun TransactionRow(transaction: ExpenseItem) {
             )
         }
 
-        // 🔹 Expense Amount
+        // 🔹 Transaction Amount
         Text(
             text = transaction.amount,
             fontSize = 16.sp,
@@ -190,12 +188,12 @@ fun AddTransactionsButton() {
             .padding(horizontal = 45.dp, vertical = 12.dp)
             .clip(RoundedCornerShape(50))
             .background(Color(0xFF00D09E)) // Green color
-            .clickable { /* Add expenses action */ },
+            .clickable { /* Add Transactions action */ },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Add Expenses",
+            text = "Add Transaction",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
@@ -235,7 +233,7 @@ fun Category_SpecificType_Header(navController: NavController) {
             }
 
             Text(
-                text = "Expense",
+                text = "Transaction",
                 color = Color.Black,
                 fontSize = 23.sp,
                 fontWeight = FontWeight.Bold,
@@ -300,7 +298,7 @@ fun Category_SpecificType_Header(navController: NavController) {
 
                 Column {
                     Text(
-                        text = "Total Expense",
+                        text = "Total Transaction",
                         color = Color.Black,
                         fontWeight = FontWeight.W400,
                         fontSize = 14.sp
