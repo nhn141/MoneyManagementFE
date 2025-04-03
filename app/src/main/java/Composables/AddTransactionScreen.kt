@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 fun AddTransactionScreen(navController: NavController) {
     GeneralTemplate(
         contentHeader = { AddTransactionHeaderSection(navController) },
-        contentBody = { TransactionForm() }
+        contentBody = { TransactionForm() },
+        fraction = 0.14f,
     )
 }

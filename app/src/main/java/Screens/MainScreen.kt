@@ -1,6 +1,7 @@
 package Screens
 
 import Composables.AddTransactionHeaderSection
+import Composables.AddTransactionScreen
 import Composables.BalanceInfo
 import Composables.BottomNavItem
 import Composables.BottomNavigationBar
@@ -12,6 +13,7 @@ import Composables.ProfileHeaderSection
 import Composables.ProfileScreen
 import Composables.ProfileViewModel
 import Composables.GeneralTemplate
+import Composables.HomePageHeaderSection
 import Composables.TransactionForm
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
@@ -53,17 +55,15 @@ fun MainScreen(viewModel: ProfileViewModel) {
         ) {
             composable(BottomNavItem.Home.route) {
                 GeneralTemplate(
-                    contentHeader = { HomeHeader() },
+                    contentHeader = { HomePageHeaderSection(navController) },
                     contentBody = { HomeScreen() }
                 )
             }
 
             composable("add_transaction") {
-                GeneralTemplate(
-                    contentHeader = { AddTransactionHeaderSection(navController) },
-                    contentBody = { TransactionForm() }
-                )
+                AddTransactionScreen(navController)
             }
+
             composable("category_specific_type") {
                 GeneralTemplate(
                     contentHeader = { Category_SpecificType_Header(navController) },
