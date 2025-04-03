@@ -53,7 +53,7 @@ fun getExpenseData() : List<ExpenseItem> {
 }
 
 @Composable
-fun Category_SpecificType_Body() {
+fun Category_SpecificType_Body(navController: NavController) {
     Box {
         Column(
             modifier = Modifier
@@ -82,7 +82,7 @@ fun Category_SpecificType_Body() {
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-            AddTransactionsButton()
+            AddTransactionsButton(navController)
         }
         Box(
             modifier = Modifier
@@ -183,14 +183,14 @@ fun TransactionRow(transaction: ExpenseItem) {
 }
 
 @Composable
-fun AddTransactionsButton() {
+fun AddTransactionsButton(navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 45.dp, vertical = 12.dp)
             .clip(RoundedCornerShape(50))
             .background(Color(0xFF00D09E)) // Green color
-            .clickable { /* Add expenses action */ },
+            .clickable { navController.navigate("add_transaction") },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -377,4 +377,3 @@ fun CustomProgressBar(progress: Float, totalAmount: String) {
         )
     }
 }
-

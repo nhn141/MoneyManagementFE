@@ -31,9 +31,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneymanagement_frontend.R
+import androidx.navigation.NavController
 
 @Composable
-fun HeaderSection(balanceInfo: BalanceInfo) {
+fun HeaderSection(balanceInfo: BalanceInfo, navController: NavController) {
     Column(
         modifier = Modifier.padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -46,17 +47,17 @@ fun HeaderSection(balanceInfo: BalanceInfo) {
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .clickable (
+                    .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
+                        indication = null, // Removes the ripple effect
                         onClick = {
-
+                            navController.popBackStack()
                         }
                     )
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_arrow_back),
-                    contentDescription = "Back Icon",
+                    contentDescription = "Back",
                     tint = Color.White,
                     modifier = Modifier.size(28.dp)
                 )

@@ -2,6 +2,7 @@ package Composables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -15,10 +16,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 
 @Composable
-fun AddTransactionHeaderSection() {
+fun AddTransactionHeaderSection(navController: NavController) {
     var isIncome by remember { mutableStateOf(true) }
 
     Column(
@@ -36,13 +38,19 @@ fun AddTransactionHeaderSection() {
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .clickable { }
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null, // Removes the ripple effect
+                        onClick = {
+                            navController.popBackStack()
+                        }
+                    )
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_arrow_back),
                     contentDescription = "Back",
                     tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
             Row(

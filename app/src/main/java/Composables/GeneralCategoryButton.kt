@@ -19,9 +19,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneymanagement_frontend.R
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+
 
 @Composable
-fun CategoryButton(category: Category) {
+fun CategoryButton(category: Category, navController: NavController) {
     val imageRes = when (category.name) {
         "Food" -> R.drawable.ic_food
         "Transport" -> R.drawable.ic_transport
@@ -42,7 +45,7 @@ fun CategoryButton(category: Category) {
             .padding(top = 20.dp)
     ) {
         Button(
-            onClick = { /* Handle click */ },
+            onClick = { navController.navigate("category_specific_type") },
             modifier = Modifier
                 .size(100.dp)
                 .padding(0.dp),
