@@ -1,5 +1,7 @@
 package Screens
 
+import Composables.AddTransactionHeaderSection
+import Composables.AddTransactionScreen
 import Composables.BalanceInfo
 import Composables.BottomNavItem
 import Composables.BottomNavigationBar
@@ -11,6 +13,8 @@ import Composables.ProfileHeaderSection
 import Composables.ProfileScreen
 import Composables.ProfileViewModel
 import Composables.GeneralTemplate
+import Composables.HomePageHeaderSection
+import Composables.TransactionForm
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -51,8 +55,19 @@ fun MainScreen(viewModel: ProfileViewModel) {
         ) {
             composable(BottomNavItem.Home.route) {
                 GeneralTemplate(
-                    contentHeader = { HomeHeader() },
+                    contentHeader = { HomePageHeaderSection(navController) },
                     contentBody = { HomeScreen() }
+                )
+            }
+
+            composable("add_transaction") {
+                AddTransactionScreen(navController)
+            }
+
+            composable("category_specific_type") {
+                GeneralTemplate(
+                    contentHeader = { Category_SpecificType_Header(navController) },
+                    contentBody = { Category_SpecificType_Body(navController) }
                 )
             }
 
@@ -60,13 +75,15 @@ fun MainScreen(viewModel: ProfileViewModel) {
                 GeneralTemplate(
                     contentHeader = { AnalysisHeader() },
                     contentBody = { AnalysisScreen() }
+
                 )
             }
 
             composable(BottomNavItem.Transaction.route) {
                 GeneralTemplate(
                     contentHeader = { TransactionHeader() },
-                    contentBody = { TransactionScreen() }
+                    contentBody = { TransactionScreen() },
+                    fraction = 0.14f
                 )
             }
 
@@ -83,10 +100,10 @@ fun MainScreen(viewModel: ProfileViewModel) {
                     Category("More", R.drawable.ic_more)
                 )
                 GeneralTemplate(
-                    contentHeader = { Category_SpecificType_Header(navController) },
-                    contentBody = { Category_SpecificType_Body() }
-//                    contentHeader = { Composables.HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00")) },
-//                    contentBody = { Composables.CategoriesGrid(categories) }
+                    //contentHeader = { Category_SpecificType_Header(navController) },
+                    //contentBody = { Category_SpecificType_Body() }
+                    contentHeader = { Composables.HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00"), navController) },
+                    contentBody = { Composables.CategoriesGrid(categories, navController) }
                 )
             }
 
@@ -190,5 +207,5 @@ fun ProfieScreen() {
 @Preview
 @Composable
 fun PreviewHeaderSection() {
-    HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00"))
+    HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00"), navController = rememberNavController())
 }

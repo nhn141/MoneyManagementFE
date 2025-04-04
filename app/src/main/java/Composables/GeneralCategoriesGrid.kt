@@ -12,9 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @Composable
-fun CategoriesGrid(categories: List<Category>) {
+fun CategoriesGrid(categories: List<Category>, navController: NavController) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = Modifier
@@ -24,7 +25,7 @@ fun CategoriesGrid(categories: List<Category>) {
         contentPadding = PaddingValues(16.dp)
     ) {
         items(categories) { category ->
-            CategoryButton(category)
+            CategoryButton(category, navController)
         }
     }
 }

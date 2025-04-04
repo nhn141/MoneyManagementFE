@@ -4,23 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,11 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneymanagement_frontend.R
 import androidx.navigation.NavController
+import com.example.moneymanagement_frontend.R
 
 @Composable
-fun HeaderSection(balanceInfo: BalanceInfo, navController: NavController) {
+fun HomePageHeaderSection(navController: NavController) {
     Column(
         modifier = Modifier.padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -42,37 +31,26 @@ fun HeaderSection(balanceInfo: BalanceInfo, navController: NavController) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth().padding(top = 30.dp)
+            modifier = Modifier.fillMaxWidth().padding(top = 5.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null, // Removes the ripple effect
-                        onClick = {
-                            navController.popBackStack()
-                        }
-                    )
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_arrow_back),
-                    contentDescription = "Back",
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+            Column {
+                Text(
+                    text = "Hi, Welcome Back",
+                    color = Color.Black,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Good Morning",
+                    color = Color.Black,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal
                 )
             }
-            Text(
-                text = "Categories",
-                color = Color.Black,
-                fontSize = 23.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
             Box(
                 modifier = Modifier
                     .clickable(
-                        onClick = { /* Handle Notifications click */ }
+                        onClick = { }
                     )
                     .size(40.dp)
                     .background(Color(0xFF53dba9))
@@ -98,7 +76,7 @@ fun HeaderSection(balanceInfo: BalanceInfo, navController: NavController) {
         }
         Column(
             modifier = Modifier
-                .padding(5.dp),
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -136,7 +114,7 @@ fun HeaderSection(balanceInfo: BalanceInfo, navController: NavController) {
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "${balanceInfo.totalBalance}",
+                        text = "$7,783.00",
                         color = Color.White,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
@@ -176,7 +154,7 @@ fun HeaderSection(balanceInfo: BalanceInfo, navController: NavController) {
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "${balanceInfo.totalExpense}",
+                        text = "-\$1,187.40",
                         color = Color(0xFF008DDD),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
@@ -215,4 +193,3 @@ fun HeaderSection(balanceInfo: BalanceInfo, navController: NavController) {
         }
     }
 }
-
