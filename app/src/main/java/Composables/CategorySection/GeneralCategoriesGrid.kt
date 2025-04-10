@@ -1,4 +1,4 @@
-package Composables
+package DI.Composables.CategorySection
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues

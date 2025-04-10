@@ -1,6 +1,7 @@
-import Composables.GeneralTemplate
-import Composables.LoginScreen
-import Composables.RegisterScreen
+import DI.Composables.CategorySection.GeneralTemplate
+import DI.Composables.AuthSection.LoginScreen
+import DI.Composables.AuthSection.RegisterScreen
+import DI.Composables.CategorySection.GeneralTemplate
 import ViewModels.AuthViewModel
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController

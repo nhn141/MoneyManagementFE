@@ -1,5 +1,7 @@
-package Composables
+package DI.Composables.CategorySection
 
+import DI.Models.BalanceInfo
+import DI.ViewModels.GeneralCategoryViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable

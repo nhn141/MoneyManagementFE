@@ -1,5 +1,6 @@
-package Composables
+package DI.Composables.CategorySection
 
+import DI.Models.BalanceInfo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable

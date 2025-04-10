@@ -1,15 +1,12 @@
 package com.example.moneymanagement_frontend
 
-import Composables.ProfileViewModel
-import AuthActivityScreen
+import DI.ViewModels.ProfileViewModel
 import Screens.MainScreen
-import ViewModels.AuthViewModel
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.core.view.WindowCompat
 
 import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint

@@ -1,22 +1,22 @@
 package Screens
 
-import Composables.AddTransactionHeaderSection
-import Composables.AddTransactionScreen
-import Composables.BalanceInfo
-import Composables.BottomNavItem
-import Composables.BottomNavigationBar
-import Composables.Category
-import Composables.Category_SpecificType_Body
-import Composables.Category_SpecificType_Header
-import Composables.HeaderSection
-import Composables.ProfileHeaderSection
-import Composables.ProfileScreen
-import Composables.ProfileViewModel
-import Composables.GeneralTemplate
-import Composables.HomePageHeaderSection
-import Composables.TransactionForm
-import androidx.activity.viewModels
-import androidx.compose.foundation.background
+import DI.Composables.CategorySection.AddTransactionScreen
+import DI.Composables.CategorySection.Category_SpecificType_Body
+import DI.Composables.CategorySection.Category_SpecificType_Header
+import DI.Composables.CategorySection.GeneralTemplate
+import DI.Models.BalanceInfo
+import DI.Models.BottomNavItem
+import DI.Composables.NavbarSection.BottomNavigationBar
+import DI.Composables.CategorySection.CategoriesGrid
+import DI.Composables.CategorySection.Category
+import DI.Composables.CategorySection.Category_SpecificType_Body
+import DI.Composables.CategorySection.Category_SpecificType_Header
+import DI.Composables.CategorySection.HeaderSection
+import DI.Composables.ProfileSection.ProfileHeaderSection
+import DI.Composables.ProfileSection.ProfileScreen
+import DI.ViewModels.ProfileViewModel
+import DI.Composables.CategorySection.GeneralTemplate
+import DI.Composables.HomeSection.HomePageHeaderSection
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,10 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -102,8 +99,8 @@ fun MainScreen(viewModel: ProfileViewModel) {
                 GeneralTemplate(
                     //contentHeader = { Category_SpecificType_Header(navController) },
                     //contentBody = { Category_SpecificType_Body() }
-                    contentHeader = { Composables.HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00"), navController) },
-                    contentBody = { Composables.CategoriesGrid(categories, navController) }
+                    contentHeader = { HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00"), navController) },
+                    contentBody = { CategoriesGrid(categories, navController) }
                 )
             }
 

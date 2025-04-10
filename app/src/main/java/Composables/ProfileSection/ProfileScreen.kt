@@ -1,5 +1,6 @@
-package Composables
+package DI.Composables.ProfileSection
 
+import DI.ViewModels.ProfileViewModel
 import androidx.compose.runtime.Composable
 
 @Composable

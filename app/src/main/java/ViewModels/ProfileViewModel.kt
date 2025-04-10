@@ -1,4 +1,5 @@
-package Composables
+package DI.ViewModels
+import DI.Models.Profile
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel

@@ -1,4 +1,5 @@
-package Composables
+package DI.Composables.NavbarSection
+import DI.Models.BottomNavItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
