@@ -58,7 +58,7 @@ fun LoginScreen(viewModel: AuthViewModel = viewModel(), onNavigateToRegister: ()
                     snackbarHostState.showSnackbar("Login failed: ${result.exceptionOrNull()?.message}")
                 }
             }
-            viewModel.resetLoginState() // 🔥 Reset ngay sau khi hiển thị thông báo
+            viewModel.resetLoginState() // 🔥 Reset state ngay sau khi hiển thị thông báo
         }
     }
 

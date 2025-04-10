@@ -1,7 +1,9 @@
 package com.example.moneymanagement_frontend
 
+import AuthActivityScreen
 import DI.ViewModels.ProfileViewModel
 import Screens.MainScreen
+import ViewModels.AuthViewModel
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,9 +19,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-           MainScreen(viewModel = profileViewModel)
-//            val authViewModel: AuthViewModel by viewModels() // Inject ViewModel using Hilt
-//            AuthActivityScreen(authViewModel)
+//           MainScreen(viewModel = profileViewModel)
+            val authViewModel: AuthViewModel by viewModels() // Inject ViewModel using Hilt
+            AuthActivityScreen(authViewModel)
         }
     }
 }

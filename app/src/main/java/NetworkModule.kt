@@ -10,18 +10,24 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor // Add this import
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import javax.net.ssl.*
 
 @Module
-@InstallIn(SingletonComponent::class) // Ensures these dependencies live throughout the app lifecycle
+@InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://10.0.2.2:5215/api/" // Emulator localhost
+    //private const val BASE_URL = "http://10.0.2.2:5215/api/" // Emulator localhost
+    private const val BASE_URL = "https://10.0.2.2:7112/api/"
 
-    fun getUnsafeOkHttpClient(): OkHttpClient {
+    // Make this a @Provides function for better DI practices and add logging
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(): OkHttpClient {
         try {
+            // Trust all certificates (existing unsafe setup)
             val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
                 override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
                 override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
@@ -30,39 +36,43 @@ object NetworkModule {
 
             val sslContext = SSLContext.getInstance("SSL")
             sslContext.init(null, trustAllCerts, SecureRandom())
-
             val sslSocketFactory = sslContext.socketFactory
 
+            // Add logging interceptor
+            val loggingInterceptor = HttpLoggingInterceptor().apply {
+                setLevel(HttpLoggingInterceptor.Level.BODY) // Logs full request/response, including body
+            }
+
+            // Build OkHttpClient with both SSL bypass and logging
             return OkHttpClient.Builder()
                 .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
-                .hostnameVerifier { _, _ -> true } // Bỏ qua kiểm tra hostname
+                .hostnameVerifier { _, _ -> true } // Bypass hostname verification
+                .addInterceptor(loggingInterceptor) // Add the logging interceptor
                 .build()
         } catch (e: Exception) {
             throw RuntimeException(e)
         }
     }
 
-    @Singleton
     @Provides
-    fun provideRetrofit(): Retrofit {
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(getUnsafeOkHttpClient()) // Sử dụng OkHttp tùy chỉnh
+            .client(okHttpClient) // Use the OkHttpClient with logging
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    @Singleton
     @Provides
+    @Singleton
     fun provideApiService(retrofit: Retrofit): ApiService {
         return retrofit.create(ApiService::class.java)
     }
 
-    @Singleton
     @Provides
-    fun provideAuthRepository(apiService: ApiService) : AuthRepository {
+    @Singleton
+    fun provideAuthRepository(apiService: ApiService): AuthRepository {
         return AuthRepository(apiService)
     }
 }
-
-

@@ -2,6 +2,7 @@ package ViewModels
 
 import Models.User
 import Repositories.AuthRepository
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,16 +16,17 @@ class AuthViewModel @Inject constructor(
     private val repository: AuthRepository
 ) : ViewModel() {
 
-    private val _loginState = MutableStateFlow<Result<User>?>(null)
-    val loginState: StateFlow<Result<User>?> = _loginState
+    private val _loginState = MutableStateFlow<Result<String>?>(null)
+    val loginState: StateFlow<Result<String>?> = _loginState
 
-    private val _registerState = MutableStateFlow<Result<User>?>(null)
-    val registerState: StateFlow<Result<User>?> = _registerState
+    private val _registerState = MutableStateFlow<Result<String>?>(null)
+    val registerState: StateFlow<Result<String>?> = _registerState
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
             val result = repository.login(email, password)
             _loginState.value = result
+            Log.d("Login", result.toString());
         }
     }
 
@@ -32,10 +34,11 @@ class AuthViewModel @Inject constructor(
         _loginState.value = null
     }
 
-    fun register(name: String, email: String, password: String) {
+    fun register(username: String, email: String, password: String) {
         viewModelScope.launch {
-            val result = repository.register(name, email, password)
+            val result = repository.register(username, email, password)
             _registerState.value = result
+            Log.d("Register", result.toString());
         }
     }
 
