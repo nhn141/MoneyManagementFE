@@ -35,10 +35,10 @@ class AuthRepository @Inject constructor(private val apiService: ApiService) {
         }
     }
 
-    suspend fun register(username: String, email: String, password: String): Result<String> {
+    suspend fun register(firstName: String, lastName: String, email: String, password: String, confirmPassword: String): Result<String> {
         return try {
 
-            val request = SignUpRequest(username, password, email)
+            val request = SignUpRequest(firstName, lastName, email, password, confirmPassword)
             val response = apiService.signUp(request)
 
             if(response.isSuccessful) {

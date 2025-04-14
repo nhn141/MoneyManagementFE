@@ -1,27 +1,26 @@
 package com.example.moneymanagement_frontend
 
-import AuthActivityScreen
-import DI.ViewModels.ProfileViewModel
-import Screens.MainScreen
+import DI.Navigation.AppNavHost
 import ViewModels.AuthViewModel
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import dagger.hilt.android.AndroidEntryPoint
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val profileViewModel: ProfileViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-//           MainScreen(viewModel = profileViewModel)
-            val authViewModel: AuthViewModel by viewModels() // Inject ViewModel using Hilt
-            AuthActivityScreen(authViewModel)
+            AppNavHost()
         }
     }
 }

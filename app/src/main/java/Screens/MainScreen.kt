@@ -1,5 +1,6 @@
 package Screens
 
+import DI.API.TokenHandler.AuthStorage
 import DI.Composables.CategorySection.AddTransactionScreen
 import DI.Composables.CategorySection.Category_SpecificType_Body
 import DI.Composables.CategorySection.Category_SpecificType_Header
@@ -9,35 +10,47 @@ import DI.Models.BottomNavItem
 import DI.Composables.NavbarSection.BottomNavigationBar
 import DI.Composables.CategorySection.CategoriesGrid
 import DI.Composables.CategorySection.Category
-import DI.Composables.CategorySection.Category_SpecificType_Body
-import DI.Composables.CategorySection.Category_SpecificType_Header
 import DI.Composables.CategorySection.HeaderSection
 import DI.Composables.ProfileSection.ProfileHeaderSection
 import DI.Composables.ProfileSection.ProfileScreen
-import DI.ViewModels.ProfileViewModel
-import DI.Composables.CategorySection.GeneralTemplate
 import DI.Composables.HomeSection.HomePageHeaderSection
+import DI.Navigation.Routes
+import DI.ViewModels.CategoryViewModel
+import ViewModels.AuthViewModel
+import android.util.Log
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.moneymanagement_frontend.R
 
 @Composable
-fun MainScreen(viewModel: ProfileViewModel) {
+fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
     val navController = rememberNavController()
+    val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -107,7 +120,7 @@ fun MainScreen(viewModel: ProfileViewModel) {
             composable(BottomNavItem.Profie.route) {
                 GeneralTemplate(
                     contentHeader = { ProfileHeaderSection() },
-                    contentBody = { ProfileScreen(viewModel) }
+                    contentBody = { ProfileScreen() }
                 )
             }
         }
@@ -167,16 +180,64 @@ fun ProfileHeader() {
 
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(authViewModel: AuthViewModel = hiltViewModel()) {
+    // Get the Context using LocalContext
+    val context = LocalContext.current
+
+    // Retrieve the token (use remember to avoid recomputing unnecessarily)
+    val token = remember { AuthStorage.getToken(context) ?: "No token found" }
+
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "Home Screen", fontSize = 24.sp)
+       Column {
+           Button(
+               onClick = {
+                   authViewModel.logout()
+               },
+               modifier = Modifier.padding(start = 25.dp)
+           ) {
+               Text("Log out")
+           }
+
+           Text(
+               text = "Home Screen\nToken: $token",
+               fontSize = 24.sp,
+               textAlign = androidx.compose.ui.text.style.TextAlign.Center
+           )
+       }
     }
 }
 
 @Composable
-fun AnalysisScreen() {
+fun AnalysisScreen(categoryViewModel: CategoryViewModel = hiltViewModel()) {
+    val categories = categoryViewModel.categories.collectAsState()
+
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "Analysis Screen", fontSize = 24.sp)
+        Column {
+            Button(
+                onClick = {
+                    categoryViewModel.getCategories()
+                },
+                modifier = Modifier.padding(start = 25.dp)
+            ) {
+                Text("Get Categories")
+            }
+
+            categories.value?.let { result ->
+                if(result.isSuccess) {
+                    val categoryList = result.getOrNull()
+                    categoryList?.let { list ->
+                        LazyColumn {
+                            items(list) { category ->
+                                Text(text = category.toString())
+                            }
+                        }
+                    }
+                } else {
+                    Log.d("Fetching Categories", "Error getting categories to render")
+                }
+            }
+        }
+
     }
 }
 

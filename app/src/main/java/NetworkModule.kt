@@ -1,10 +1,13 @@
 package DI
 
 import API.ApiService
+import DI.API.TokenHandler.AuthInterceptor
 import Repositories.AuthRepository
+import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -19,13 +22,13 @@ import javax.net.ssl.*
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    //private const val BASE_URL = "http://10.0.2.2:5215/api/" // Emulator localhost
+//    private const val BASE_URL = "http://10.0.2.2:5215/api/" // Emulator localhost
     private const val BASE_URL = "https://10.0.2.2:7112/api/"
 
     // Make this a @Provides function for better DI practices and add logging
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
         try {
             // Trust all certificates (existing unsafe setup)
             val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
@@ -47,6 +50,7 @@ object NetworkModule {
             return OkHttpClient.Builder()
                 .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
                 .hostnameVerifier { _, _ -> true } // Bypass hostname verification
+                .addInterceptor(AuthInterceptor(context))
                 .addInterceptor(loggingInterceptor) // Add the logging interceptor
                 .build()
         } catch (e: Exception) {

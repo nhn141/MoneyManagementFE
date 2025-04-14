@@ -1,10 +1,16 @@
 package DI.ViewModels
 import DI.Models.Profile
+import DI.Repositories.ProfileRepository
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class ProfileViewModel : ViewModel() {
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val repository: ProfileRepository
+) : ViewModel() {
     private val _profile = mutableStateOf(Profile("", "", "", true, false))
     val profile: State<Profile> get() = _profile
 
