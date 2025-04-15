@@ -1,5 +1,6 @@
 package Composables
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,7 +18,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun GeneralTemplate(contentHeader: @Composable () -> Unit, contentBody: @Composable () -> Unit, fraction: Float = 0.32f) {
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().background(color = Color(0xFF53dba9))
     ) {
         Column(
             modifier = Modifier

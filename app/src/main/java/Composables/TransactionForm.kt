@@ -36,7 +36,7 @@ fun TransactionForm() {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 25.dp)
     ) {
         TransactionTextField(label = "Transaction Code")
         TransactionTextField(label = "Account Number")
