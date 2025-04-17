@@ -23,7 +23,8 @@ import javax.net.ssl.*
 object NetworkModule {
 
 //    private const val BASE_URL = "http://10.0.2.2:5215/api/" // Emulator localhost
-    private const val BASE_URL = "https://10.0.2.2:7112/api/"
+//    private const val BASE_URL = "https://10.0.2.2:7112/api/"
+    private const val BASE_URL = "http://143.198.208.227:5000/api/"
 
     // Make this a @Provides function for better DI practices and add logging
     @Provides

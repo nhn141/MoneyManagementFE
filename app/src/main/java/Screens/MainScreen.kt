@@ -14,7 +14,6 @@ import DI.Composables.CategorySection.HeaderSection
 import DI.Composables.ProfileSection.ProfileHeaderSection
 import DI.Composables.ProfileSection.ProfileScreen
 import DI.Composables.HomeSection.HomePageHeaderSection
-import DI.Navigation.Routes
 import DI.ViewModels.CategoryViewModel
 import ViewModels.AuthViewModel
 import android.util.Log
@@ -30,7 +29,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
