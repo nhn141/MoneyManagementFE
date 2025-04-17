@@ -23,7 +23,7 @@ import androidx.navigation.NavController
 
 
 @Composable
-fun CategoryButton(category: Category, navController: NavController) {
+fun CategoryButton(category: Category, navController: NavController, modifier: Modifier = Modifier) {
     val imageRes = when (category.name) {
         "Food" -> R.drawable.ic_food
         "Transport" -> R.drawable.ic_transport
@@ -33,13 +33,14 @@ fun CategoryButton(category: Category, navController: NavController) {
         "Gifts" -> R.drawable.ic_gifts
         "Savings" -> R.drawable.ic_savings
         "Entertainment" -> R.drawable.ic_entertainment
+        "Salary" -> R.drawable.ic_total_expense
         else -> R.drawable.ic_more
     }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(top = 20.dp)
     ) {

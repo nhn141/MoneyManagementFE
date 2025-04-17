@@ -26,3 +26,5 @@ fun AppNavHost(authViewModel: AuthViewModel = hiltViewModel()) {
         }
     }
 }
+
+
