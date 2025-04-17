@@ -1,4 +1,4 @@
-package Composables
+package DI.Composables.CategorySection
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneymanagement_frontend.R
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 
 
 @Composable

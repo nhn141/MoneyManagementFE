@@ -55,6 +55,10 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.security.crypto.ktx)
+    implementation (libs.androidx.security.crypto)
+    implementation (libs.androidx.security.crypto.ktx.v110alpha06)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

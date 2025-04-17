@@ -1,4 +1,4 @@
-package Composables
+package DI.Models
 
 data class BalanceInfo(
     val totalBalance: String,

@@ -1,6 +1,5 @@
 package com.example.moneymanagement_frontend
 
-import AuthActivityScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent

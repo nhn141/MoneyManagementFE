@@ -1,6 +1,9 @@
-import Composables.GeneralTemplate
-import Composables.LoginScreen
-import Composables.RegisterScreen
+import DI.Composables.CategorySection.GeneralTemplate
+import DI.Composables.AuthSection.LoginScreen
+import DI.Composables.AuthSection.RegisterScreen
+import DI.Composables.CategorySection.GeneralTemplate
+import DI.Composables.HomeSection.HomePageHeaderSection
+import Screens.MainScreen
 import ViewModels.AuthViewModel
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
@@ -8,6 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,45 +29,21 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneymanagement_frontend.R
+import java.lang.Error
 
 @Composable
-fun AuthNavHost(navController: NavHostController, authViewModel: AuthViewModel) {
-    NavHost(navController = navController, startDestination = "login") {
-        composable("login") {
-            LoginScreen(
-                viewModel = authViewModel,
-                onNavigateToRegister = { navController.navigate("register") },
-            )
-        }
-        composable("register") {
-            RegisterScreen(
-                viewModel = authViewModel,
-                onNavigateToLogin = {
-                    navController.navigate("login") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun AuthActivityScreen(authViewModel: AuthViewModel) {
-    val navController = rememberNavController()
-    AuthNavHost(navController, authViewModel)
-}
-
-@Composable
-fun AuthScreen(title: String, content: @Composable () -> Unit) {
+fun AuthScreen(title: String, fraction: Float, content: @Composable () -> Unit) {
     Box(
-        modifier = Modifier.fillMaxSize().background(Color(0xFF53dba9))
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF53dba9))
     ) {
         GeneralTemplate(
             contentHeader = { AuthHeader(title) },
             contentBody = content,
-            fraction = 0.2f
+            fraction = fraction
         )
     }
 }
@@ -90,6 +70,7 @@ fun AuthTextField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     isPassword: Boolean = false,
+    isError: Boolean = false
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
     OutlinedTextField(
@@ -98,8 +79,8 @@ fun AuthTextField(
         placeholder = { Text(text = placeholder, color = Color.Gray) },
         shape = RoundedCornerShape(20.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = Color.Transparent,
-            focusedBorderColor = Color.Transparent,
+            unfocusedBorderColor = if(isError) Color.Red else Color.Transparent,
+            focusedBorderColor = if(isError) Color.Red else Color.Transparent,
             unfocusedContainerColor = Color(0xFFDFF7E2),
             focusedContainerColor = Color(0xFFDFF7E2)
         ),
@@ -144,7 +125,9 @@ fun CustomRow(content: @Composable () -> Unit) {
 @Composable
 fun SocialLoginSection() {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {

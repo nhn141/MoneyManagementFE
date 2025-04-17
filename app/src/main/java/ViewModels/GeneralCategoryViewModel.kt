@@ -1,5 +1,7 @@
-package Composables
+package DI.ViewModels
 
+import DI.Models.BalanceInfo
+import DI.Composables.CategorySection.Category
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
