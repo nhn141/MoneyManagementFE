@@ -14,6 +14,7 @@ import DI.Composables.CategorySection.HeaderSection
 import DI.Composables.ProfileSection.ProfileHeaderSection
 import DI.Composables.ProfileSection.ProfileScreen
 import DI.Composables.HomeSection.HomePageHeaderSection
+import DI.Composables.HomeSection.HomePageScreen
 import DI.Navigation.Routes
 import DI.ViewModels.CategoryViewModel
 import ViewModels.AuthViewModel
@@ -64,10 +65,10 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(BottomNavItem.Home.route) {
-                GeneralTemplate(
-                    contentHeader = { HomePageHeaderSection(navController) },
-                    contentBody = { HomeScreen() }
-                )
+                HomePageScreen()
+//                GeneralTemplate(
+//                    contentHeader = { HomePageHeaderSection(navController) },
+//                    contentBody = { HomeScreen() }
             }
 
             composable("add_transaction") {
