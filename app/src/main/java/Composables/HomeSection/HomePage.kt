@@ -6,6 +6,9 @@ import DI.Composables.CategorySection.CategoryButton
 import DI.Composables.CategorySection.CustomProgressBar
 import DI.Composables.CategorySection.GeneralTemplate
 import DI.Composables.CategorySection.TransactionItem
+import DI.Composables.TransactionSection.GeneralTransactionItem
+import DI.Composables.TransactionSection.GeneralTransactionSummary
+import DI.Composables.TransactionSection.getGeneralTransactionData
 import Screens.HomeScreen
 import Screens.TransactionScreen
 import androidx.compose.foundation.Image
@@ -236,7 +239,7 @@ fun HomePageBody() {
     ) {
         OverviewSection()
         TimeSelector()
-        TransactionSummary()
+        GeneralTransactionSummary(transactions = getGeneralTransactionData())
     }
 }
 @Composable
@@ -399,123 +402,15 @@ fun TimeSelector() {
         }
     }
 }
+
+
+
+
+
+
+
+@Preview(showBackground = true)
 @Composable
-fun TransactionItem(
-    iconRes: Int,
-    title: String,
-    time: String,
-    type: String,
-    amount: String,
-    isIncome: Boolean = false
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Icon bên trái
-        Button(
-            onClick = {},
-            modifier = Modifier.size(48.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0068FF)),
-            shape = MaterialTheme.shapes.medium,
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            Image(
-                painter = painterResource(id = iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                colorFilter = ColorFilter.tint(Color.White)
-            )
-        }
-
-        // Thông tin chính
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 12.dp)
-        ) {
-            Text(text = title, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
-            Text(
-                text = time,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF0068FF)
-            )
-        }
-
-        VerticalDivider(modifier = Modifier
-            .width(1.dp)
-            .height(40.dp)
-            ,color = Color(0xFFB0F3D3))
-
-        Text(
-            text = type,
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier
-                .weight(0.6f)
-                .padding(horizontal = 8.dp)
-        )
-
-        VerticalDivider(modifier = Modifier
-            .width(1.dp)
-            .height(40.dp)
-            ,color = Color(0xFFB0F3D3))
-        Column(
-            modifier = Modifier
-                .padding(start = 12.dp),
-            horizontalAlignment = Alignment.End
-        ) {
-            Text(
-                text = amount,
-                color = if (isIncome) Color.Black else Color(0xFF0080FF),
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
-    }
+fun HomePageScreenPreview() {
+    HomePageScreen()
 }
-
-
-
-@Composable
-fun TransactionSummary() {
-    Column {
-        TransactionItem(
-            iconRes = R.drawable.ic_total_expense,
-            title = "Salary",
-            time = "18:27 – April 30",
-            type = "Monthly",
-            amount = "$4.000,00",
-            isIncome = true
-        )
-        TransactionItem(
-            iconRes = R.drawable.ic_groceries,
-            title = "Groceries",
-            time = "17:00 – April 24",
-            type = "Pantry",
-            amount = "-$100,00"
-        )
-        TransactionItem(
-            iconRes = R.drawable.ic_rent,
-            title = "Rent",
-            time = "8:30 – April 15",
-            type = "Rent",
-            amount = "-$674,40"
-        )
-    }
-}
-
-
-
-
-
-//@Preview(showBackground = true)
-//@Composable
-//fun HomePageScreenPreview() {
-//    val navController = rememberNavController()
-//    HomePageScreen(navController = navController)
-//}

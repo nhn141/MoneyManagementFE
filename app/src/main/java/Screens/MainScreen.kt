@@ -15,6 +15,8 @@ import DI.Composables.ProfileSection.ProfileHeaderSection
 import DI.Composables.ProfileSection.ProfileScreen
 import DI.Composables.HomeSection.HomePageHeaderSection
 import DI.Composables.HomeSection.HomePageScreen
+import DI.Composables.TransactionSection.TransactionHeaderSection
+import DI.Composables.TransactionSection.TransactionPageScreen
 import DI.Navigation.Routes
 import DI.ViewModels.CategoryViewModel
 import ViewModels.AuthViewModel
@@ -91,11 +93,11 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
             }
 
             composable(BottomNavItem.Transaction.route) {
-                GeneralTemplate(
-                    contentHeader = { TransactionHeader() },
-                    contentBody = { TransactionScreen() },
-                    fraction = 0.14f
-                )
+//                GeneralTemplate(
+//                    contentHeader = { TransactionHeaderSection(navController) },
+//                    contentBody = { TransactionScreen() },
+//                )
+                TransactionPageScreen(navController)
             }
 
             composable(BottomNavItem.Category.route) {
