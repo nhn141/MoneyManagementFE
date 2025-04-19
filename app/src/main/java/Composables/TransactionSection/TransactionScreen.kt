@@ -7,6 +7,7 @@ import DI.Composables.CategorySection.TransactionList
 import DI.Composables.CategorySection.getTransactionData
 import DI.Composables.TransactionSection.GeneralTransactionRow
 import DI.Composables.TransactionSection.GeneralTransactionSummary
+import DI.ViewModels.TransactionViewModel
 import Screens.TransactionScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,30 +41,34 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 
 @Composable
 fun TransactionPageScreen(navController: NavController) {
     GeneralTemplate(
         contentHeader = { TransactionHeaderSection(navController) },
-        contentBody = { TransactionBodySection() },
+        contentBody = { TransactionBodySection(navController) },
         fraction = 0.35f
     )
 }
 
-data class GeneralTransactionItem (val icon: Int, val title: String, val timestamp: String, val type: String, val amount: String, val isIncome: Boolean = false)
+data class GeneralTransactionItem (val icon: Int, val title: String, val timestamp: String, val type: String, val amount: String, val isIncome: Boolean)
 fun getGeneralTransactionData() : List<GeneralTransactionItem> {
     return listOf(
-        GeneralTransactionItem(R.drawable.ic_total_expense, "Salary", "18:27 - April 30", "Monthly", "-$26,00"),
-        GeneralTransactionItem(R.drawable.ic_groceries, "Groceries", "18:27 - April 30", "Pantry", "-$100,00"),
-        GeneralTransactionItem(R.drawable.ic_rent, "Rent", "18:27 - April 30", "Rent", "-$674,00"),
-        GeneralTransactionItem(R.drawable.ic_transport, "Transport", "18:27 - April 30", "Fuel", "-$4,00"),
-        GeneralTransactionItem(R.drawable.ic_food, "Food", "20:50 - March 31", "Dinner", "-$70,20")
+        GeneralTransactionItem(R.drawable.ic_total_expense, "Salary", "18:27 - April 30", "Monthly", "$26,00", true),
+        GeneralTransactionItem(R.drawable.ic_groceries, "Groceries", "18:27 - April 30", "Pantry", "-$100,00", false),
+        GeneralTransactionItem(R.drawable.ic_rent, "Rent", "18:27 - April 30", "Rent", "-$674,00", false),
+        GeneralTransactionItem(R.drawable.ic_transport, "Transport", "18:27 - April 30", "Fuel", "-$4,00", false),
+        GeneralTransactionItem(R.drawable.ic_food, "Food", "20:50 - March 31", "Dinner", "-$70,20", false)
     )
 }
 
 @Composable
 fun TransactionHeaderSection(navController: NavController) {
+    val viewModel: TransactionViewModel = hiltViewModel()
+    val selected = viewModel.selectedType.value
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -165,11 +170,13 @@ fun TransactionHeaderSection(navController: NavController) {
             // Income Card
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selected == "Income") Color(0xFF0068FF) else Color(0xFFF1FFF3)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 16.dp)
+                    .clickable { viewModel.onTypeSelected("Income") }
 
             ) {
                 Column(
@@ -180,19 +187,19 @@ fun TransactionHeaderSection(navController: NavController) {
                     Icon(
                         painter = painterResource(R.drawable.ic_income),
                         contentDescription = "Income",
-                        tint = Color(0xFF10C176),
+                        tint = if (selected == "Income") Color.White else Color(0xFF00D09E),
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Income",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Black,
+                        color = if (selected == "Income") Color.White else Color.Black,
                     )
                     Text(
                         text = "$4,120.00",
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = if (selected == "Income") Color.White else Color.Black
                     )
                 }
             }
@@ -202,11 +209,13 @@ fun TransactionHeaderSection(navController: NavController) {
             // Expense Card
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selected == "Expense") Color(0xFF0068FF) else Color(0xFFF1FFF3)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 16.dp)
+                    .clickable { viewModel.onTypeSelected("Expense") }
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize() .padding(vertical = 8.dp),
@@ -216,19 +225,19 @@ fun TransactionHeaderSection(navController: NavController) {
                     Icon(
                         painter = painterResource(R.drawable.ic_expense),
                         contentDescription = "Expense",
-                        tint = Color(0xFF0068FF),
+                        tint = if (selected == "Expense") Color.White else Color(0xFF0068FF),
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Expense",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Black
+                        color = if (selected == "Expense") Color.White else Color.Black
                     )
                     Text(
                         text = "$1,187.40",
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0068FF)
+                        color = if (selected == "Expense") Color.White else Color(0xFF0068FF)
                     )
                 }
             }
@@ -237,7 +246,11 @@ fun TransactionHeaderSection(navController: NavController) {
 }
 
 @Composable
-fun TransactionBodySection() {
+fun TransactionBodySection(navController: NavController) {
+    val showDatePicker = remember { mutableStateOf(false) }
+    val viewModel: TransactionViewModel = hiltViewModel()
+    val transactionsByMonth = viewModel.filteredTransactions.value
+
     Box {
         Column(
             modifier = Modifier
@@ -251,41 +264,69 @@ fun TransactionBodySection() {
             ) {
                 Spacer(modifier = Modifier.height(7.dp))
 
-                // 🔹 April Section
-                MonthSection("April")
-                Spacer(modifier = Modifier.height(5.dp))
-                GeneralTransactionSummary(transactions = getGeneralTransactionData().filter { it.timestamp.contains("April") })
-
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 🔹 March Section
-                MonthSection("March")
-                Spacer(modifier = Modifier.height(5.dp))
-                GeneralTransactionSummary(transactions = getGeneralTransactionData().filter { it.timestamp.contains("March") })
+                transactionsByMonth.forEach { (month, items) ->
+                    MonthSection(month)
+                    Spacer(modifier = Modifier.height(5.dp))
+                    GeneralTransactionSummary(transactions = items)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
         }
+
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(28.dp)
-                .clip(RoundedCornerShape(30.dp))
-                .background(Color(0xFF00D09E))
-                .size(35.dp)
-
         ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_calendar),
-                contentDescription = "Calendar",
-                modifier = Modifier.align(Alignment.Center),
-                tint = Color.Black.copy(alpha = 0.8f)
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 🔘 Nút Add Transaction
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(30.dp))
+                        .background(Color(0xFF00D09E))
+                        .size(30.dp)
+                        .clickable {
+                            navController.navigate("add_transaction")
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_more),
+                        contentDescription = "Add Transaction",
+                        tint = Color.Black.copy(alpha = 0.8f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // 📅 Nút Calendar
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(30.dp))
+                        .background(Color(0xFF00D09E))
+                        .size(30.dp)
+                        .clickable {
+                            showDatePicker.value = true
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_calendar),
+                        contentDescription = "Calendar",
+                        tint = Color.Black.copy(alpha = 0.8f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
 
     }
 }
+
 
 @Composable
 fun GeneralTransactionRow(

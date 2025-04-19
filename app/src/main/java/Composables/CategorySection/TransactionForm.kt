@@ -1,5 +1,6 @@
 package DI.Composables.CategorySection
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -8,10 +9,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,8 +22,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import java.util.Calendar
+import com.vanpra.composematerialdialogs.*
+import com.vanpra.composematerialdialogs.datetime.date.datepicker
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun TransactionForm() {
@@ -43,10 +56,11 @@ fun TransactionForm() {
         TransactionTextField(
             label = "Date",
             value = date,
-            onValueChange = { date = it },
+            onValueChange = { }, // Không cần chỉnh trực tiếp ở đây
             isDropdown = true,
-            trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = "Calendar") }
+            trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = "Calendar") },
         )
+
         Spacer(modifier = Modifier.height(8.dp))
 
         TransactionTextField(label = "Category", value = category, onValueChange = { category = it }, isDropdown = true)
@@ -77,18 +91,51 @@ fun TransactionTextField(
     onValueChange: (String) -> Unit = {},
     isDropdown: Boolean = false,
     isMultiline: Boolean = false,
-    trailingIcon: @Composable (() -> Unit)? = null
+    trailingIcon: @Composable (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        readOnly = isDropdown,
-        trailingIcon = trailingIcon,
-        shape = RoundedCornerShape(24.dp),
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-    )
+            .then(
+                if (isDropdown && onClick != null) Modifier.clickable { onClick() }
+                else Modifier
+            )
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            readOnly = isDropdown,
+            trailingIcon = trailingIcon,
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier
+                .fillMaxWidth(),
+            maxLines = if (isMultiline) 4 else 1,
+            singleLine = !isMultiline,
+            enabled = !isDropdown || onClick == null // Disable typing if it's dropdown
+        )
+    }
     Spacer(modifier = Modifier.height(8.dp))
 }
 
+
+@Composable
+fun AddTransactionScreen(navController: NavController) {
+    GeneralTemplate(
+        contentHeader = { AddTransactionHeaderSection(navController) },
+        contentBody = { TransactionForm() },
+        fraction = 0.14f,
+    )
+}
+
+
+
+
+
+@Preview(showBackground = true)
+@Composable
+fun AddTransactionScreenPreview() {
+    val navController = rememberNavController()
+    AddTransactionScreen(navController = navController)
+}

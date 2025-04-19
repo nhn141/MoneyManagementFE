@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.security.crypto.ktx)
     implementation (libs.androidx.security.crypto)
     implementation (libs.androidx.security.crypto.ktx.v110alpha06)
+    implementation(libs.support.annotations)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -107,5 +108,8 @@ dependencies {
 
     implementation ("com.squareup.okhttp3:okhttp:4.10.0")
     implementation ("com.squareup.okhttp3:logging-interceptor:4.10.0")
+
+    implementation ("io.github.vanpra.compose-material-dialogs:datetime:0.8.1-rc")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.2")
 
 }
