@@ -1,5 +1,7 @@
 package DI.Composables.CategorySection
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -35,9 +37,12 @@ import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TransactionForm() {
+    val dateDialogState = rememberMaterialDialogState()
     var date by remember { mutableStateOf("March 24, 2025") }
+
     var category by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf(TextFieldValue("$0")) }
     var title by remember { mutableStateOf(TextFieldValue("Dinner")) }
@@ -53,13 +58,36 @@ fun TransactionForm() {
         TransactionTextField(label = "Account Number")
         TransactionTextField(label = "Bank")
 
+        // 🔽 Date field with picker
         TransactionTextField(
             label = "Date",
             value = date,
-            onValueChange = { }, // Không cần chỉnh trực tiếp ở đây
+            onValueChange = {},
             isDropdown = true,
-            trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = "Calendar") },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = "Calendar",
+                    modifier = Modifier.clickable { dateDialogState.show() }
+                )
+            }
         )
+
+        // 📅 Date Picker Dialog
+        MaterialDialog(
+            dialogState = dateDialogState,
+            buttons = {
+                positiveButton("OK")
+                negativeButton("Cancel")
+            }
+        ) {
+            datepicker(
+                initialDate = LocalDate.now(),
+                title = "Select a date"
+            ) {
+                date = it.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")) // Ví dụ: April 19, 2025
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -67,7 +95,13 @@ fun TransactionForm() {
         TransactionTextField(label = "Amount", value = amount.text, onValueChange = { amount = TextFieldValue(it) })
         TransactionTextField(label = "Transaction Title", value = title.text, onValueChange = { title = TextFieldValue(it) })
 
-        TransactionTextField(label = "Enter Message", value = message.text, onValueChange = { message = TextFieldValue(it) }, isMultiline = true)
+        TransactionTextField(
+            label = "Enter Message",
+            value = message.text,
+            onValueChange = { message = TextFieldValue(it) },
+            isMultiline = true
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
@@ -84,6 +118,7 @@ fun TransactionForm() {
     }
 }
 
+
 @Composable
 fun TransactionTextField(
     label: String,
@@ -92,15 +127,10 @@ fun TransactionTextField(
     isDropdown: Boolean = false,
     isMultiline: Boolean = false,
     trailingIcon: @Composable (() -> Unit)? = null,
-    onClick: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (isDropdown && onClick != null) Modifier.clickable { onClick() }
-                else Modifier
-            )
     ) {
         OutlinedTextField(
             value = value,
@@ -113,13 +143,15 @@ fun TransactionTextField(
                 .fillMaxWidth(),
             maxLines = if (isMultiline) 4 else 1,
             singleLine = !isMultiline,
-            enabled = !isDropdown || onClick == null // Disable typing if it's dropdown
+            enabled = true
         )
     }
     Spacer(modifier = Modifier.height(8.dp))
 }
 
 
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AddTransactionScreen(navController: NavController) {
     GeneralTemplate(
@@ -133,6 +165,7 @@ fun AddTransactionScreen(navController: NavController) {
 
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun AddTransactionScreenPreview() {
