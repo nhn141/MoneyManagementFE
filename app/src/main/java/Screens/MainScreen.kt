@@ -1,6 +1,7 @@
 package Screens
 
 import DI.API.TokenHandler.AuthStorage
+import DI.Composables.AnalysisSection.AnalysisBody
 import DI.Composables.CategorySection.AddTransactionScreen
 import DI.Composables.CategorySection.Category_SpecificType_Body
 import DI.Composables.CategorySection.Category_SpecificType_Header
@@ -82,7 +83,7 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
             composable(BottomNavItem.Analysis.route) {
                 GeneralTemplate(
                     contentHeader = { AnalysisHeader() },
-                    contentBody = { AnalysisScreen() }
+                    contentBody = { AnalysisBody() }
 
                 )
             }
