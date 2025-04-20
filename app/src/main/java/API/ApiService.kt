@@ -4,6 +4,8 @@ import DI.Models.Auth.RefreshTokenRequest
 import DI.Models.Auth.SignInRequest
 import DI.Models.Auth.SignUpRequest
 import DI.Models.Category.Category
+import DI.Models.Category.Transaction
+import DI.Models.Wallet
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -23,4 +25,18 @@ interface ApiService {
     @GET("Categories")
     suspend fun getCategories(): List<Category>
 
+    @GET("Wallets")
+    suspend fun getWallets(): List<Wallet>
+
+    @GET("Transactions")
+    suspend fun getTransactions(): List<Transaction>
+
+    @POST("Categories")
+    suspend fun createCategory(@Body category: Category): Response<ResponseBody>
+
+    @POST("Wallets")
+    suspend fun createWallet(@Body wallet: Wallet): Response<ResponseBody>
+
+    @POST("Transactions")
+    suspend fun createTransaction(@Body transaction: Transaction): Response<ResponseBody>
 }
