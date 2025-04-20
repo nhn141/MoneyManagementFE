@@ -36,13 +36,20 @@ import com.vanpra.composematerialdialogs.*
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TransactionForm() {
     val dateDialogState = rememberMaterialDialogState()
-    var date by remember { mutableStateOf("March 24, 2025") }
-
+    val formatter = remember {
+        SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+    }
+    var date by remember { mutableStateOf(formatter.format(Calendar.getInstance().time)) }
+    var transactionCode by remember { mutableStateOf("") }
+    var accountNumber by remember { mutableStateOf("") }
+    var bank by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf(TextFieldValue("$0")) }
     var title by remember { mutableStateOf(TextFieldValue("Dinner")) }
@@ -54,9 +61,22 @@ fun TransactionForm() {
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 25.dp)
     ) {
-        TransactionTextField(label = "Transaction Code")
-        TransactionTextField(label = "Account Number")
-        TransactionTextField(label = "Bank")
+        TransactionTextField(
+            label = "Transaction Code",
+            value = transactionCode,
+            onValueChange = { transactionCode = it }
+        )
+        TransactionTextField(
+            label = "Account Number",
+            value = accountNumber,
+            onValueChange = { accountNumber = it }
+        )
+        TransactionTextField(
+            label = "Bank",
+            value = bank,
+            onValueChange = { bank = it }
+        )
+
 
         // 🔽 Date field with picker
         TransactionTextField(
@@ -82,18 +102,30 @@ fun TransactionForm() {
             }
         ) {
             datepicker(
-                initialDate = LocalDate.now(),
                 title = "Select a date"
-            ) {
-                date = it.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")) // Ví dụ: April 19, 2025
+            ) { localDate ->
+                val calendar = Calendar.getInstance()
+                calendar.set(localDate.year, localDate.monthValue - 1, localDate.dayOfMonth)
+
+                date = formatter.format(calendar.time)
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TransactionTextField(label = "Category", value = category, onValueChange = { category = it }, isDropdown = true)
-        TransactionTextField(label = "Amount", value = amount.text, onValueChange = { amount = TextFieldValue(it) })
-        TransactionTextField(label = "Transaction Title", value = title.text, onValueChange = { title = TextFieldValue(it) })
+        TransactionTextField(
+            label = "Category",
+            value = category,
+            onValueChange = { category = it },
+            isDropdown = true)
+        TransactionTextField(
+            label = "Amount",
+            value = amount.text,
+            onValueChange = { amount = TextFieldValue(it) })
+        TransactionTextField(
+            label = "Transaction Title",
+            value = title.text,
+            onValueChange = { title = TextFieldValue(it) })
 
         TransactionTextField(
             label = "Enter Message",
