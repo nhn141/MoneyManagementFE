@@ -5,4 +5,5 @@ object Routes {
     const val Register = "register"
     const val Main = "main"
     const val Auth = "auth"
+    const val Calendar = "calendar"
 }

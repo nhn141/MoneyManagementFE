@@ -1,8 +1,7 @@
 package DI.Composables.AnalysisSection
 
+import DI.Navigation.Routes
 import DI.ViewModels.AnalysisViewModel
-import DI.ViewModels.PeriodData
-import android.util.Log
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -11,26 +10,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,13 +33,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.models.BarProperties
@@ -58,12 +46,13 @@ import ir.ehsannarmani.compose_charts.models.LabelProperties
 
 @Composable
 fun AnalysisBody(
+    navController: NavController,
     analysisViewModel: AnalysisViewModel = hiltViewModel()
 ) {
     val periodGraphResult = analysisViewModel.periodGraph.collectAsState()
 
-    val periods = listOf("Daily", "Weekly", "Monthly", "Year")
-    var selectedPeriod by remember { mutableStateOf(1) }
+    val periods = listOf("Daily", "Weekly", "Monthly", "Yearly")
+    var selectedPeriod by remember { mutableStateOf(0) }
 
     val selectedPeriodLabel = periods[selectedPeriod]
     val selectedData = periodGraphResult.let { result ->
@@ -74,6 +63,7 @@ fun AnalysisBody(
         }
     }
 
+    val labels = selectedData?.labels ?: emptyList()
     val incomeList = selectedData?.income ?: emptyList()
     val expenseList = selectedData?.expenses ?: emptyList()
     val totalIncome = selectedData?.totalIncome?.let { "$${String.format("%,.2f", it)}" } ?: "--"
@@ -150,11 +140,14 @@ fun AnalysisBody(
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color(0xFF53dba9))
                                 .padding(5.dp)
+                                .clickable {
+                                    navController.navigate(Routes.Calendar)
+                                }
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_calendar),
                                 contentDescription = null,
-                                tint = Color(0xFF093030)
+                                tint = Color(0xFF093030),
                             )
                         }
                     }
@@ -167,7 +160,8 @@ fun AnalysisBody(
                 ) {
                     IncomeExpensesBarChart(
                         incomeValues = incomeList,
-                        expenseValues = expenseList
+                        expenseValues = expenseList,
+                        labels = labels
                     )
                 }
             }
@@ -228,11 +222,11 @@ fun PeriodTotalTransaction(
 
 @Composable
 fun IncomeExpensesBarChart(
-    incomeValues: List<Double> = listOf(5000.0, 1000.0, 8000.0, 3000.0, 12000.0, 500.0, 1000.0),
-    expenseValues: List<Double> = listOf(3000.0, 1500.0, 4000.0, 2000.0, 8000.0, 700.0, 1200.0),
-    periods: List<String> = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    incomeValues: List<Double>,
+    expenseValues: List<Double>,
+    labels: List<String>
 ) {
-    val size = listOf(incomeValues.size, expenseValues.size, periods.size).minOrNull() ?: 0
+    val size = listOf(incomeValues.size, expenseValues.size, labels.size).minOrNull() ?: 0
 
     // 🔒 Guard against empty lists
     if (size == 0) {
@@ -247,10 +241,10 @@ fun IncomeExpensesBarChart(
         return
     }
 
-    val chartData = remember(incomeValues, expenseValues, periods) {
+    val chartData = remember(incomeValues, expenseValues, labels) {
         (0 until size).map { index ->
             Bars(
-                label = periods[index],
+                label = labels[index],
                 values = listOf(
                     Bars.Data(
                         label = "Income",
@@ -274,7 +268,7 @@ fun IncomeExpensesBarChart(
         data = chartData,
         barProperties = BarProperties(
             cornerRadius = Bars.Data.Radius.Rectangle(topLeft = 6.dp, topRight = 6.dp),
-            spacing = 5.dp,
+            spacing = 4.dp,
             thickness = 8.dp
         ),
         animationSpec = spring(

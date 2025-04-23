@@ -1,5 +1,6 @@
 package API
 
+import DI.Models.Analysis.CategoryBreakdown
 import DI.Models.Auth.RefreshTokenRequest
 import DI.Models.Auth.SignInRequest
 import DI.Models.Auth.SignUpRequest
@@ -43,4 +44,7 @@ interface ApiService {
 
     @POST("Transactions")
     suspend fun createTransaction(@Body transaction: Transaction): Response<ResponseBody>
+
+    @GET("Statistics")
+    suspend fun getCategoryBreakdown(@Query("startDate") startDate: String, @Query("endDate") endDate: String): List<CategoryBreakdown>
 }

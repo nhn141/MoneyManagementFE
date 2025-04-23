@@ -1,5 +1,8 @@
 package DI.ViewModels
 
+import DI.Models.Analysis.CategoryBreakdown
+import DI.Models.Analysis.PeriodData
+import DI.Models.Analysis.PeriodGraph
 import DI.Repositories.AnalysisRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,22 +16,73 @@ import javax.inject.Inject
 class AnalysisViewModel @Inject constructor(
     private val analysisRepository: AnalysisRepository
 ) : ViewModel() {
+
     private var _periodGraph = MutableStateFlow<Result<PeriodGraph>?>(null)
     val periodGraph: StateFlow<Result<PeriodGraph>?> = _periodGraph
 
+    private var _categoryBreakdown = MutableStateFlow<Result<List<CategoryBreakdown>>?>(null)
+    val categoryBreakdown: StateFlow<Result<List<CategoryBreakdown>>?> = _categoryBreakdown
     init {
-        getMockWeeklyTransactions()
+        getDailyTransactions()
+        getWeeklyTransactions()
+        getMonthlyTransactions()
+        getYearlyTransactions()
     }
 
-    private fun getMockWeeklyTransactions() {
+    private fun getDailyTransactions() {
+        viewModelScope.launch {
+            val result = analysisRepository.getMockDailyTransactions()
+            result.onSuccess { dailyTransactions ->
+                // Convert transactions into PeriodData
+                val periodData = PeriodData(
+                    labels = dailyTransactions.transactions.map { it.dayOfWeek },
+                    income = dailyTransactions.transactions.map { if(it.type == "Income") it.amount else 0.0},
+                    expenses = dailyTransactions.transactions.map { if(it.type == "Expense") it.amount else 0.0},
+                    totalIncome = dailyTransactions.totalIncome,
+                    totalExpenses = dailyTransactions.totalExpense
+                )
+
+                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
+                val updatedMap = currentMap.toMutableMap().apply {
+                    put("Daily", periodData)
+                }
+
+                _periodGraph.value = Result.success(
+                    PeriodGraph(
+                        isLoading = false,
+                        dataByPeriod = updatedMap
+                    )
+                )
+            }.onFailure {
+                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
+                _periodGraph.value = Result.success(
+                    PeriodGraph(
+                        isLoading = false,
+                        dataByPeriod = currentMap // preserve previously fetched data
+                    )
+                )
+            }
+        }
+    }
+
+    private fun weekNumberConfig(weekNumber: Int): String {
+        return when (weekNumber) {
+            1 -> "1st Week"
+            2 -> "2nd Week"
+            3 -> "3rd Week"
+            4 -> "4th Week"
+            else -> ""
+        }
+    }
+
+    private fun getWeeklyTransactions() {
         viewModelScope.launch {
             val result = analysisRepository.getMockWeeklyTransactions()
             result.onSuccess { weeklyTransactions ->
-                // Convert transactions into PeriodData
                 val periodData = PeriodData(
-                    labels = weeklyTransactions.transactions.map { it.dayOfWeek },
-                    income = weeklyTransactions.transactions.map { if(it.type == "Income") it.amount else 0.0},
-                    expenses = weeklyTransactions.transactions.map { if(it.type == "Expense") it.amount else 0.0},
+                    labels = weeklyTransactions.transactions.map { weekNumberConfig(it.weekNumber) },
+                    income = weeklyTransactions.transactions.map { it.totalIncome },
+                    expenses = weeklyTransactions.transactions.map { it.totalExpense },
                     totalIncome = weeklyTransactions.totalIncome,
                     totalExpenses = weeklyTransactions.totalExpense
                 )
@@ -44,55 +98,103 @@ class AnalysisViewModel @Inject constructor(
                         dataByPeriod = updatedMap
                     )
                 )
-            }.onFailure { e ->
-                _periodGraph.value = Result.failure(e)
+            }.onFailure {
+                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
+                _periodGraph.value = Result.success(
+                    PeriodGraph(
+                        isLoading = false,
+                        dataByPeriod = currentMap // preserve previously fetched data
+                    )
+                )
             }
         }
     }
 
-    private fun loadMockData() {
-        val mockData = mapOf(
-            "Daily" to PeriodData(
-                labels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
-                income = listOf(100.0, 120.0, 90.0, 110.0, 130.0, 95.0, 105.0),
-                expenses = listOf(80.0, 95.0, 75.0, 90.0, 100.0, 85.0, 95.0),
-                totalIncome = 700.0,
-                totalExpenses = 420.0
-            ),
-            "Weekly" to PeriodData(
-                labels = listOf("Week 1", "Week 2", "Week 3", "Week 4"),
-                income = listOf(2000.0, 1800.0, 2200.0, 2100.0),
-                expenses = listOf(1500.0, 1600.0, 1700.0, 1800.0),
-                totalIncome = 8000.0,
-                totalExpenses = 7200.0
-            ),
-            "Monthly" to PeriodData(
-                labels = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
-                income = listOf(10000.0, 11000.0, 12000.0, 13000.0, 14000.0, 18000.0),
-                expenses = listOf(8000.0, 9000.0, 10000.0, 11000.0, 12000.0, 15000.0),
-                totalIncome = 100000.0,
-                totalExpenses = 120000.0
-            ),
-            "Yearly" to PeriodData(
-                labels = listOf("2023", "2024", "2025", "2026"),
-                income = listOf(50000.0, 55000.0, 60000.0, 65000.0),
-                expenses = listOf(45000.0, 50000.0, 55000.0, 60000.0),
-                totalIncome = 200000.0,
-                totalExpenses = 240000.0
-            )
-        )
+    private fun getMonthlyTransactions() {
+        viewModelScope.launch {
+            val result = analysisRepository.getMockMonthlyTransactions()
+            result.onSuccess { monthlyTransactions ->
+                val periodData = PeriodData(
+                    labels = monthlyTransactions.transactions.map { it.month },
+                    income = monthlyTransactions.transactions.map { it.totalIncome },
+                    expenses = monthlyTransactions.transactions.map { it.totalExpense },
+                    totalIncome = monthlyTransactions.totalIncome,
+                    totalExpenses = monthlyTransactions.totalExpense
+                )
+
+                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
+                val updatedMap = currentMap.toMutableMap().apply {
+                    put("Monthly", periodData)
+                }
+
+                _periodGraph.value = Result.success(
+                    PeriodGraph(
+                        isLoading = false,
+                        dataByPeriod = updatedMap
+                    )
+                )
+            }.onFailure {
+                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
+                _periodGraph.value = Result.success(
+                    PeriodGraph(
+                        isLoading = false,
+                        dataByPeriod = currentMap // preserve previously fetched data
+                    )
+                )
+            }
+        }
+    }
+
+    private fun getYearlyTransactions() {
+        viewModelScope.launch {
+            val result = analysisRepository.getMockYearlyTransactions()
+            result.onSuccess { yearlyTransactionsList ->
+                val periodData = PeriodData(
+                    labels = yearlyTransactionsList.map { it.year },
+                    income = yearlyTransactionsList.map { it.totalIncome },
+                    expenses = yearlyTransactionsList.map { it.totalExpense },
+                    totalIncome = yearlyTransactionsList.sumOf { it.totalIncome },
+                    totalExpenses = yearlyTransactionsList.sumOf { it.totalExpense }
+                )
+
+                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
+                val updatedMap = currentMap.toMutableMap().apply {
+                    put("Yearly", periodData)
+                }
+
+                _periodGraph.value = Result.success(
+                    PeriodGraph(
+                        isLoading = false,
+                        dataByPeriod = updatedMap
+                    )
+                )
+            }.onFailure {
+                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
+                _periodGraph.value = Result.success(
+                    PeriodGraph(
+                        isLoading = false,
+                        dataByPeriod = currentMap // preserve previously fetched data
+                    )
+                )
+            }
+        }
+    }
+
+    fun getCategoryBreakdown(startDate: String, endDate: String) {
+        viewModelScope.launch {
+            val result = analysisRepository.getCategoryBreakdown(startDate, endDate)
+            _categoryBreakdown.value = result
+        }
+    }
+
+    fun getMockCategoryBreakdown(startDate: String, endDate: String) {
+        viewModelScope.launch {
+            val result = analysisRepository.getCategoryBreakdownMock(startDate, endDate)
+            _categoryBreakdown.value = result
+        }
     }
 }
 
-data class PeriodData(
-    val labels: List<String>,
-    val income: List<Double>,
-    val expenses: List<Double>,
-    val totalIncome: Double,
-    val totalExpenses: Double
-)
 
-data class PeriodGraph(
-    val isLoading: Boolean = true,
-    val dataByPeriod: Map<String, PeriodData> = emptyMap()
-)
+
+
