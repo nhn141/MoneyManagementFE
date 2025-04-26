@@ -30,6 +30,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -109,7 +110,10 @@ dependencies {
     implementation ("com.squareup.okhttp3:okhttp:4.10.0")
     implementation ("com.squareup.okhttp3:logging-interceptor:4.10.0")
 
-    implementation ("io.github.vanpra.compose-material-dialogs:datetime:0.8.1-rc")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.2")
+    // Compose Charts
+    implementation(libs.compose.charts.v012)
 
+    // The compose calendar library for Android
+    coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:2.1.5")
+    implementation("com.kizitonwose.calendar:compose:2.6.2")
 }

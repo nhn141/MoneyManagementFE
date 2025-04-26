@@ -1,40 +1,36 @@
 package DI.ViewModels
 
-import DI.Composables.TransactionSection.GeneralTransactionItem
-import DI.Composables.TransactionSection.getGeneralTransactionData
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.State
+import DI.Models.Category.Transaction
+import DI.Repositories.TransactionRepository
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class TransactionViewModel @Inject constructor() : ViewModel() {
+class TransactionViewModel @Inject constructor(
+    private val repository: TransactionRepository
+) : ViewModel() {
+    private val _transactions = MutableStateFlow<Result<List<Transaction>>?>(null)
+    val transactions: StateFlow<Result<List<Transaction>>?> = _transactions
 
-    private val _selectedType = mutableStateOf<String>("All")
-    val selectedType: State<String> = _selectedType
-
-    private val allTransactions = getGeneralTransactionData()
-
-    val filteredTransactions: State<Map<String, List<GeneralTransactionItem>>> = derivedStateOf {
-        val filtered = when (_selectedType.value) {
-            "Income" -> allTransactions.filter { it.isIncome }
-            "Expense" -> allTransactions.filter { !it.isIncome }
-            else -> allTransactions
-        }
-
-        // Group theo tháng
-        filtered.groupBy { item ->
-            if (item.timestamp.contains("April")) "April"
-            else if (item.timestamp.contains("March")) "March"
-            else "Other"
+    fun fetchTransactions() {
+        viewModelScope.launch {
+            val result = repository.getTransactions()
+            _transactions.value = result
         }
     }
 
-    fun onTypeSelected(type: String) {
-        _selectedType.value = if (_selectedType.value == type) "All" else type
+    private val _transactionState = MutableStateFlow<Result<Unit>?>(null)
+    val transactionState: StateFlow<Result<Unit>?> = _transactionState
+
+    fun createTransaction(transaction: Transaction) {
+        viewModelScope.launch {
+            val result = repository.createTransaction(transaction)
+            _transactionState.value = result
+        }
     }
 }

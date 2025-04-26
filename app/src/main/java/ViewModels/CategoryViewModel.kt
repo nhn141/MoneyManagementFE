@@ -23,4 +23,13 @@ class CategoryViewModel @Inject constructor(
             _categories.value = result
         }
     }
+
+    private val _categoryState = MutableStateFlow<Result<Unit>?>(null)
+    val categoryState: StateFlow<Result<Unit>?> = _categoryState
+    fun createCategory(category: Category) {
+        viewModelScope.launch {
+            val result = repository.createCategory(category)
+            _categoryState.value = result
+        }
+    }
 }

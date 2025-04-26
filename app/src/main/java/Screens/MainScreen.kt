@@ -1,6 +1,8 @@
 package Screens
 
 import DI.API.TokenHandler.AuthStorage
+import DI.Composables.AnalysisSection.AnalysisBody
+import DI.Composables.AnalysisSection.CalendarScreen
 import DI.Composables.CategorySection.AddTransactionScreen
 import DI.Composables.CategorySection.Category_SpecificType_Body
 import DI.Composables.CategorySection.Category_SpecificType_Header
@@ -33,7 +35,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -87,9 +88,12 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
             composable(BottomNavItem.Analysis.route) {
                 GeneralTemplate(
                     contentHeader = { AnalysisHeader() },
-                    contentBody = { AnalysisScreen() }
-
+                    contentBody = { AnalysisBody(navController) }
                 )
+            }
+
+            composable(Routes.Calendar) {
+                CalendarScreen()
             }
 
             composable(BottomNavItem.Transaction.route) {

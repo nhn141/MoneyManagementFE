@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!-- Allow HTTP to public IP -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">143.198.208.227</domain>
+    </domain-config>
+
+    <!-- Still allow local host (emulator) -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">10.0.2.2</domain>
-        <trust-anchors>
-            <certificates src="system" />
-        </trust-anchors>
     </domain-config>
 </network-security-config>
