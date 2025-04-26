@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.security.crypto.ktx)
     implementation (libs.androidx.security.crypto)
     implementation (libs.androidx.security.crypto.ktx.v110alpha06)
+    implementation(libs.support.annotations)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
