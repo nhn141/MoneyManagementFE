@@ -115,4 +115,11 @@ dependencies {
     // The compose calendar library for Android
     coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("com.kizitonwose.calendar:compose:2.6.2")
+
+    // Ocr
+    implementation (libs.text.recognition)
+    implementation(libs.jetbrains.kotlinx.coroutines.android)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.jetbrains.kotlinx.coroutines.play.services)
+
 }

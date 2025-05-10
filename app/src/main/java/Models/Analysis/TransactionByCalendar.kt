@@ -1,7 +1,7 @@
 package DI.Models.Analysis
 
 data class TransactionByCalendar(
-    val title: String,
+    val description: String,
     val date: String,
     val time: String,
     val dayOfWeek: String,

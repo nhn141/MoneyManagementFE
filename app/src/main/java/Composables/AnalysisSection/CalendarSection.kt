@@ -25,7 +25,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,7 +57,7 @@ fun CalendarScreen() {
     GeneralTemplate(
         contentHeader = { CalendarHeader() },
         contentBody = { CalendarBody() },
-        fraction = 0.15f
+        fraction = 0.1f
     )
 }
 
@@ -97,9 +101,12 @@ fun CalendarBody(analysisViewModel: AnalysisViewModel = hiltViewModel()) {
 
     var selection by remember { mutableStateOf(DateSelection()) }
     LaunchedEffect(selection) {
+        Log.d("DateSelection", "Start: ${selection.start}, End: ${selection.end}")
         val startDate = selection.start?.let { selection.formatDate(it) }
         val endDate = selection.end?.let { selection.formatDate(it) }
-        analysisViewModel.getMockCategoryBreakdown(startDate ?: "", endDate ?: "")
+        Log.d("StartDate", "Start Date: $startDate")
+        Log.d("EndDate", "End Date: $endDate")
+        analysisViewModel.getCategoryBreakdown(startDate.toString(), endDate.toString())
     }
 
     val categoryBreakdownResult by analysisViewModel.categoryBreakdown.collectAsState()
@@ -114,6 +121,7 @@ fun CalendarBody(analysisViewModel: AnalysisViewModel = hiltViewModel()) {
             }
         }
     }
+    Log.d("CategoryBreakdownValue", "categoryBreakdown: $categoryBreakdown")
 
     var statisticsMode by remember { mutableStateOf("Aggregate") }
 
@@ -368,7 +376,7 @@ fun handleRangeSelection(clickedDate: LocalDate, currentSelection: DateSelection
     return when {
         currentSelection.start == null -> DateSelection(start = clickedDate)
         currentSelection.end == null -> {
-            if (clickedDate.isAfter(currentSelection.start)) {
+            if (clickedDate.isAfter(currentSelection.start) || clickedDate.isEqual(currentSelection.start)) {
                 DateSelection(start = currentSelection.start, end = clickedDate)
             } else {
                 DateSelection(start = clickedDate)
@@ -390,105 +398,14 @@ fun CategoryAggregateSection(categoryBreakdown: List<CategoryBreakdown?>, select
             Text("No category breakdown data available", fontWeight = FontWeight.W500, fontSize = 16.sp, color = Color.Black)
         }
     } else {
-        LazyColumn {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             items(categoryBreakdown.size) { item ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    // Icon
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF3299FF))
-                            .align(Alignment.CenterVertically)
-                            .padding(12.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_gifts),
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-
-                    // Header and date
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = categoryBreakdown[item]?.category ?: "",
-                            fontWeight = FontWeight.W500,
-                            fontSize = 16.sp,
-                            color = Color.Black
-                        )
-                        Text(
-                            text = selectionDateRange,
-                            fontWeight = FontWeight.W500,
-                            fontSize = 14.sp,
-                            color = Color(0xFF0068FF)
-                        )
-                    }
-
-                    // Vertical Slider
-                    Box(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .height(40.dp)
-                            .background(Color(0xFF00D09E))
-                    )
-
-                    // Total Income
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(
-                            text = "Income",
-                            fontWeight = FontWeight.W400,
-                            fontSize = 14.sp,
-                            color = Color.Black
-                        )
-
-                        Text(
-                            text = "$" + categoryBreakdown[item]?.totalIncome.toString(),
-                            fontWeight = FontWeight.W500,
-                            fontSize = 16.sp,
-                            color = Color(0xFF00D09E)
-                        )
-                    }
-
-                    // Vertical Slider
-                    Box(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .height(40.dp)
-                            .background(Color(0xFF00D09E))
-                    )
-
-                    // Total Expense
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Expense",
-                            fontWeight = FontWeight.W400,
-                            fontSize = 14.sp,
-                            color = Color.Black
-                        )
-
-                        Text(
-                            text = "-$" + categoryBreakdown[item]?.totalExpenses.toString(),
-                            fontWeight = FontWeight.W500,
-                            fontSize = 16.sp,
-                            color = Color(0xFFF86058)
-                        )
-                    }
-                }
+                val category = categoryBreakdown[item]?.category ?: ""
+                val totalIncome = categoryBreakdown[item]?.totalIncome.toString()
+                val totalExpense = categoryBreakdown[item]?.totalExpenses.toString()
+                AggregateItem(category, selectionDateRange, totalIncome, totalExpense)
             }
         }
     }
@@ -607,5 +524,137 @@ fun CustomPieChart(type: String, breakdownList: List<CategoryBreakdownPieData>) 
                 )
             }
         }
+    }
+}
+
+@Composable
+fun AggregateItem(category: String, date: String, income: String, expense: String) {
+    Box(
+        modifier = Modifier.fillMaxWidth()
+
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, Color(0xFF6DB6FE), RoundedCornerShape(16.dp))
+            .background(Color(0xFFF3FFFC))
+            .padding(32.dp)
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                // Icon
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF3299FF))
+                        .align(Alignment.CenterVertically)
+                        .padding(12.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_gifts),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                // Header and date
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(start = 8.dp, end = 8.dp)
+                ) {
+                    Text(
+                        text = category,
+                        fontWeight = FontWeight.W500,
+                        fontSize = 16.sp,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = date,
+                        fontWeight = FontWeight.W500,
+                        fontSize = 12.sp,
+                        color = Color(0xFF0068FF)
+                    )
+                }
+            }
+
+            // Slider
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .background(
+                        color = Color(0xFF6DB6FE),
+                        shape = RectangleShape
+                    )
+                    .height(1.dp)
+            )
+
+            // Item
+            StatisticItem(type = "Income", amount = income)
+            StatisticItem(type = "Expense", amount = expense)
+
+        }
+    }
+}
+
+@Composable
+private fun StatisticItem(type: String, amount: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .border(
+                1.dp,
+                if(type == "Income") Color(0xFF00D09E) else Color(0xFFF86058),
+                RoundedCornerShape(8.dp))
+            .background(if(type == "Income") Color(0xFFCFFFF3) else Color(0xFFFFE8E7))
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp, horizontal = 16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Vertical Slider
+                Box(
+                    modifier = Modifier
+                        .width(5.dp)
+                        .height(20.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if(type == "Income") Color(0xFF00D09E) else Color(0xFFF86058))
+                )
+                Text(
+                    text = type,
+                    color = if(type == "Income") Color(0xFF0A3D2D) else Color(0xFF5E1410),
+                    fontWeight = FontWeight.W500
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFFFFFFF))
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = amount,
+                        color = if(type == "Income") Color(0xFF17A482) else Color(0xFFF86058),
+                        fontWeight = FontWeight.W600,
+                    )
+                }
+            }
+        }
+
     }
 }

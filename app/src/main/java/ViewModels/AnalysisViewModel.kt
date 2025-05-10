@@ -4,6 +4,7 @@ import DI.Models.Analysis.CategoryBreakdown
 import DI.Models.Analysis.PeriodData
 import DI.Models.Analysis.PeriodGraph
 import DI.Repositories.AnalysisRepository
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -182,8 +183,10 @@ class AnalysisViewModel @Inject constructor(
 
     fun getCategoryBreakdown(startDate: String, endDate: String) {
         viewModelScope.launch {
+            Log.d("CategoryBreakdown", "Fetching category breakdown data for dates: $startDate to $endDate")
             val result = analysisRepository.getCategoryBreakdown(startDate, endDate)
             _categoryBreakdown.value = result
+            Log.d("CategoryBreakdown", "Category breakdown data fetched successfully")
         }
     }
 

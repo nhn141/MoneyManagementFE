@@ -6,6 +6,7 @@ import DI.Models.Auth.SignInRequest
 import DI.Models.Auth.SignUpRequest
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
+import DI.Models.Ocr.OcrData
 import DI.Models.Wallet
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -45,6 +46,10 @@ interface ApiService {
     @POST("Transactions")
     suspend fun createTransaction(@Body transaction: Transaction): Response<ResponseBody>
 
-    @GET("Statistics")
+    @GET("Statistics/category-breakdown")
     suspend fun getCategoryBreakdown(@Query("startDate") startDate: String, @Query("endDate") endDate: String): List<CategoryBreakdown>
+
+    @POST("Gemini/extract-ocr")
+    suspend fun extractOcr(@Body ocrString: String): OcrData
+
 }

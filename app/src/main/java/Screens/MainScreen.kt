@@ -16,6 +16,7 @@ import DI.Composables.CategorySection.HeaderSection
 import DI.Composables.ProfileSection.ProfileHeaderSection
 import DI.Composables.ProfileSection.ProfileScreen
 import DI.Composables.HomeSection.HomePageHeaderSection
+import DI.Composables.OcrSection.OcrScreen
 import DI.Navigation.Routes
 import DI.ViewModels.CategoryViewModel
 import ViewModels.AuthViewModel
@@ -124,7 +125,10 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
             composable(BottomNavItem.Profie.route) {
                 GeneralTemplate(
                     contentHeader = { ProfileHeaderSection() },
-                    contentBody = { ProfileScreen() }
+                    contentBody = {
+//                        ProfileScreen()
+                        OcrScreen()
+                    }
                 )
             }
         }

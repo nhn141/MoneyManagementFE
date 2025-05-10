@@ -21,7 +21,7 @@ data class DateSelection(
     }
 
     fun formatDate(date: LocalDate): String {
-        val formatter = DateTimeFormatter.ofPattern("MMM yyyy")
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         return date.format(formatter)
     }
 }
