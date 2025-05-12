@@ -8,7 +8,7 @@ import DI.Composables.CategorySection.GeneralTemplate
 import DI.Composables.CategorySection.TransactionItem
 import DI.Composables.TransactionSection.GeneralTransactionItem
 import DI.Composables.TransactionSection.GeneralTransactionSummary
-import DI.Composables.TransactionSection.getGeneralTransactionData
+//import DI.Composables.TransactionSection.getGeneralTransactionData
 import Screens.HomeScreen
 import Screens.TransactionScreen
 import androidx.compose.foundation.Image
@@ -53,7 +53,7 @@ import androidx.navigation.compose.rememberNavController
 fun HomePageScreen() {
     GeneralTemplate(
         contentHeader = { HomePageHeaderSection() },
-        contentBody = { HomePageBody() }
+        contentBody = { HomeScreen() }
     )
 }
 
@@ -239,7 +239,7 @@ fun HomePageBody() {
     ) {
         OverviewSection()
         TimeSelector()
-        GeneralTransactionSummary(transactions = getGeneralTransactionData())
+        //GeneralTransactionSummary(transactions = getGeneralTransactionData())
     }
 }
 @Composable

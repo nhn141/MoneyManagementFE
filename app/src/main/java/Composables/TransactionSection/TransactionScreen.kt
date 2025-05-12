@@ -7,8 +7,13 @@ import DI.Composables.CategorySection.TransactionList
 import DI.Composables.CategorySection.getTransactionData
 import DI.Composables.TransactionSection.GeneralTransactionRow
 import DI.Composables.TransactionSection.GeneralTransactionSummary
+import DI.Models.Category.Transaction
+import DI.Models.Transaction.TransactionSearchRequest
+import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.TransactionScreenViewModel
 import DI.ViewModels.TransactionViewModel
 import Screens.TransactionScreen
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,14 +24,29 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,8 +61,18 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun TransactionPageScreen(navController: NavController) {
@@ -53,20 +83,41 @@ fun TransactionPageScreen(navController: NavController) {
     )
 }
 
-data class GeneralTransactionItem (val icon: Int, val title: String, val timestamp: String, val type: String, val amount: String, val isIncome: Boolean)
-fun getGeneralTransactionData() : List<GeneralTransactionItem> {
-    return listOf(
-        GeneralTransactionItem(R.drawable.ic_total_expense, "Salary", "18:27 - April 30", "Monthly", "$26,00", true),
-        GeneralTransactionItem(R.drawable.ic_groceries, "Groceries", "18:27 - April 30", "Pantry", "-$100,00", false),
-        GeneralTransactionItem(R.drawable.ic_rent, "Rent", "18:27 - April 30", "Rent", "-$674,00", false),
-        GeneralTransactionItem(R.drawable.ic_transport, "Transport", "18:27 - April 30", "Fuel", "-$4,00", false),
-        GeneralTransactionItem(R.drawable.ic_food, "Food", "20:50 - March 31", "Dinner", "-$70,20", false)
+
+//fun getGeneralTransactionData() : List<GeneralTransactionItem> {
+//    return listOf(
+//        GeneralTransactionItem(R.drawable.ic_total_expense, "Salary", "18:27 - April 30", "$26,00", true),
+//        GeneralTransactionItem(R.drawable.ic_groceries, "Groceries", "18:27 - April 30", "-$100,00", false),
+//        GeneralTransactionItem(R.drawable.ic_rent, "Rent", "18:27 - April 30", "-$674,00", false),
+//        GeneralTransactionItem(R.drawable.ic_transport, "Transport", "18:27 - April 30", "-$4,00", false),
+//        GeneralTransactionItem(R.drawable.ic_food, "Food", "20:50 - March 31", "-$70,20", false)
+//    )
+//}
+
+data class GeneralTransactionItem (val icon: Int, val title: String, val timestamp: String?, val amount: String, val isIncome: Boolean)
+
+fun Transaction.toGeneralTransactionItem(): GeneralTransactionItem {
+    val isIncome = type.lowercase() == "income"
+
+    return GeneralTransactionItem(
+        icon = when {
+            "salary" in description.lowercase() -> R.drawable.ic_total_expense
+            "groceries" in description.lowercase() -> R.drawable.ic_groceries
+            "rent" in description.lowercase() -> R.drawable.ic_rent
+            "transport" in description.lowercase() -> R.drawable.ic_transport
+            "food" in description.lowercase() -> R.drawable.ic_food
+            else -> R.drawable.ic_more
+        },
+        title = description,
+        timestamp = transactionDate,
+        amount = if (isIncome) "$${amount}" else "-$${amount}",
+        isIncome = isIncome
     )
 }
 
 @Composable
 fun TransactionHeaderSection(navController: NavController) {
-    val viewModel: TransactionViewModel = hiltViewModel()
+    val viewModel: TransactionScreenViewModel = hiltViewModel()
     val selected = viewModel.selectedType.value
 
     Column(
@@ -247,29 +298,33 @@ fun TransactionHeaderSection(navController: NavController) {
 
 @Composable
 fun TransactionBodySection(navController: NavController) {
-    val showDatePicker = remember { mutableStateOf(false) }
-    val viewModel: TransactionViewModel = hiltViewModel()
-    val transactionsByMonth = viewModel.filteredTransactions.value
+    var date by remember { mutableStateOf("") }
+    val showSearchDialog = remember { mutableStateOf(false) }
+    val showDatePickerDialog = remember { mutableStateOf(false) }
+    val viewModel: TransactionScreenViewModel = hiltViewModel()
+    val categoryViewModel: CategoryViewModel = hiltViewModel()
+    val transactions = viewModel.filteredTransactions.value
 
     Box {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 25.dp, end = 25.dp, top = 25.dp)
+                .padding(start = 25.dp, end = 25.dp, top = 70.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxHeight(0.85f)
+                    .fillMaxHeight(0.9f)
                     .verticalScroll(rememberScrollState())
             ) {
                 Spacer(modifier = Modifier.height(7.dp))
 
-                transactionsByMonth.forEach { (month, items) ->
-                    MonthSection(month)
-                    Spacer(modifier = Modifier.height(5.dp))
-                    GeneralTransactionSummary(transactions = items)
-                    Spacer(modifier = Modifier.height(16.dp))
+                if (transactions.isNotEmpty()) {
+                    GeneralTransactionSummary(transactions = transactions)
+                } else {
+                    Text("No transactions found.")
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -284,7 +339,102 @@ fun TransactionBodySection(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 🔘 Nút Add Transaction
+                // Nút tìm
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(30.dp))
+                        .background(Color(0xFF00D09E))
+                        .size(30.dp)
+                        .clickable {
+                            showSearchDialog.value = true
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_search),
+                        contentDescription = "Advanced Search",
+                        tint = Color.Black.copy(alpha = 0.8f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                if (showSearchDialog.value) {
+                    SearchDialog(
+                        viewModel = categoryViewModel,
+                        onDismiss = { showSearchDialog.value = false },
+                        onSearch = { params ->
+                            showSearchDialog.value = false
+
+                            val request = TransactionSearchRequest(
+                                startDate = params.startDate,
+                                endDate = params.endDate,
+                                type = params.type?.ifBlank { null },
+                                category = params.category?.ifBlank { null },
+                                amountRange = params.amountRange?.ifBlank { null },
+                                keywords = params.keywords?.ifBlank { null },
+                                timeRange = params.timeRange?.ifBlank { null },
+                                dayOfWeek = params.dayOfWeek?.ifBlank { null }
+                            )
+                            viewModel.searchTransactions(request)
+                        }
+                    )
+                }
+
+
+                // Nút Calendar (DatePicker)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(30.dp))
+                        .background(Color(0xFF00D09E))
+                        .size(30.dp)
+                        .clickable {
+                            showDatePickerDialog.value = true
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_calendar),
+                        contentDescription = "Calendar",
+                        tint = Color.Black.copy(alpha = 0.8f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Text(
+                    text = date,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+
+                // DatePicker Dialog
+                if (showDatePickerDialog.value) {
+                    DatePickerModal(
+                        onDateSelected = { millis ->
+                            if (millis != null) {
+                                val zoneId = ZoneId.systemDefault()
+                                val selectedDate = Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate()
+
+                                val displayFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.getDefault())
+                                date = selectedDate.format(displayFormatter)
+
+                                val fromDate = Date.from(selectedDate.atStartOfDay(zoneId).toInstant())
+                                val toDate = Date.from(selectedDate.atTime(LocalTime.MAX).atZone(zoneId).toInstant())
+
+                                val isoFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).apply {
+                                    timeZone = TimeZone.getTimeZone("UTC")
+                                }
+                                viewModel.fetchTransactionsByDateRange(
+                                    from = isoFormatter.format(fromDate),
+                                    to = isoFormatter.format(toDate)
+                                )
+                            }
+                        },
+                        onDismiss = { showDatePickerDialog.value = false }
+                    )
+                }
+
+                // Nút Add Transaction
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(30.dp))
@@ -302,30 +452,14 @@ fun TransactionBodySection(navController: NavController) {
                         modifier = Modifier.size(20.dp)
                     )
                 }
-
-                // 📅 Nút Calendar
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(30.dp))
-                        .background(Color(0xFF00D09E))
-                        .size(30.dp)
-                        .clickable {
-                            showDatePicker.value = true
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_calendar),
-                        contentDescription = "Calendar",
-                        tint = Color.Black.copy(alpha = 0.8f),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
             }
         }
-
     }
 }
+
+
+
+
 
 
 @Composable
@@ -333,7 +467,6 @@ fun GeneralTransactionRow(
     icon: Int,
     title: String,
     time: String,
-    type: String,
     amount: String,
     isIncome: Boolean
 ) {
@@ -374,30 +507,6 @@ fun GeneralTransactionRow(
             )
         }
 
-        VerticalDivider(
-            modifier = Modifier
-                .width(1.dp)
-                .height(40.dp),
-            color = Color(0xFFB0F3D3)
-        )
-
-        Text(
-            text = type,
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier
-                .weight(0.6f)
-                .padding(horizontal = 8.dp)
-        )
-
-        VerticalDivider(
-            modifier = Modifier
-                .width(1.dp)
-                .height(40.dp),
-            color = Color(0xFFB0F3D3)
-        )
-
         Column(
             modifier = Modifier
                 .padding(start = 12.dp),
@@ -423,14 +532,288 @@ fun GeneralTransactionSummary(transactions: List<GeneralTransactionItem>) {
             GeneralTransactionRow(
                 icon = transaction.icon,
                 title = transaction.title,
-                time = transaction.timestamp,
-                type = transaction.type,
+                time = transaction.timestamp.toString(),
                 amount = transaction.amount,
                 isIncome = transaction.isIncome
             )
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerModal(
+    onDateSelected: (Long?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState()
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onDateSelected(datePickerState.selectedDateMillis)
+                onDismiss()
+            }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
+
+
+@Composable
+fun SearchDialog(
+    viewModel: CategoryViewModel,
+    onDismiss: () -> Unit,
+    onSearch: (TransactionSearchRequest) -> Unit
+) {
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
+    val formatter = remember {
+        SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+    }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
+    var amountRange by remember { mutableStateOf("") }
+    var keywords by remember { mutableStateOf("") }
+    var timeRange by remember { mutableStateOf("") }
+    var dayOfWeek by remember { mutableStateOf("") }
+    val categoriesResult by viewModel.categories.collectAsState()
+    val categoryNames = categoriesResult?.getOrNull()?.map { it.name } ?: emptyList()
+
+    LaunchedEffect(Unit) {
+        viewModel.getCategories()
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .background(Color(0xFFDFF7E2), shape = RoundedCornerShape(16.dp))
+                .padding(20.dp)
+                .fillMaxWidth()
+        ) {
+            Column {
+                Text(
+                    text = "Advanced Search",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        SearchField(
+                            label = "Start Date",
+                            value = startDate,
+                            isDropdown = true,
+                            onChange = { startDate = it },
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = "Select Start Date",
+                                    tint = Color(0xFF00D09E),
+                                    modifier = Modifier.clickable { showStartDatePicker = true }
+                                )
+                            }
+                        )
+
+                        SearchDropdownField(
+                            label = "Type",
+                            options = listOf("Expense", "Income"),
+                            selectedOption = type,
+                            onOptionSelected = { type = it }
+                        )
+                        SearchDropdownField(
+                            label = "Amount Range ($)",
+                            options = listOf("0-50", "50-100", "100-500", "500-1000", "1000+"),
+                            selectedOption = amountRange,
+                            onOptionSelected = { amountRange = it }
+                        )
+                        SearchField(label = "Keywords", value = keywords, onChange = { keywords = it })
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        SearchField(
+                            label = "End Date",
+                            isDropdown = true,
+                            value = endDate,
+                            onChange = { endDate = it },
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = "Select End Date",
+                                    tint = Color(0xFF00D09E),
+                                    modifier = Modifier.clickable { showEndDatePicker = true }
+                                )
+                            }
+                        )
+                        SearchDropdownField(
+                            label = "Category",
+                            options = categoryNames,
+                            selectedOption = category,
+                            onOptionSelected = { category = it }
+                        )
+                        SearchDropdownField(
+                            label = "Day of Week",
+                            options = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
+                            selectedOption = dayOfWeek,
+                            onOptionSelected = { dayOfWeek = it }
+                        )
+                        SearchDropdownField(
+                            label = "Time Range",
+                            options = listOf("0h-8h", "8h-16h", "16h-0h"),
+                            selectedOption = timeRange,
+                            onOptionSelected = { timeRange = it }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        Log.d("SearchDialog", "Start Date: $startDate, End Date: $endDate, type: $type, category: $category, amountRange: $amountRange, keywords: $keywords")
+                        onSearch(
+                            TransactionSearchRequest(
+                                startDate, endDate, type, category,
+                                amountRange, keywords, timeRange, dayOfWeek
+                            )
+                        )
+                        onDismiss()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00D09E),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Search", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+    if (showStartDatePicker) {
+        DatePickerModal(
+            onDateSelected = {
+                it?.let { millis ->
+                    val calendar = Calendar.getInstance().apply { timeInMillis = millis }
+                    startDate = formatter.format(calendar.time)
+                }
+            },
+            onDismiss = { showStartDatePicker = false }
+        )
+    }
+    if (showEndDatePicker) {
+        DatePickerModal(
+            onDateSelected = {
+                it?.let { millis ->
+                    val calendar = Calendar.getInstance().apply { timeInMillis = millis }
+                    endDate = formatter.format(calendar.time)
+                }
+            },
+            onDismiss = { showEndDatePicker = false }
+        )
+    }
+}
+
+
+@Composable
+fun SearchField(
+    label: String,
+    value: String,
+    isDropdown: Boolean = false,
+    onChange: (String) -> Unit,
+    trailingIcon: (@Composable (() -> Unit))? = null
+) {
+    OutlinedTextField(
+        value = value,
+        readOnly = isDropdown,
+        onValueChange = onChange,
+        label = { Text(label) },
+        trailingIcon = trailingIcon,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .background(Color(0xFFF1FFF3), shape = RoundedCornerShape(8.dp)),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Color(0xFF00D09E),
+            unfocusedBorderColor = Color.Transparent,
+            focusedContainerColor = Color(0xFFF1FFF3),
+            unfocusedContainerColor = Color(0xFFF1FFF3)
+        )
+    )
+}
+
+@Composable
+fun SearchDropdownField(
+    label: String,
+    options: List<String>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .padding(vertical = 4.dp)) {
+
+        OutlinedTextField(
+            value = selectedOption,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    modifier = Modifier.clickable { expanded = true }
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF1FFF3), shape = RoundedCornerShape(8.dp)),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF00D09E),
+                unfocusedBorderColor = Color.Transparent,
+                focusedContainerColor = Color(0xFFF1FFF3),
+                unfocusedContainerColor = Color(0xFFF1FFF3)
+            )
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .background(Color.White)
+                .fillMaxWidth()
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+
 
 @Preview (showBackground = true)
 @Composable
