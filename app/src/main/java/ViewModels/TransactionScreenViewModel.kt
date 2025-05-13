@@ -2,6 +2,7 @@ package DI.ViewModels
 
 import DI.Composables.TransactionSection.GeneralTransactionItem
 import DI.Composables.TransactionSection.toGeneralTransactionItem
+import DI.Models.Category.Category
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -9,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.State
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
+import DI.Repositories.CategoryRepository
 import DI.Repositories.TransactionRepository
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -28,7 +30,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TransactionScreenViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
     private val _selectedType = mutableStateOf("All")
@@ -44,11 +47,27 @@ class TransactionScreenViewModel @Inject constructor(
             else -> allTransactions
         }
     }
+    private val _categories = mutableStateOf<List<Category>>(emptyList())
+    val categories: List<Category> get() = _categories.value
+
 
     init {
         Log.d("TransactionScreenViewModel", "ViewModel initialized")
-        fetchTransactions()
+        loadCategories()
     }
+
+    private fun loadCategories() {
+        viewModelScope.launch {
+            val result = categoryRepository.getCategories()
+            if (result.isSuccess) {
+                _categories.value = result.getOrThrow()
+                fetchTransactions() // Chỉ fetch khi đã có categories
+            } else {
+                Log.e("TransactionScreenVM", "Load categories failed: ${result.exceptionOrNull()?.message}")
+            }
+        }
+    }
+
 
     private fun fetchTransactions() {
         viewModelScope.launch {

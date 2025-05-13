@@ -7,6 +7,7 @@ import DI.Composables.CategorySection.TransactionList
 import DI.Composables.CategorySection.getTransactionData
 import DI.Composables.TransactionSection.GeneralTransactionRow
 import DI.Composables.TransactionSection.GeneralTransactionSummary
+import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
 import DI.ViewModels.CategoryViewModel
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -83,34 +85,23 @@ fun TransactionPageScreen(navController: NavController) {
     )
 }
 
+data class GeneralTransactionItem(
+    val categoryID: String,
+    val title: String,
+    val timestamp: String?,
+    val amount: String,
+    val isIncome: Boolean
+)
 
-//fun getGeneralTransactionData() : List<GeneralTransactionItem> {
-//    return listOf(
-//        GeneralTransactionItem(R.drawable.ic_total_expense, "Salary", "18:27 - April 30", "$26,00", true),
-//        GeneralTransactionItem(R.drawable.ic_groceries, "Groceries", "18:27 - April 30", "-$100,00", false),
-//        GeneralTransactionItem(R.drawable.ic_rent, "Rent", "18:27 - April 30", "-$674,00", false),
-//        GeneralTransactionItem(R.drawable.ic_transport, "Transport", "18:27 - April 30", "-$4,00", false),
-//        GeneralTransactionItem(R.drawable.ic_food, "Food", "20:50 - March 31", "-$70,20", false)
-//    )
-//}
-
-data class GeneralTransactionItem (val icon: Int, val title: String, val timestamp: String?, val amount: String, val isIncome: Boolean)
 
 fun Transaction.toGeneralTransactionItem(): GeneralTransactionItem {
     val isIncome = type.lowercase() == "income"
 
     return GeneralTransactionItem(
-        icon = when {
-            "salary" in description.lowercase() -> R.drawable.ic_total_expense
-            "groceries" in description.lowercase() -> R.drawable.ic_groceries
-            "rent" in description.lowercase() -> R.drawable.ic_rent
-            "transport" in description.lowercase() -> R.drawable.ic_transport
-            "food" in description.lowercase() -> R.drawable.ic_food
-            else -> R.drawable.ic_more
-        },
+        categoryID = categoryID,
         title = description,
         timestamp = transactionDate,
-        amount = if (isIncome) "$${amount}" else "-$${amount}",
+        amount = if (isIncome) "$$amount" else "-$$amount",
         isIncome = isIncome
     )
 }
@@ -303,7 +294,12 @@ fun TransactionBodySection(navController: NavController) {
     val showDatePickerDialog = remember { mutableStateOf(false) }
     val viewModel: TransactionScreenViewModel = hiltViewModel()
     val categoryViewModel: CategoryViewModel = hiltViewModel()
+    val categories by categoryViewModel.categories.collectAsState()
     val transactions = viewModel.filteredTransactions.value
+
+    LaunchedEffect(Unit) {
+        categoryViewModel.getCategories()
+    }
 
     Box {
         Column(
@@ -319,7 +315,10 @@ fun TransactionBodySection(navController: NavController) {
                 Spacer(modifier = Modifier.height(7.dp))
 
                 if (transactions.isNotEmpty()) {
-                    GeneralTransactionSummary(transactions = transactions)
+                    GeneralTransactionSummary(
+                        transactions = transactions,
+                        categories = categories?.getOrNull() ?: emptyList()
+                    )
                 } else {
                     Text("No transactions found.")
                 }
@@ -457,18 +456,10 @@ fun TransactionBodySection(navController: NavController) {
     }
 }
 
-
-
-
-
-
 @Composable
 fun GeneralTransactionRow(
-    icon: Int,
-    title: String,
-    time: String,
-    amount: String,
-    isIncome: Boolean
+    transaction: GeneralTransactionItem,
+    categories: List<Category>
 ) {
     Row(
         modifier = Modifier
@@ -477,19 +468,17 @@ fun GeneralTransactionRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Icon bên trái
-        Button(
-            onClick = {},
-            modifier = Modifier.size(48.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0068FF)),
-            shape = MaterialTheme.shapes.medium,
-            contentPadding = PaddingValues(0.dp)
+        // Icon tròn bo góc
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF0068FF).copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
         ) {
-            Image(
-                painter = painterResource(id = icon),
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                colorFilter = ColorFilter.tint(Color.White)
+            TransactionIconButton(
+                categoryID = transaction.categoryID,
+                categories = categories
             )
         }
 
@@ -499,22 +488,27 @@ fun GeneralTransactionRow(
                 .weight(1f)
                 .padding(start = 12.dp)
         ) {
-            Text(text = title, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
             Text(
-                text = time,
+                text = transaction.title,
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.Black
+            )
+
+            Text(
+                text = transaction.timestamp ?: "",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF0068FF)
             )
         }
 
+        // Số tiền
         Column(
-            modifier = Modifier
-                .padding(start = 12.dp),
+            modifier = Modifier.padding(start = 12.dp),
             horizontalAlignment = Alignment.End
         ) {
             Text(
-                text = amount,
-                color = if (isIncome) Color.Black else Color(0xFF0080FF),
+                text = transaction.amount,
+                color = if (transaction.isIncome) Color.Black else Color(0xFF0080FF),
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyLarge
             )
@@ -524,18 +518,14 @@ fun GeneralTransactionRow(
 
 
 
-
 @Composable
-fun GeneralTransactionSummary(transactions: List<GeneralTransactionItem>) {
+fun GeneralTransactionSummary(
+    transactions: List<GeneralTransactionItem>,
+    categories: List<Category>
+) {
     Column {
         transactions.forEach { transaction ->
-            GeneralTransactionRow(
-                icon = transaction.icon,
-                title = transaction.title,
-                time = transaction.timestamp.toString(),
-                amount = transaction.amount,
-                isIncome = transaction.isIncome
-            )
+            GeneralTransactionRow(transaction = transaction, categories = categories)
         }
     }
 }
