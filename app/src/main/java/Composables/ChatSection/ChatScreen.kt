@@ -39,6 +39,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -56,79 +57,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-
-
-/*
-@Composable
-fun ChatScreen(viewModel: ChatViewModel = hiltViewModel()) {
-    LaunchedEffect(Unit) {
-        viewModel.connectToSignalR()
-    }
-    val messages = viewModel.messages
-    val onlineUsers = viewModel.onlineUsers
-
-    var receiverId by remember { mutableStateOf("") }
-    var messageContent by remember { mutableStateOf("") }
-
-    Column(modifier = Modifier.padding(16.dp)) {
-
-        // 📡 Online users list
-        Text("Online Users:", style = MaterialTheme.typography.titleMedium)
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            items(onlineUsers) { userId ->
-                Button(
-                    onClick = { receiverId = userId },
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Text(userId)
-                }
-            }
-        }
-
-        // 💬 Chat messages
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            items(messages) { message ->
-                Text("(${message.sentAt}) ${message.senderName}: ${message.content}")
-            }
-        }
-
-        // ✏️ Message input
-        OutlinedTextField(
-            value = receiverId,
-            onValueChange = { receiverId = it },
-            label = { Text("Receiver ID") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = messageContent,
-            onValueChange = { messageContent = it },
-            label = { Text("Message") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Button(
-            onClick = {
-                if (receiverId.isNotBlank() && messageContent.isNotBlank()) {
-                    viewModel.sendMessage(receiverId, messageContent)
-                    messageContent = ""
-                }
-            },
-            modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
-        ) {
-            Text("Send")
-        }
-    }
-}
- */
 
 @Composable
 fun ChatScreen(
@@ -387,7 +315,7 @@ fun ChatTopBar(
     ) {
         // Back button
         Icon(
-            imageVector = Icons.Default.ArrowBack,
+            imageVector = Icons.Default.ArrowCircleLeft,
             contentDescription = "Back",
             modifier = Modifier
                 .size(28.dp)

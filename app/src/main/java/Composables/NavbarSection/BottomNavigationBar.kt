@@ -32,7 +32,7 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem.Analysis,
         BottomNavItem.Transaction,
         BottomNavItem.Category,
-        BottomNavItem.Profie
+        BottomNavItem.Profile
     )
 
     Surface(

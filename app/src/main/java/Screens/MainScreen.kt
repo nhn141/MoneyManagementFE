@@ -56,6 +56,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.friendsapp.FriendsApp
+import com.example.friendsapp.FriendsAppTheme
 import com.example.moneymanagement_frontend.R
 
 @Composable
@@ -151,14 +153,17 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
                 )
             }
 
-            composable(BottomNavItem.Profie.route) {
-                GeneralTemplate(
-                    contentHeader = { ProfileHeaderSection() },
-                    contentBody = {
-//                        ProfileScreen()
-                        OcrScreen()
-                    }
-                )
+            composable(BottomNavItem.Profile.route) {
+//                GeneralTemplate(
+//                    contentHeader = { ProfileHeaderSection() },
+//                    contentBody = {
+////                        ProfileScreen()
+////                        OcrScreen()
+//                    }
+//                )
+                FriendsAppTheme {
+                    FriendsApp(navController = navController)
+                }
             }
         }
     }

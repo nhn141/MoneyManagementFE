@@ -8,11 +8,19 @@ import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
+import DI.Models.Friend.AcceptFriendRequestResponse
+import DI.Models.Friend.AddFriendRequest
+import DI.Models.Friend.AddFriendResponse
+import DI.Models.Friend.DeleteFriendResponse
+import DI.Models.Friend.Friend
+import DI.Models.Friend.FriendRequest
+import DI.Models.Friend.RejectFriendRequestResponse
 import DI.Models.Ocr.OcrData
 import DI.Models.Wallet
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -60,4 +68,22 @@ interface ApiService {
 
     @GET("Messages/{receiverId}")
     suspend fun getChatWithOtherUser(@Path("receiverId") otherUserId: String): List<ChatMessage>
+
+    @GET("Friends")
+    suspend fun getAllFriends(): List<Friend>
+
+    @POST("Friends/add")
+    suspend fun addFriend(@Body request: AddFriendRequest): Response<AddFriendResponse>
+
+    @GET("Friends/requests")
+    suspend fun getFriendRequests(): List<FriendRequest>
+
+    @POST("Friends/accept/{friendId}")
+    suspend fun acceptFriendRequest(@Path("friendId") friendId: String): Response<AcceptFriendRequestResponse>
+
+    @POST("Friends/reject/{friendId}")
+    suspend fun rejectFriendRequest(@Path("friendId") friendId: String): Response<RejectFriendRequestResponse>
+
+    @DELETE("Friends/{friendId}")
+    suspend fun deleteFriend(@Path("friendId") friendId: String): Response<DeleteFriendResponse>
 }
