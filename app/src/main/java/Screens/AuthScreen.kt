@@ -1,17 +1,6 @@
-import DI.Composables.CategorySection.GeneralTemplate
-import DI.Composables.AuthSection.LoginScreen
-import DI.Composables.AuthSection.RegisterScreen
-import DI.Composables.CategorySection.GeneralTemplate
-import DI.Composables.HomeSection.HomePageHeaderSection
-import Screens.MainScreen
-import ViewModels.AuthViewModel
+import DI.Composables.GeneralTemplate
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.compose.composable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,9 +18,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneymanagement_frontend.R
-import java.lang.Error
 
 @Composable
 fun AuthScreen(title: String, fraction: Float, content: @Composable () -> Unit) {

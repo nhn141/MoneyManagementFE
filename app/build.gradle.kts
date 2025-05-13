@@ -60,6 +60,7 @@ dependencies {
     implementation (libs.androidx.security.crypto)
     implementation (libs.androidx.security.crypto.ktx.v110alpha06)
 
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -121,5 +122,11 @@ dependencies {
     implementation(libs.jetbrains.kotlinx.coroutines.android)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.jetbrains.kotlinx.coroutines.play.services)
+
+    // Chat
+    implementation (libs.microsoft.signalr)
+    implementation(libs.java.jwt)
+
+
 
 }

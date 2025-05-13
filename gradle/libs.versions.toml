@@ -3,10 +3,13 @@ activityCompose = "1.10.1"
 agp = "8.8.2"
 androidxSecurityCryptoKtx = "1.1.0-alpha06"
 composeBom = "2025.03.00"
+composeBomVersion = "2023.10.01"
 composeCharts = "latest_version"
 composeChartsVersion = "0.1.0"
 converterGson = "2.9.0"
+foundation = "1.8.1"
 githubComposeCharts = "0.1.2"
+javaJwt = "4.4.0"
 kotlin = "2.1.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -28,12 +31,14 @@ roomCompiler = "2.7.1"
 roomRuntime = "2.7.1"
 securityCryptoKtx = "1.0.0"
 securityCryptoVersion = "1.0.0"
+signalrVersion = "6.0.1"
 textRecognition = "16.0.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activityCompose" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-bom-v20231001 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
@@ -55,6 +60,8 @@ compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref
 compose-charts-v010 = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeChartsVersion" }
 compose-charts-v012 = { module = "io.github.ehsannarmani:compose-charts", version.ref = "githubComposeCharts" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
+java-jwt = { module = "com.auth0:java-jwt", version.ref = "javaJwt" }
 jetbrains-kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroidVersion" }
 jetbrains-kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServicesVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -65,6 +72,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+microsoft-signalr = { module = "com.microsoft.signalr:signalr", version.ref = "signalrVersion" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 androidx-security-crypto-ktx = { group = "androidx.security", name = "security-crypto-ktx", version.ref = "securityCryptoKtx" }
 text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "textRecognition" }

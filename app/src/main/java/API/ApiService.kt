@@ -6,6 +6,8 @@ import DI.Models.Auth.SignInRequest
 import DI.Models.Auth.SignUpRequest
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
+import DI.Models.Chat.Chat
+import DI.Models.Chat.ChatMessage
 import DI.Models.Ocr.OcrData
 import DI.Models.Wallet
 import okhttp3.ResponseBody
@@ -13,6 +15,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
@@ -52,4 +55,9 @@ interface ApiService {
     @POST("Gemini/extract-ocr")
     suspend fun extractOcr(@Body ocrString: String): OcrData
 
+    @GET("Messages/chats")
+    suspend fun getAllChats(): List<Chat>
+
+    @GET("Messages/{receiverId}")
+    suspend fun getChatWithOtherUser(@Path("receiverId") otherUserId: String): List<ChatMessage>
 }

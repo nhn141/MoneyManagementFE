@@ -1,5 +1,6 @@
 package DI.Composables.CategorySection
 
+import DI.Composables.GeneralTemplate
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 

@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.auth0.jwt.JWT
+import com.auth0.jwt.exceptions.JWTDecodeException
 
 object AuthStorage {
     private const val PREFS_NAME = "auth_prefs"
@@ -32,5 +34,17 @@ object AuthStorage {
 
     fun clearToken(context: Context) {
         getEncryptedPrefs(context).edit().remove(TOKEN_KEY).apply()
+    }
+
+    // Decode token and get userId
+    fun getUserIdFromToken(context: Context): String? {
+        val token = getToken(context) ?: return null
+        return try {
+            // Decode JWT token and extract the userId from the "sub" claim (or any claim your backend uses)
+            val decodedJWT = JWT.decode(token)
+            decodedJWT.getClaim("sub").asString()  // replace "sub" if your token uses a different claim
+        } catch (e: JWTDecodeException) {
+            null
+        }
     }
 }

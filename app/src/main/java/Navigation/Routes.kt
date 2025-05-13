@@ -6,4 +6,7 @@ object Routes {
     const val Main = "main"
     const val Auth = "auth"
     const val Calendar = "calendar"
+    const val ChatMessage = "chat_message/{otherUserId}"
+
+    val all = setOf(Login, Register, Main, Auth, Calendar, ChatMessage)
 }

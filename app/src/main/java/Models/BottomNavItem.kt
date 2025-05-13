@@ -8,4 +8,8 @@ sealed class BottomNavItem(val route: String, val icon: Int, val title: String) 
     object Transaction : BottomNavItem("transaction", R.drawable.ic_transaction, "Transaction")
     object Category : BottomNavItem("category", R.drawable.ic_category, "Category")
     object Profie : BottomNavItem("user", R.drawable.ic_user, "Profie")
+
+    companion object {
+        val allRoutes = listOf(Home, Analysis, Transaction, Category, Profie)
+    }
 }
