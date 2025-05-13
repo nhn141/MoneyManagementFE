@@ -72,7 +72,7 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(BottomNavItem.Home.route) {
-                HomePageScreen()
+                HomePageScreen(navController)
 //                GeneralTemplate(
 //                    contentHeader = { HomePageHeaderSection(navController) },
 //                    contentBody = { HomeScreen() }

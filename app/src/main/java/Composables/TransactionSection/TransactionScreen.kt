@@ -297,6 +297,10 @@ fun TransactionBodySection(navController: NavController) {
     val categories by categoryViewModel.categories.collectAsState()
     val transactions = viewModel.filteredTransactions.value
 
+    LaunchedEffect(Unit) {
+        categoryViewModel.getCategories()
+    }
+
     Box {
         Column(
             modifier = Modifier

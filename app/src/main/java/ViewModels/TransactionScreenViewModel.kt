@@ -61,7 +61,7 @@ class TransactionScreenViewModel @Inject constructor(
             val result = categoryRepository.getCategories()
             if (result.isSuccess) {
                 _categories.value = result.getOrThrow()
-                fetchTransactions() // Chỉ fetch khi đã có categories
+                fetchTransactions()
             } else {
                 Log.e("TransactionScreenVM", "Load categories failed: ${result.exceptionOrNull()?.message}")
             }

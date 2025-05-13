@@ -7,7 +7,9 @@ import DI.Composables.CategorySection.GeneralTemplate
 import DI.Composables.CategorySection.TransactionItem
 import DI.Composables.TransactionSection.GeneralTransactionItem
 import DI.Composables.TransactionSection.GeneralTransactionSummary
-//import DI.Composables.TransactionSection.getGeneralTransactionData
+import DI.Composables.TransactionSection.TransactionBodySection
+import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.TransactionScreenViewModel
 import Screens.HomeScreen
 import Screens.TransactionScreen
 import androidx.compose.foundation.Image
@@ -15,8 +17,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material3.Button
@@ -46,13 +50,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun HomePageScreen() {
+fun HomePageScreen(navController: NavController) {
     GeneralTemplate(
         contentHeader = { HomePageHeaderSection() },
-        contentBody = { HomeScreen() }
+        contentBody = { HomePageBody() }
     )
 }
 
@@ -230,6 +236,15 @@ fun HomePageHeaderSection() {
 
 @Composable
 fun HomePageBody() {
+    val viewModel: TransactionScreenViewModel = hiltViewModel()
+    val categoryViewModel: CategoryViewModel = hiltViewModel()
+    val categories by categoryViewModel.categories.collectAsState()
+    val transactions = viewModel.filteredTransactions.value
+
+    LaunchedEffect(Unit) {
+        categoryViewModel.getCategories()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -238,7 +253,24 @@ fun HomePageBody() {
     ) {
         OverviewSection()
         TimeSelector()
-        //GeneralTransactionSummary(transactions = getGeneralTransactionData())
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Spacer(modifier = Modifier.height(7.dp))
+
+            if (transactions.isNotEmpty()) {
+                GeneralTransactionSummary(
+                    transactions = transactions,
+                    categories = categories?.getOrNull() ?: emptyList()
+                )
+            } else {
+                Text("No transactions found.")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
 @Composable
@@ -403,13 +435,3 @@ fun TimeSelector() {
 }
 
 
-
-
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun HomePageScreenPreview() {
-    HomePageScreen()
-}
