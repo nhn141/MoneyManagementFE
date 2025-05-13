@@ -260,25 +260,6 @@ fun DropdownSelector(
     Spacer(modifier = Modifier.height(8.dp))
 }
 
-
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun AddTransactionScreen(navController: NavController) {
-    val viewModel: TransactionScreenViewModel = hiltViewModel()
-    var type by remember { mutableStateOf("Expense") }
-    GeneralTemplate(
-        contentHeader = { AddTransactionHeaderSection(navController, type) { newType -> type = newType } },
-        contentBody = { TransactionForm(viewModel, navController, type, onTypeChange = { type = it }) },
-        fraction = 0.14f,
-    )
-}
-
-
-
-
-
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable

@@ -297,10 +297,6 @@ fun TransactionBodySection(navController: NavController) {
     val categories by categoryViewModel.categories.collectAsState()
     val transactions = viewModel.filteredTransactions.value
 
-    LaunchedEffect(Unit) {
-        categoryViewModel.getCategories()
-    }
-
     Box {
         Column(
             modifier = Modifier
@@ -468,7 +464,6 @@ fun GeneralTransactionRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Icon tròn bo góc
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -482,7 +477,6 @@ fun GeneralTransactionRow(
             )
         }
 
-        // Thông tin chính
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -501,7 +495,6 @@ fun GeneralTransactionRow(
             )
         }
 
-        // Số tiền
         Column(
             modifier = Modifier.padding(start = 12.dp),
             horizontalAlignment = Alignment.End

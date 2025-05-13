@@ -12,6 +12,7 @@ import DI.Models.BottomNavItem
 import DI.Composables.NavbarSection.BottomNavigationBar
 import DI.Composables.CategorySection.CategoriesGrid
 import DI.Composables.CategorySection.Category
+import DI.Composables.CategorySection.GeneralCategoryScreen
 import DI.Composables.CategorySection.HeaderSection
 import DI.Composables.ProfileSection.ProfileHeaderSection
 import DI.Composables.ProfileSection.ProfileScreen
@@ -22,7 +23,9 @@ import DI.Composables.TransactionSection.TransactionPageScreen
 import DI.Navigation.Routes
 import DI.ViewModels.CategoryViewModel
 import ViewModels.AuthViewModel
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -51,6 +54,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.moneymanagement_frontend.R
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
     val navController = rememberNavController()
@@ -97,31 +101,11 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
             }
 
             composable(BottomNavItem.Transaction.route) {
-//                GeneralTemplate(
-//                    contentHeader = { TransactionHeaderSection(navController) },
-//                    contentBody = { TransactionScreen() },
-//                )
                 TransactionPageScreen(navController)
             }
 
             composable(BottomNavItem.Category.route) {
-                val categories = mutableListOf(
-                    Category("Food", R.drawable.ic_food),
-                    Category("Transport", R.drawable.ic_transport),
-                    Category("Medicine", R.drawable.ic_medicine),
-                    Category("Groceries", R.drawable.ic_groceries),
-                    Category("Rent", R.drawable.ic_rent),
-                    Category("Gifts", R.drawable.ic_gifts),
-                    Category("Savings", R.drawable.ic_savings),
-                    Category("Entertainment", R.drawable.ic_entertainment),
-                    Category("More", R.drawable.ic_more)
-                )
-                GeneralTemplate(
-                    //contentHeader = { Category_SpecificType_Header(navController) },
-                    //contentBody = { Category_SpecificType_Body() }
-                    contentHeader = { HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00"), navController) },
-                    contentBody = { CategoriesGrid(categories, navController) }
-                )
+                GeneralCategoryScreen(navController)
             }
 
             composable(BottomNavItem.Profie.route) {

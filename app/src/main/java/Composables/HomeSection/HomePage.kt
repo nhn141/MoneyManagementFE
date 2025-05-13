@@ -2,7 +2,6 @@ package DI.Composables.HomeSection
 
 import DI.Composables.CategorySection.AddTransactionScreen
 import DI.Composables.CategorySection.Category
-import DI.Composables.CategorySection.CategoryButton
 import DI.Composables.CategorySection.CustomProgressBar
 import DI.Composables.CategorySection.GeneralTemplate
 import DI.Composables.CategorySection.TransactionItem
