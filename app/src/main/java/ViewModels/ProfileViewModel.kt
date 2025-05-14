@@ -1,36 +1,51 @@
 package DI.ViewModels
-import DI.Models.Profile
+import DI.Models.UserInfo.Profile
+import DI.Models.UserInfo.UploadState
 import DI.Repositories.ProfileRepository
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val repository: ProfileRepository
+    private val profileRepository: ProfileRepository
 ) : ViewModel() {
-    private val _profile = mutableStateOf(Profile("", "", "", true, false))
-    val profile: State<Profile> get() = _profile
+    var uploadState by mutableStateOf<UploadState>(UploadState.Idle)
+       private set
 
-    fun updateUsername(username: String) {
-        _profile.value = _profile.value.copy(username = username)
+    private val _profile = MutableStateFlow<Result<Profile>?>(null)
+    val profile: StateFlow<Result<Profile>?> = _profile
+
+    fun uploadAvatar(file: File) {
+        viewModelScope.launch {
+            uploadState = UploadState.Loading
+            val result = profileRepository.uploadAvatar(file)
+            uploadState = if (result.isSuccess) {
+                UploadState.Success
+            } else {
+                UploadState.Error(result.exceptionOrNull()?.message ?: "Unknown error")
+            }
+        }
     }
 
-    fun updatePhone(phone: String) {
-        _profile.value = _profile.value.copy(phone = phone)
+    fun resetState() {
+        uploadState = UploadState.Idle
     }
 
-    fun updateEmail(email: String) {
-        _profile.value = _profile.value.copy(email = email)
+    fun getProfile() {
+        viewModelScope.launch {
+            val result = profileRepository.getProfile()
+            _profile.value = result
+        }
     }
 
-    fun togglePushNotifications() {
-        _profile.value = _profile.value.copy(pushNotificationsEnabled = !_profile.value.pushNotificationsEnabled)
-    }
-
-    fun toggleDarkTheme() {
-        _profile.value = _profile.value.copy(darkThemeEnabled = !_profile.value.darkThemeEnabled)
-    }
 }
+

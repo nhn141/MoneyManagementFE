@@ -47,7 +47,7 @@ import kotlinx.coroutines.launch
 val MainColor = Color(0xFF53dba9)
 
 @Composable
-fun FriendsAppTheme(content: @Composable () -> Unit) {
+fun FriendsScreenTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = MainColor,
@@ -61,7 +61,7 @@ fun FriendsAppTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun FriendsApp(
+fun FriendsScreen(
     friendViewModel: FriendViewModel = hiltViewModel(),
     navController: NavController
 ) {

@@ -16,13 +16,17 @@ import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.Models.Friend.RejectFriendRequestResponse
 import DI.Models.Ocr.OcrData
+import DI.Models.UserInfo.Profile
 import DI.Models.Wallet
+import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -86,4 +90,13 @@ interface ApiService {
 
     @DELETE("Friends/{friendId}")
     suspend fun deleteFriend(@Path("friendId") friendId: String): Response<DeleteFriendResponse>
+
+    @GET("Accounts/profile")
+    suspend fun getProfile(): Profile
+
+    @Multipart
+    @POST("Accounts/avatar")
+    suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): Response<Unit>
+
+
 }

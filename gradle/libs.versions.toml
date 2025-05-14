@@ -2,6 +2,7 @@
 activityCompose = "1.10.1"
 agp = "8.8.2"
 androidxSecurityCryptoKtx = "1.1.0-alpha06"
+coilCompose = "2.5.0"
 composeBom = "2025.03.00"
 composeBomVersion = "2023.10.01"
 composeCharts = "latest_version"
@@ -56,6 +57,7 @@ androidx-ui = { module = "androidx.compose.ui:ui" }
 androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }
 compose-charts-v010 = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeChartsVersion" }
 compose-charts-v012 = { module = "io.github.ehsannarmani:compose-charts", version.ref = "githubComposeCharts" }

@@ -127,6 +127,8 @@ dependencies {
     implementation (libs.microsoft.signalr)
     implementation(libs.java.jwt)
 
+    // Display Avatar
+    implementation(libs.coil.compose)
 
 
 }
