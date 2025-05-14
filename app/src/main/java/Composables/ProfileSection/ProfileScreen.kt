@@ -2,25 +2,21 @@ import DI.Composables.ProfileSection.AvatarImage
 import DI.Composables.ProfileSection.BackgroundColor
 import DI.Composables.ProfileSection.CardColor
 import DI.Composables.ProfileSection.DividerColor
+import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.ProfileSection.MainColor
 import DI.Composables.ProfileSection.TextPrimaryColor
 import DI.Composables.ProfileSection.TextSecondaryColor
-import DI.Composables.ProfileSection.uriToFile
 import DI.Models.UserInfo.Profile
+import DI.Navigation.Routes
 import DI.ViewModels.ProfileViewModel
 import ViewModels.AuthViewModel
-import android.net.Uri
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -38,342 +34,125 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import androidx.navigation.NavController
+import com.example.moneymanagement_frontend.R
 
 @Composable
-fun EditProfileScreen(
-    profile: Profile,
-    onSaveChanges: (Profile) -> Unit,
-    onNavigateBack: () -> Unit,
-    profileViewMode: ProfileViewModel = hiltViewModel()
-) {
-    var firstName by remember { mutableStateOf(profile.firstName) }
-    var lastName by remember { mutableStateOf(profile.lastName) }
-    var displayName by remember { mutableStateOf(profile.displayName) }
-    var userName by remember { mutableStateOf(profile.userName) }
-    var email by remember { mutableStateOf(profile.email) }
-
-    val context = LocalContext.current
-    val uploadState = profileViewMode.uploadState
-
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        selectedImageUri = uri
-        uri?.let {
-            val file = uriToFile(it, context)
-            file?.let { profileViewMode.uploadAvatar(it) }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        // Edit Profile Top Bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Go back",
-                    tint = TextPrimaryColor
-                )
-            }
-
-            Text(
-                text = "Edit Profile",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimaryColor
-                ),
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Avatar Edit Section
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Box {
-                // Profile Image
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(MainColor.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AvatarImage("https://firebasestorage.googleapis.com/v0/b/moneymanagementliveserver.firebasestorage.app/o/user_avatars%2F687baa6b-b371-4a0b-9eb2-d7f8ffc4b21f%2Favatar.jpg?alt=media")
-                }
-
-                // Edit Icon
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MainColor)
-                        .align(Alignment.BottomEnd)
-                        .clickable {
-                            launcher.launch("image/*")
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Change profile picture",
-                        tint = Color.White
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Form Fields
-        ProfileTextField(
-            label = "First Name",
-            value = firstName,
-            onValueChange = { firstName = it }
-        )
-
-        ProfileTextField(
-            label = "Last Name",
-            value = lastName,
-            onValueChange = { lastName = it }
-        )
-
-        ProfileTextField(
-            label = "Display Name",
-            value = displayName,
-            onValueChange = { displayName = it }
-        )
-
-        ProfileTextField(
-            label = "Username",
-            value = userName,
-            onValueChange = { userName = it }
-        )
-
-        ProfileTextField(
-            label = "Email",
-            value = email,
-            onValueChange = { email = it },
-            keyboardType = KeyboardType.Email
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Save Button
-        Button(
-            onClick = {
-                // Create updated profile
-                val updatedProfile = profile.copy(
-                    firstName = firstName,
-                    lastName = lastName,
-                    displayName = displayName,
-                    userName = userName,
-                    email = email
-                )
-                onSaveChanges(updatedProfile)
-            },
-            modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .padding(vertical = 8.dp)
-                .align(Alignment.CenterHorizontally),
-            colors = ButtonDefaults.buttonColors(containerColor = MainColor)
-        ) {
-            Text(
-                text = "Save Changes",
-                fontSize = 16.sp,
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun ProfileTextField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    keyboardType: KeyboardType = KeyboardType.Text
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = TextSecondaryColor
-            )
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MainColor,
-                cursorColor = MainColor
-            )
-        )
-    }
-}
-
-@Composable
-fun ProfileScreenWithEditing(
+fun ProfileScreen(
+    navController: NavController,
+    authViewModel: AuthViewModel = hiltViewModel(),
     profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
-    var showEditScreen by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         profileViewModel.getProfile()
     }
 
     val profileResult = profileViewModel.profile.collectAsState()
-    var profile = profileResult.value?.getOrNull()
+    val profile = profileResult.value?.getOrNull()
 
-    if (showEditScreen && profile != null) {
-        EditProfileScreen(
-            profile = profile,
-            onSaveChanges = { updatedProfile ->
-                profile = updatedProfile
-                showEditScreen = false
-            },
-            onNavigateBack = { showEditScreen = false }
-        )
-    } else {
-        ProfileScreen(
-            profile = profile,
-            onEditProfileClick = { showEditScreen = true }
-        )
-    }
-}
-
-@Composable
-fun ProfileScreen(
-    profile: Profile?,
-    onEditProfileClick: () -> Unit,
-    authViewModel: AuthViewModel = hiltViewModel(),
-) {
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundColor)
-    ) {
-        Column(
+    MaterialTheme {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
+                .background(BackgroundColor)
         ) {
-            // Top App Bar
-            TopAppBar()
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Profile Card
-            ProfileHeaderCard(profile, onEditProfileClick)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Account Settings
-            SectionTitle("Account Settings")
-            SettingsItem(
-                icon = Icons.Default.Person,
-                title = "Personal Information",
-                subtitle = "Update your personal details"
-            )
-            SettingsItem(
-                icon = Icons.Default.Lock,
-                title = "Security",
-                subtitle = "Password and authentication"
-            )
-            SettingsItem(
-                icon = Icons.Default.Notifications,
-                title = "Notifications",
-                subtitle = "Manage your alerts and notifications"
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Financial Settings
-            SectionTitle("Financial Settings")
-            SettingsItem(
-                icon = Icons.Default.CreditCard,
-                title = "Payment Methods",
-                subtitle = "Manage your cards and bank accounts"
-            )
-            SettingsItem(
-                icon = Icons.Default.Savings,
-                title = "Savings Goals",
-                subtitle = "Set and track your financial goals"
-            )
-            SettingsItem(
-                icon = Icons.Default.BarChart,
-                title = "Budget Categories",
-                subtitle = "Customize your spending categories"
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Support and Info
-            SectionTitle("Support & Info")
-            SettingsItem(
-                icon = Icons.Default.Help,
-                title = "Help & Support",
-                subtitle = "FAQs and contact information"
-            )
-            SettingsItem(
-                icon = Icons.Default.Info,
-                title = "About",
-                subtitle = "App version and legal information"
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { authViewModel.logout() },
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth(0.5f)
-                    .padding(vertical = 8.dp)
-                    .align(Alignment.CenterHorizontally),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = "Log Out",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                // Top App Bar
+                TopAppBar()
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Profile Card
+                ProfileHeaderCard(profile, navController)
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Account Settings
+                SectionTitle("Account Settings")
+                SettingsItem(
+                    icon = Icons.Default.Person,
+                    title = "Personal Information",
+                    subtitle = "Update your personal details"
                 )
+                SettingsItem(
+                    icon = Icons.Default.Lock,
+                    title = "Security",
+                    subtitle = "Password and authentication"
+                )
+                SettingsItem(
+                    icon = Icons.Default.Notifications,
+                    title = "Notifications",
+                    subtitle = "Manage your alerts and notifications"
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Financial Settings
+                SectionTitle("Financial Settings")
+                SettingsItem(
+                    icon = Icons.Default.CreditCard,
+                    title = "Payment Methods",
+                    subtitle = "Manage your cards and bank accounts"
+                )
+                SettingsItem(
+                    icon = Icons.Default.Savings,
+                    title = "Savings Goals",
+                    subtitle = "Set and track your financial goals"
+                )
+                SettingsItem(
+                    icon = Icons.Default.BarChart,
+                    title = "Budget Categories",
+                    subtitle = "Customize your spending categories"
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Support and Info
+                SectionTitle("Support & Info")
+                SettingsItem(
+                    icon = Icons.Default.Help,
+                    title = "Help & Support",
+                    subtitle = "FAQs and contact information"
+                )
+                SettingsItem(
+                    icon = Icons.Default.Info,
+                    title = "About",
+                    subtitle = "App version and legal information"
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = { authViewModel.logout() },
+                    modifier = Modifier
+                        .fillMaxWidth(0.5f)
+                        .padding(vertical = 8.dp)
+                        .align(Alignment.CenterHorizontally),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text(
+                        text = "Log Out",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
         }
     }
@@ -407,7 +186,7 @@ fun TopAppBar() {
 }
 
 @Composable
-fun ProfileHeaderCard(profile: Profile?, onEditProfileClick: () -> Unit) {
+fun ProfileHeaderCard(profile: Profile?, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth(),
@@ -435,14 +214,7 @@ fun ProfileHeaderCard(profile: Profile?, onEditProfileClick: () -> Unit) {
                     .background(MainColor.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-
-                AvatarImage("https://firebasestorage.googleapis.com/v0/b/moneymanagementliveserver.firebasestorage.app/o/user_avatars%2F687baa6b-b371-4a0b-9eb2-d7f8ffc4b21f%2Favatar.jpg?alt=media")
-//                Image(
-//                    painter = painterResource(id = R.drawable.profile_image),
-//                    contentDescription = "Profile picture",
-//                    modifier = Modifier.fillMaxSize(),
-//                    contentScale = ContentScale.Crop
-//                )
+                AvatarImage(profile.avatarUrl)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -466,6 +238,86 @@ fun ProfileHeaderCard(profile: Profile?, onEditProfileClick: () -> Unit) {
                 )
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Stylish User ID with Copy Button
+            val clipboardManager = LocalClipboardManager.current
+            val context = LocalContext.current
+            val idText = profile.id
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MainColor.copy(alpha = 0.1f))
+                    .padding(vertical = 8.dp, horizontal = 12.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Row {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PermIdentity,
+                            contentDescription = null,
+                            tint = MainColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "User ID",
+                            fontSize = 15.sp,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = MainColor
+                            )
+
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            clipboardManager.setText(AnnotatedString(idText))
+                            Toast.makeText(context, "ID copied to clipboard", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy ID",
+                            tint = MainColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.dp,
+                            color = MainColor.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.White.copy(alpha = 0.6f))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = idText,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimaryColor
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Profile Stats / Finance Summary
@@ -484,7 +336,7 @@ fun ProfileHeaderCard(profile: Profile?, onEditProfileClick: () -> Unit) {
 
             // Edit Profile Button
             OutlinedButton(
-                onClick = { onEditProfileClick() },
+                onClick = { navController.navigate(Routes.EditProfile) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MainColor
@@ -606,12 +458,5 @@ fun SettingsItem(
                 tint = TextSecondaryColor
             )
         }
-    }
-}
-
-@Composable
-fun ProfileScreenPreview() {
-    MaterialTheme {
-        ProfileScreenWithEditing()
     }
 }

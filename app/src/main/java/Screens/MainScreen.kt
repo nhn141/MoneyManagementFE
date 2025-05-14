@@ -16,10 +16,10 @@ import DI.Composables.CategorySection.HeaderSection
 import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.HomeSection.HomePageHeaderSection
-import DI.Composables.OcrSection.OcrScreen
+import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Navigation.Routes
 import DI.ViewModels.CategoryViewModel
-import ProfileScreenPreview
+import ProfileScreen
 import ViewModels.AuthViewModel
 import android.app.Activity
 import android.util.Log
@@ -56,8 +56,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.friendsapp.FriendsScreen
-import com.example.friendsapp.FriendsScreenTheme
 import com.example.moneymanagement_frontend.R
 
 @Composable
@@ -160,10 +158,14 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
 //                       OcrScreen()
 //                    }
 //                )
-               ProfileScreenPreview()
+               ProfileScreen(navController)
 //                FriendsScreenTheme {
 //                    FriendsScreen(navController = navController)
 //                }
+            }
+
+            composable(Routes.EditProfile) {
+                EditProfileScreen(navController)
             }
         }
     }

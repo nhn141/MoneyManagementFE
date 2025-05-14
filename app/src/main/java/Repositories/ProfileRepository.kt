@@ -2,6 +2,7 @@ package DI.Repositories
 
 import API.ApiService
 import DI.Models.UserInfo.Profile
+import DI.Models.UserInfo.UpdatedProfile
 import android.util.Log
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -41,6 +42,23 @@ class ProfileRepository @Inject constructor(
 
         } catch (e: Exception) {
             Log.e("UploadException", "Exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateProfile(updatedProfile: UpdatedProfile): Result<String> {
+        return try {
+            val response = apiService.updateProfile(updatedProfile)
+
+            if(response.isSuccessful) {
+                Result.success("Update successful")
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Log.e("UpdateError", "Failed with code: ${response.code()}, error: $errorBody")
+                Result.failure(Exception("Update failed: ${response.code()} ${errorBody.orEmpty()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UpdateException", "Exception: ${e.message}", e)
             Result.failure(e)
         }
     }

@@ -14,6 +14,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import java.io.File
 
@@ -42,6 +43,8 @@ fun AvatarImage(url: String) {
         model = ImageRequest.Builder(context)
             .data(url)
             .crossfade(true)
+            .memoryCachePolicy(CachePolicy.DISABLED) // Disable memory cache
+            .diskCachePolicy(CachePolicy.DISABLED)   // Disable disk cache
             .listener(
                 onError = { _, result ->
                     Log.e("AvatarImage", "Image load failed: ${result.throwable.toString()}")

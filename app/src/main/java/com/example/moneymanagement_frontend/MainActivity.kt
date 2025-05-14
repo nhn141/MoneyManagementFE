@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
         // Set navigation bar to black (Color.BLACK.toArgb() for Compose)
         window.navigationBarColor = Color.BLACK // API 21+ :contentReference[oaicite:2]{index=2}
 
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             AppNavHost()
         }
