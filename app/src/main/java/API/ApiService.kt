@@ -12,6 +12,8 @@
     import retrofit2.http.Body
     import retrofit2.http.GET
     import retrofit2.http.POST
+    import retrofit2.http.PUT
+    import retrofit2.http.DELETE
     import retrofit2.http.Query
 
     interface ApiService {
@@ -30,17 +32,26 @@
         @GET("Wallets")
         suspend fun getWallets(): List<Wallet>
 
-        @GET("Transactions")
-        suspend fun getTransactions(): List<Transaction>
-
         @POST("Categories")
         suspend fun createCategory(@Body category: Category): Response<ResponseBody>
 
         @POST("Wallets")
         suspend fun createWallet(@Body wallet: Wallet): Response<ResponseBody>
 
+        @GET("Transactions")
+        suspend fun getTransactions(): List<Transaction>
+
+        @PUT("Transactions")
+        suspend fun updateTransaction(@Body transaction: Transaction): Response<Transaction>
+
         @POST("Transactions")
         suspend fun createTransaction(@Body transaction : Transaction): Response<Transaction>
+
+        @GET("Transactions/{id}")
+        suspend fun getTransactionById(@retrofit2.http.Path("id") id: String): Response<Transaction>
+
+        @DELETE("Transactions/{id}")
+        suspend fun deleteTransaction(@retrofit2.http.Path("id") id: String): Response<ResponseBody>
 
         @GET("Transactions/date-range")
         suspend fun getTransactionsByDateRange(

@@ -1,21 +1,12 @@
 package DI.Composables.TransactionSection
 
-import DI.Composables.CategorySection.AddTransactionsButton
 import DI.Composables.CategorySection.GeneralTemplate
-import DI.Composables.CategorySection.MonthSection
-import DI.Composables.CategorySection.TransactionList
-import DI.Composables.CategorySection.getTransactionData
-import DI.Composables.TransactionSection.GeneralTransactionRow
-import DI.Composables.TransactionSection.GeneralTransactionSummary
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel
-import DI.ViewModels.TransactionViewModel
-import Screens.TransactionScreen
 import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -37,27 +28,20 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -86,7 +70,9 @@ fun TransactionPageScreen(navController: NavController) {
 }
 
 data class GeneralTransactionItem(
+    val transactionID: String,
     val categoryID: String,
+    val walletID: String,
     val title: String,
     val timestamp: String?,
     val amount: String,
@@ -98,7 +84,9 @@ fun Transaction.toGeneralTransactionItem(): GeneralTransactionItem {
     val isIncome = type.lowercase() == "income"
 
     return GeneralTransactionItem(
+        transactionID = transactionID,
         categoryID = categoryID,
+        walletID = walletID,
         title = description,
         timestamp = transactionDate,
         amount = if (isIncome) "$$amount" else "-$$amount",
@@ -300,6 +288,9 @@ fun TransactionBodySection(navController: NavController) {
     LaunchedEffect(Unit) {
         categoryViewModel.getCategories()
     }
+    LaunchedEffect(Unit) {
+        viewModel.fetchTransactions()
+    }
 
     Box {
         Column(
@@ -316,6 +307,7 @@ fun TransactionBodySection(navController: NavController) {
 
                 if (transactions.isNotEmpty()) {
                     GeneralTransactionSummary(
+                        navController = navController,
                         transactions = transactions,
                         categories = categories?.getOrNull() ?: emptyList()
                     )
@@ -458,6 +450,7 @@ fun TransactionBodySection(navController: NavController) {
 
 @Composable
 fun GeneralTransactionRow(
+    navController: NavController,
     transaction: GeneralTransactionItem,
     categories: List<Category>
 ) {
@@ -476,6 +469,8 @@ fun GeneralTransactionRow(
             contentAlignment = Alignment.Center
         ) {
             TransactionIconButton(
+                navController = navController,
+                transactionID = transaction.transactionID,
                 categoryID = transaction.categoryID,
                 categories = categories
             )
@@ -513,16 +508,15 @@ fun GeneralTransactionRow(
     }
 }
 
-
-
 @Composable
 fun GeneralTransactionSummary(
+    navController: NavController,
     transactions: List<GeneralTransactionItem>,
     categories: List<Category>
 ) {
     Column {
         transactions.forEach { transaction ->
-            GeneralTransactionRow(transaction = transaction, categories = categories)
+            GeneralTransactionRow(navController = navController, transaction = transaction, categories = categories)
         }
     }
 }

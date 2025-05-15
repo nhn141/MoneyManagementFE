@@ -38,6 +38,59 @@ class TransactionRepository @Inject constructor(private val apiService: ApiServi
         }
     }
 
+    suspend fun getTransactionById(id: String): Result<Transaction> {
+        return try {
+            val response = apiService.getTransactionById(id)
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    Result.success(it)
+                } ?: Result.failure(Exception("Empty response body"))
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Log.e("TransactionRepository", "Get by ID failed: ${response.code()} - $errorBody")
+                Result.failure(Exception("Failed to get transaction by ID: $errorBody"))
+            }
+        } catch (e: Exception) {
+            Log.e("TransactionRepository", "Exception during get by ID: ${e.localizedMessage}", e)
+            Result.failure(e)
+        }
+    }
+
+
+    suspend fun updateTransaction(transaction: Transaction): Result<Transaction> {
+        return try {
+            val response = apiService.updateTransaction(transaction)
+            if (response.isSuccessful) {
+                Log.d("TransactionRepository", "Transaction updated successfully")
+                response.body()?.let { Result.success(it) } ?: Result.failure(Exception("Empty response body"))
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Log.e("TransactionRepository", "Update failed: ${response.code()} - $errorBody")
+                Result.failure(Exception("Failed to update transaction: $errorBody"))
+            }
+        } catch (e: Exception) {
+            Log.e("TransactionRepository", "Exception during update: ${e.localizedMessage}", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteTransaction(id: String): Result<Unit> {
+        return try {
+            val response = apiService.deleteTransaction(id)
+            if (response.isSuccessful) {
+                Log.d("TransactionRepository", "Transaction deleted successfully")
+                Result.success(Unit)
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Log.e("TransactionRepository", "Delete failed: ${response.code()} - $errorBody")
+                Result.failure(Exception("Failed to delete transaction: $errorBody"))
+            }
+        } catch (e: Exception) {
+            Log.e("TransactionRepository", "Exception during delete: ${e.localizedMessage}", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun getTransactionsByDateRange(fromDate: String, toDate: String): Result<List<Transaction>> {
         return try {
             val response = apiService.getTransactionsByDateRange(fromDate, toDate)

@@ -10,15 +10,13 @@ import DI.Composables.CategorySection.GeneralTemplate
 import DI.Models.BalanceInfo
 import DI.Models.BottomNavItem
 import DI.Composables.NavbarSection.BottomNavigationBar
-import DI.Composables.CategorySection.CategoriesGrid
-import DI.Composables.CategorySection.Category
 import DI.Composables.CategorySection.GeneralCategoryScreen
 import DI.Composables.CategorySection.HeaderSection
 import DI.Composables.ProfileSection.ProfileHeaderSection
 import DI.Composables.ProfileSection.ProfileScreen
-import DI.Composables.HomeSection.HomePageHeaderSection
 import DI.Composables.HomeSection.HomePageScreen
-import DI.Composables.TransactionSection.TransactionHeaderSection
+import DI.Composables.TransactionSection.TransactionDetailScreen
+import DI.Composables.TransactionSection.TransactionEditScreen
 import DI.Composables.TransactionSection.TransactionPageScreen
 import DI.Navigation.Routes
 import DI.ViewModels.CategoryViewModel
@@ -52,7 +50,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.moneymanagement_frontend.R
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -86,6 +83,19 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
                 GeneralTemplate(
                     contentHeader = { Category_SpecificType_Header(navController) },
                     contentBody = { Category_SpecificType_Body(navController) }
+                )
+            }
+
+            composable("transaction_detail/{transactionId}") { backStackEntry ->
+                val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+                TransactionDetailScreen(navController = navController, transactionId = transactionId)
+            }
+            composable("transaction_edit/{transactionId}") { backStackEntry ->
+                val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+
+                TransactionEditScreen(
+                    navController = navController,
+                    transactionId = transactionId
                 )
             }
 

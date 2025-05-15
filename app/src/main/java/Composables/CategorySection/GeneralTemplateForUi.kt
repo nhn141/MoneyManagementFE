@@ -16,7 +16,11 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun GeneralTemplate(contentHeader: @Composable () -> Unit, contentBody: @Composable () -> Unit, fraction: Float = 0.32f) {
+fun GeneralTemplate(
+    contentHeader: @Composable () -> Unit,
+    contentBody: @Composable () -> Unit,
+    fraction: Float = 0.32f,
+) {
     Box(
         modifier = Modifier.fillMaxSize().background(color = Color(0xFF53dba9))
     ) {

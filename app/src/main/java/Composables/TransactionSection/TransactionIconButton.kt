@@ -13,15 +13,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 
 @Composable
-fun TransactionIconButton(categoryID: String, categories: List<Category>) {
+fun TransactionIconButton(navController: NavController,
+                          transactionID: String,
+                          categoryID: String,
+                          categories: List<Category>) {
     val categoryName = categories.find { it.categoryID == categoryID }?.name ?: "Other"
     val iconRes = getCategoryIcon(categoryName)
 
     Button(
-        onClick = { /* Handle click if needed */ },
+        onClick = {
+            navController.navigate("transaction_detail/$transactionID")
+        },
         modifier = Modifier.size(48.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0068FF)),
         shape = MaterialTheme.shapes.medium,

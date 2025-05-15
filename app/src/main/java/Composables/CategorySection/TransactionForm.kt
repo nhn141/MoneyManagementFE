@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -24,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,22 +31,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import java.util.Calendar
 import com.vanpra.composematerialdialogs.*
-import com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
+import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.text.SimpleDateFormat
+import java.time.LocalTime
 import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -61,14 +55,30 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
     val categoriesResult by categoryViewModel.categories.collectAsState()
     val walletsResult by walletViewModel.wallets.collectAsState()
 
-    // Trigger load
     LaunchedEffect(Unit) {
         categoryViewModel.getCategories()
         walletViewModel.fetchWallets()
     }
 
-    val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-    var date by remember { mutableStateOf(formatter.format(Calendar.getInstance().time)) }
+    val selectedDateTime = remember { mutableStateOf(Calendar.getInstance()) }
+
+    val storageFormatter = remember {
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    }
+    val displayFormatter = remember {
+        SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault())
+    }
+
+    val displayDate by remember {
+        derivedStateOf { displayFormatter.format(selectedDateTime.value.time) }
+    }
+
+    val storageDate by remember {
+        derivedStateOf { storageFormatter.format(selectedDateTime.value.time) }
+    }
+
+    val dateDialogState = rememberMaterialDialogState()
+    val timeDialogState = rememberMaterialDialogState()
 
     var categoryId by remember { mutableStateOf("") }
     var categoryName by remember { mutableStateOf("") }
@@ -77,7 +87,6 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
     var amount by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
 
-    val dateDialogState = rememberMaterialDialogState()
 
     Column(
         modifier = Modifier
@@ -125,7 +134,7 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
 
         TransactionTextField(
             label = "Date",
-            value = date,
+            value = displayDate,
             onValueChange = {},
             isDropdown = true,
             trailingIcon = {
@@ -140,22 +149,45 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
         MaterialDialog(
             dialogState = dateDialogState,
             buttons = {
-                positiveButton("OK")
+                positiveButton("Next") {
+                    timeDialogState.show()
+                }
                 negativeButton("Cancel")
             },
             backgroundColor = Color(0xFFF1FFF3)
         ) {
             datepicker(
-                title = "Select a date",
-                colors = DatePickerDefaults.colors(
-                    headerBackgroundColor = Color(0xFF00D09E)
-                )
+                initialDate = LocalDate.now(),
+                title = "Select a date"
             ) { localDate ->
-                val calendar = Calendar.getInstance()
-                calendar.set(localDate.year, localDate.monthValue - 1, localDate.dayOfMonth)
-                date = formatter.format(calendar.time)
+                val newDate = selectedDateTime.value.clone() as Calendar
+                newDate.set(Calendar.YEAR, localDate.year)
+                newDate.set(Calendar.MONTH, localDate.monthValue - 1)
+                newDate.set(Calendar.DAY_OF_MONTH, localDate.dayOfMonth)
+                selectedDateTime.value = newDate
             }
         }
+        MaterialDialog(
+            dialogState = timeDialogState,
+            buttons = {
+                positiveButton("OK")
+                negativeButton("Cancel")
+            },
+            backgroundColor = Color(0xFFF1FFF3)
+        ) {
+            timepicker(
+                initialTime = LocalTime.now(),
+                title = "Select a time"
+            ) { time ->
+                val newTime = selectedDateTime.value.clone() as Calendar
+                newTime.set(Calendar.HOUR_OF_DAY, time.hour)
+                newTime.set(Calendar.MINUTE, time.minute)
+                newTime.set(Calendar.SECOND, 0)
+                selectedDateTime.value = newTime
+            }
+        }
+
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -169,7 +201,7 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
                         categoryId = categoryId,
                         walletId = walletId,
                         type = type,
-                        transactionDate = date
+                        transactionDate = storageDate
                     ) { success ->
                         if (success) navController.popBackStack()
                     }
@@ -260,10 +292,3 @@ fun DropdownSelector(
     Spacer(modifier = Modifier.height(8.dp))
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun AddTransactionScreenPreview() {
-    val navController = rememberNavController()
-    AddTransactionScreen(navController = navController)
-}

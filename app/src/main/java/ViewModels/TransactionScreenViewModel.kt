@@ -50,6 +50,8 @@ class TransactionScreenViewModel @Inject constructor(
     private val _categories = mutableStateOf<List<Category>>(emptyList())
     val categories: List<Category> get() = _categories.value
 
+    private val _selectedTransaction = mutableStateOf<Transaction?>(null)
+    val selectedTransaction: State<Transaction?> = _selectedTransaction
 
     init {
         Log.d("TransactionScreenViewModel", "ViewModel initialized")
@@ -69,12 +71,11 @@ class TransactionScreenViewModel @Inject constructor(
     }
 
 
-    private fun fetchTransactions() {
+    internal fun fetchTransactions() {
         viewModelScope.launch {
             val result = transactionRepository.getTransactions()
             if (result.isSuccess) {
                 _allTransactions.value = result.getOrThrow().map { it.toGeneralTransactionItem() }
-
             }
         }
     }
@@ -109,6 +110,69 @@ class TransactionScreenViewModel @Inject constructor(
             }
         }
     }
+
+    fun loadTransactionById(id: String, onResult: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val result = transactionRepository.getTransactionById(id)
+            if (result.isSuccess) {
+                _selectedTransaction.value = result.getOrThrow()
+                onResult(true)
+            } else {
+                Log.e("TransactionVM", "Failed to load transaction by ID: ${result.exceptionOrNull()?.message}")
+                _selectedTransaction.value = null
+                onResult(false)
+            }
+        }
+    }
+
+
+    fun updateTransaction(
+        transactionID: String,
+        amount: Double,
+        description: String,
+        categoryId: String,
+        walletId: String,
+        type: String,
+        transactionDate: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            val transaction = Transaction(
+                transactionID = transactionID,
+                amount = amount,
+                description = description,
+                categoryID = categoryId,
+                walletID = walletId,
+                type = type,
+                transactionDate = transactionDate
+            )
+
+            val result = transactionRepository.updateTransaction(transaction)
+            onResult(result.isSuccess)
+
+            if (result.isSuccess) {
+                fetchTransactions()
+                onResult(true)
+            } else {
+                Log.e("TransactionVM", "Update failed: ${result.exceptionOrNull()?.message}")
+                onResult(false)
+            }
+        }
+    }
+
+    fun deleteTransaction(id: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = transactionRepository.deleteTransaction(id)
+            if (result.isSuccess) {
+                fetchTransactions()
+                onResult(true)
+            } else {
+                Log.e("TransactionVM", "Delete failed: ${result.exceptionOrNull()?.message}")
+                onResult(false)
+            }
+        }
+    }
+
     fun fetchTransactionsByDateRange(from: String, to: String) {
         viewModelScope.launch {
             val result = transactionRepository.getTransactionsByDateRange(from, to)
