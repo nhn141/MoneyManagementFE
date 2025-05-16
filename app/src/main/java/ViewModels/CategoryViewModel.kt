@@ -14,8 +14,11 @@ import javax.inject.Inject
 class CategoryViewModel @Inject constructor(
     private val repository: CategoryRepository
 ) : ViewModel() {
-    private var _categories = MutableStateFlow<Result<List<Category>>?>(null)
+    private val _categories = MutableStateFlow<Result<List<Category>>?>(null)
     val categories: StateFlow<Result<List<Category>>?> = _categories
+
+    private val _addCategoryResult = MutableStateFlow<Result<Category>?>(null)
+    val addCategoryResult: StateFlow<Result<Category>?> = _addCategoryResult
 
     fun getCategories() {
         viewModelScope.launch {
@@ -24,12 +27,17 @@ class CategoryViewModel @Inject constructor(
         }
     }
 
-    private val _categoryState = MutableStateFlow<Result<Unit>?>(null)
-    val categoryState: StateFlow<Result<Unit>?> = _categoryState
-    fun createCategory(category: Category) {
+    fun addCategory(category: Category) {
         viewModelScope.launch {
-            val result = repository.createCategory(category)
-            _categoryState.value = result
+            val result = repository.addCategory(category)
+            _addCategoryResult.value = result
+            if (result.isSuccess) {
+                getCategories()
+            }
         }
+    }
+
+    fun clearAddCategoryResult() {
+        _addCategoryResult.value = null
     }
 }

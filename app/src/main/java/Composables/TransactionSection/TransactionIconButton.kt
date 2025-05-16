@@ -1,6 +1,7 @@
 package DI.Composables.TransactionSection
 
 import DI.Models.Category.Category
+import DI.Models.Category.CategoryIconStorage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
@@ -8,9 +9,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -19,10 +22,11 @@ import com.example.moneymanagement_frontend.R
 @Composable
 fun TransactionIconButton(navController: NavController,
                           transactionID: String,
-                          categoryID: String,
-                          categories: List<Category>) {
-    val categoryName = categories.find { it.categoryID == categoryID }?.name ?: "Other"
-    val iconRes = getCategoryIcon(categoryName)
+                          categoryID: String) {
+    val context = LocalContext.current
+    val iconStorage = remember { CategoryIconStorage(context) }
+
+    val iconRes = iconStorage.getIcon(categoryID)
 
     Button(
         onClick = {

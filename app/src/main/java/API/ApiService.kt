@@ -33,7 +33,7 @@
         suspend fun getWallets(): List<Wallet>
 
         @POST("Categories")
-        suspend fun createCategory(@Body category: Category): Response<ResponseBody>
+        suspend fun addCategory(@Body category: Category): Response<Category>
 
         @POST("Wallets")
         suspend fun createWallet(@Body wallet: Wallet): Response<ResponseBody>

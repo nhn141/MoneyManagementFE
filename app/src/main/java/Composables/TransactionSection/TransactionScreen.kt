@@ -282,7 +282,6 @@ fun TransactionBodySection(navController: NavController) {
     val showDatePickerDialog = remember { mutableStateOf(false) }
     val viewModel: TransactionScreenViewModel = hiltViewModel()
     val categoryViewModel: CategoryViewModel = hiltViewModel()
-    val categories by categoryViewModel.categories.collectAsState()
     val transactions = viewModel.filteredTransactions.value
 
     LaunchedEffect(Unit) {
@@ -308,8 +307,7 @@ fun TransactionBodySection(navController: NavController) {
                 if (transactions.isNotEmpty()) {
                     GeneralTransactionSummary(
                         navController = navController,
-                        transactions = transactions,
-                        categories = categories?.getOrNull() ?: emptyList()
+                        transactions = transactions
                     )
                 } else {
                     Text("No transactions found.")
@@ -452,7 +450,6 @@ fun TransactionBodySection(navController: NavController) {
 fun GeneralTransactionRow(
     navController: NavController,
     transaction: GeneralTransactionItem,
-    categories: List<Category>
 ) {
     Row(
         modifier = Modifier
@@ -472,7 +469,6 @@ fun GeneralTransactionRow(
                 navController = navController,
                 transactionID = transaction.transactionID,
                 categoryID = transaction.categoryID,
-                categories = categories
             )
         }
 
@@ -512,11 +508,10 @@ fun GeneralTransactionRow(
 fun GeneralTransactionSummary(
     navController: NavController,
     transactions: List<GeneralTransactionItem>,
-    categories: List<Category>
 ) {
     Column {
         transactions.forEach { transaction ->
-            GeneralTransactionRow(navController = navController, transaction = transaction, categories = categories)
+            GeneralTransactionRow(navController = navController, transaction = transaction)
         }
     }
 }

@@ -17,13 +17,15 @@ class CategoryRepository @Inject constructor(private val apiService: ApiService)
         }
     }
 
-    suspend fun createCategory(category: Category): Result<Unit> {
+    suspend fun addCategory(category: Category): Result<Category> {
         return try {
-            val response = apiService.createCategory(category)
+            val response = apiService.addCategory(category)
             if (response.isSuccessful) {
-                Result.success(Unit)
+                response.body()?.let {
+                    Result.success(it)
+                } ?: Result.failure(Exception("Empty response body"))
             } else {
-                Result.failure(Exception("Failed to create category"))
+                Result.failure(Exception("Failed with code ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

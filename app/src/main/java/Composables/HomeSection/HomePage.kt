@@ -222,7 +222,6 @@ fun HomePageBody(
 ) {
     val viewModel: TransactionScreenViewModel = hiltViewModel()
     val categoryViewModel: CategoryViewModel = hiltViewModel()
-    val categories by categoryViewModel.categories.collectAsState()
     val transactions = viewModel.filteredTransactions.value
 
     LaunchedEffect(Unit) {
@@ -251,8 +250,7 @@ fun HomePageBody(
             if (transactions.isNotEmpty()) {
                 GeneralTransactionSummary(
                     navController = navController,
-                    transactions = transactions,
-                    categories = categories?.getOrNull() ?: emptyList()
+                    transactions = transactions
                 )
             } else {
                 Text("No transactions found.")

@@ -4,7 +4,6 @@ import DI.Composables.CategorySection.GeneralTemplate
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel
 import DI.ViewModels.WalletViewModel
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -34,6 +32,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun TransactionDetailScreen(
@@ -164,6 +167,9 @@ fun TransactionDetailBody(
     val typeColor = if (type.equals("Income", ignoreCase = true)) Color(0xFF1DC418) else Color(0xFFC62828)
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -248,7 +254,13 @@ fun TransactionDetailBody(
                         onClick = {
                             showDeleteDialog = false
                             viewModel.deleteTransaction(transactionId) { success ->
-                                if (success) navController.popBackStack()
+                                if (success) {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Transaction deleted successfully")
+                                        navController.popBackStack()
+                                    }
+                                }
+
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -277,7 +289,12 @@ fun TransactionDetailBody(
                 modifier = Modifier.padding(16.dp)
             )
         }
-
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 100.dp)
+        )
     }
 }
 
