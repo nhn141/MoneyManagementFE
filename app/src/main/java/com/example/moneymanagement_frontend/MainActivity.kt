@@ -1,5 +1,6 @@
 package com.example.moneymanagement_frontend
 
+import DI.API.CrashHandler.CrashHandler
 import DI.Navigation.AppNavHost
 import ViewModels.AuthViewModel
 import android.app.Activity
@@ -25,6 +26,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Crash handler
+        Thread.setDefaultUncaughtExceptionHandler(CrashHandler(this))
 
         // Set navigation bar to black (Color.BLACK.toArgb() for Compose)
         window.navigationBarColor = Color.BLACK // API 21+ :contentReference[oaicite:2]{index=2}

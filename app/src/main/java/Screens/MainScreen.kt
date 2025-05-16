@@ -17,8 +17,11 @@ import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.HomeSection.HomePageHeaderSection
 import DI.Composables.ProfileSection.EditProfileScreen
+import DI.Navigation.LocalMainNavBackStackEntry
 import DI.Navigation.Routes
+import DI.Navigation.rememberParentEntry
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import ProfileScreen
 import ViewModels.AuthViewModel
@@ -36,6 +39,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -51,6 +55,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -59,6 +65,27 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.friendsapp.FriendsScreen
 import com.example.moneymanagement_frontend.R
+
+@Composable
+fun MainLayout(content: @Composable (NavHostController, Modifier) -> Unit) {
+    val innerNavController = rememberNavController()
+    val currentBackStackEntry by innerNavController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
+    SetLightStatusBar()
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            if (currentRoute in BottomNavItem.allRoutes.map { it.route }) {
+                BottomNavigationBar(innerNavController)
+            }
+        },
+        contentWindowInsets = WindowInsets.safeDrawing
+    ) { padding ->
+        content(innerNavController, Modifier.padding(padding))
+    }
+}
 
 @Composable
 fun MainScreen(
