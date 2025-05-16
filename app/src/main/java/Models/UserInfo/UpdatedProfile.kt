@@ -1,6 +1,6 @@
 package DI.Models.UserInfo
 
-data class UpdatedProfile(
+data class  UpdatedProfile(
     val FirstName: String?,
     val LastName: String?,
     val CurrentPassword: String,

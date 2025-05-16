@@ -1,7 +1,5 @@
 package DI.Models.Chat
 
-import DI.API.DateTimeHandler.ChatTimeFormatter
-
 data class ChatMessage(
     val messageID: String,
     val senderId: String,

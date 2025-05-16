@@ -1,41 +1,31 @@
-package DI.API.DateTimeHandler
-
-import android.util.Log
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
+import java.time.ZoneId
+import java.util.Locale
 
 object ChatTimeFormatter {
-    fun formatTimestamp(isoString: String): String {
-        return try {
-            val messageTime = ZonedDateTime.parse(isoString)
-            val now = ZonedDateTime.now(ZoneId.systemDefault())
+    private val vietnameseLocale = Locale("vi", "VN")
 
-            val daysBetween = ChronoUnit.DAYS.between(messageTime.toLocalDate(), now.toLocalDate())
+    private val inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-            return when {
-                daysBetween == 0L -> {
-                    // Same day: just show the time
-                    messageTime.format(DateTimeFormatter.ofPattern("h:mm a"))
-                }
-                daysBetween == 1L -> {
-                    // Yesterday
-                    "Yesterday at ${messageTime.format(DateTimeFormatter.ofPattern("h:mm a"))}"
-                }
-                messageTime.year == now.year -> {
-                    // This year
-                    messageTime.format(DateTimeFormatter.ofPattern("MMM d 'at' h:mm a"))
-                }
-                else -> {
-                    // Previous years
-                    messageTime.format(DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a"))
-                }
-            }
-        } catch (e: Exception) {
-            // Handle invalid date format or other errors
-            "Invalid date"
+    // Vietnamese localized time and date formats
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", vietnameseLocale)     // 24h format, e.g., 10:06
+    private val dateFormatter = DateTimeFormatter.ofPattern("d MMM", vietnameseLocale)     // e.g., 16 thg 5
+    private val fullDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", vietnameseLocale) // e.g., 16 thg 5 2025
+
+    fun formatTimestamp(sentAt: String): String {
+        val sentDateTime = LocalDateTime.parse(sentAt, inputFormatter)
+        val now = LocalDateTime.now(ZoneId.systemDefault())
+
+        val sentDate = sentDateTime.toLocalDate()
+        val today = now.toLocalDate()
+        val yesterday = today.minusDays(1)
+
+        return when {
+            sentDate == today -> sentDateTime.format(timeFormatter)   // just time, 24h format
+            sentDate == yesterday -> "Hôm qua"                         // Yesterday in Vietnamese
+            sentDate.year == today.year -> sentDateTime.format(dateFormatter) // e.g., 16 thg 5
+            else -> sentDateTime.format(fullDateFormatter)             // e.g., 16 thg 5 2025
         }
     }
 }

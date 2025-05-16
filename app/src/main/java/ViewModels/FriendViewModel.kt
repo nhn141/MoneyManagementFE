@@ -42,7 +42,13 @@ class FriendViewModel @Inject constructor(
     private val _deleteFriendEvent = MutableSharedFlow<UiEvent>()
     val deleteFriendEvent = _deleteFriendEvent.asSharedFlow()
 
+    init {
+        Log.d("FriendViewModel", "FriendViewModel initialized")
+        getAllFriends()
+    }
+
     fun getAllFriends() {
+        Log.d("FriendViewModel", "getAllFriends called")
         viewModelScope.launch {
             val result = friendRepository.getAllFriends()
             _friends.value = result

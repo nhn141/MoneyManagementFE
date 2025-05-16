@@ -10,6 +10,7 @@ import DI.Models.UserInfo.Profile
 import DI.Navigation.Routes
 import DI.ViewModels.ProfileViewModel
 import ViewModels.AuthViewModel
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -186,7 +187,13 @@ fun TopAppBar() {
 }
 
 @Composable
-fun ProfileHeaderCard(profile: Profile?, navController: NavController) {
+fun ProfileHeaderCard(
+    profile: Profile?,
+    navController: NavController,
+    profileViewModel: ProfileViewModel = hiltViewModel()
+) {
+    val avatarVersion = profileViewModel.avatarVersion.collectAsState().value
+
     Card(
         modifier = Modifier
             .fillMaxWidth(),
@@ -214,7 +221,8 @@ fun ProfileHeaderCard(profile: Profile?, navController: NavController) {
                     .background(MainColor.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                AvatarImage(profile.avatarUrl)
+                Log.d("AvatarVersionProfile", avatarVersion)
+                AvatarImage(profile.avatarUrl, avatarVersion)
             }
 
             Spacer(modifier = Modifier.height(16.dp))

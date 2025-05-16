@@ -3,6 +3,9 @@ package DI.Repositories
 import API.ApiService
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
+import DI.Models.Chat.LatestChat
+import DI.Models.Chat.LatestChatResponses
+import android.util.Log
 import com.microsoft.signalr.HubConnection
 import com.microsoft.signalr.HubConnectionBuilder
 import io.reactivex.rxjava3.core.Single
@@ -31,6 +34,17 @@ class ChatRepository @Inject constructor(private val apiService: ApiService) {
             val response = apiService.getChatWithOtherUser(otherUserId)
             Result.success(response)
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getLatestChats(): Result<LatestChatResponses> {
+        return try {
+            val response = apiService.getLatestChats()
+            Log.d("LatestChatsRepo", "$response")
+            Result.success(response)
+        } catch (e: Exception) {
+            Log.e("LatestChatsRepo", "Error fetching latest chats", e)
             Result.failure(e)
         }
     }

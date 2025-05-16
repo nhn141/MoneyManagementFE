@@ -4,6 +4,7 @@ import DI.API.TokenHandler.AuthStorage
 import DI.Models.Category.Category
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
+import DI.Models.Chat.LatestChat
 import DI.Repositories.ChatRepository
 import android.content.Context
 import android.util.Log
@@ -40,11 +41,12 @@ class ChatViewModel @Inject constructor(
     private val _chatMessages = MutableStateFlow<Result<List<ChatMessage>>?>(null)
     val chatMessages: StateFlow<Result<List<ChatMessage>>?> = _chatMessages
 
+    private val _latestChats = MutableStateFlow<Result<List<LatestChat>>?>(null)
+    val latestChats: StateFlow<Result<List<LatestChat>>?> = _latestChats
 
     init {
         connectToSignalR()
     }
-
 
     fun connectToSignalR() {
         val token = AuthStorage.getToken(context)
@@ -113,7 +115,6 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             val result = repository.getAllChats()
             _chats.value = result
-            Log.d("ChatViewModel", "Chats: $result")
         }
     }
 
@@ -121,7 +122,18 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             val result = repository.getChatWithOtherUser(otherUserId)
             _chatMessages.value = result
-            Log.d("ChatViewModel", "ChatMessages: $result")
+        }
+    }
+
+    fun getLatestChats() {
+        viewModelScope.launch {
+            val result = repository.getLatestChats()
+            result.onSuccess { chatMap ->
+                val latestMessages = chatMap.values.toList()
+                _latestChats.value = Result.success(latestMessages)
+            }.onFailure {
+                _latestChats.value = Result.failure(it)
+            }
         }
     }
 }

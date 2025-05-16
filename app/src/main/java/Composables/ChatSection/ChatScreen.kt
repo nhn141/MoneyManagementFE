@@ -1,12 +1,17 @@
 package DI.Composables.ChatSection
 
-import DI.API.DateTimeHandler.ChatTimeFormatter
 import DI.API.TokenHandler.AuthStorage
+import DI.Composables.ProfileSection.FriendAvatar
+import DI.Composables.ProfileSection.MainColor
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
+import DI.Models.Friend.Friend
 import DI.Navigation.Routes
 import DI.ViewModels.ChatViewModel
+import DI.ViewModels.FriendViewModel
+import DI.ViewModels.ProfileViewModel
 import android.util.Log
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,6 +46,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -55,30 +61,45 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
+import okhttp3.Route
 
 @Composable
 fun ChatScreen(
     navController: NavController,
-    chatViewModel: ChatViewModel = hiltViewModel()
+    chatViewModel: ChatViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    friendViewModel: FriendViewModel = hiltViewModel()
 ) {
     LaunchedEffect(Unit) {
-        chatViewModel.getAllChats()
-        Log.d("Getting Chat", "")
+        chatViewModel.getLatestChats()
     }
-    val chatsResult = chatViewModel.chats.collectAsState()
-    val chats = remember { mutableStateListOf<Chat?>(null) }
-    LaunchedEffect(chatsResult.value) {
-        chatsResult.value?.let { result ->
-            result.onSuccess { data ->
-                chats.clear()
-                chats.addAll(data)
-            }.onFailure {
-                Log.d("Chats", "Error fetching chats data")
-            }
+
+    val latestChatsResult = chatViewModel.latestChats.collectAsState()
+    val latestChats = latestChatsResult.value?.getOrNull() ?: emptyList()
+    val friendAvatars = profileViewModel.friendAvatars.collectAsState().value
+    val isLoadingAvatar = profileViewModel.isLoadingAvatar.collectAsState()
+
+    LaunchedEffect(latestChats.toList()) { // Convert to list to trigger on changes
+        if(latestChats.isNotEmpty()) {
+            val friendIds = latestChats.map { it.latestMessage.receiverId }
+            profileViewModel.getFriendAvatars(friendIds)
         }
     }
+
+    // When both chats and avatars are ready, update chats with avatarUrls
+    val chatsWithAvatars = remember(latestChats, friendAvatars) {
+        latestChats.map { chat ->
+            val avatarUrl = friendAvatars.find { it.userId == chat.latestMessage.receiverId }?.avatarUrl ?: ""
+            chat.copy(avatarUrl = avatarUrl)
+        }
+    }
+
+    val friendsResult = friendViewModel.friends.collectAsState()
+    val friends = friendsResult.value?.getOrNull() ?: emptyList()
+    Log.d("Friends", friends.toString())
 
     Column(
         modifier = Modifier
@@ -90,19 +111,37 @@ fun ChatScreen(
         Spacer(modifier = Modifier.height(16.dp))
         SearchBar()
         Spacer(modifier = Modifier.height(16.dp))
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            items(chats.size) { index ->
-                MessageItem(
-                    navController = navController,
-                    title = chats[index]?.otherUserName ?: "NoName",
-                    message = "Hello World" + "!",
-                    time = "No time",
-                    count =1,
-                    otherUserId = chats[index]?.otherUserId ?: "",
-                    color = Color(0xFF5C6BC0)
+        if(chatsWithAvatars.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(50.dp),
+                    color = Color.White,
+                    strokeWidth = 5.dp
                 )
+            }
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                items(chatsWithAvatars.size) { index ->
+                    MessageItem(
+                        navController = navController,
+                        title = chatsWithAvatars[index].latestMessage.receiverName,
+                        message = chatsWithAvatars[index].latestMessage.content,
+                        time = chatsWithAvatars[index].latestMessage.sentAt,
+                        count = chatsWithAvatars[index].unreadCount,
+                        friendId = chatsWithAvatars[index].latestMessage.receiverId,
+                        friendAvatarUrl = chatsWithAvatars[index].avatarUrl ?: "",
+                        isLoadingAvatar = isLoadingAvatar.value,
+                        isOnline = friends.firstOrNull {
+                            it.userId == chatsWithAvatars[index].latestMessage.receiverId
+                        }?.isOnline ?: false,
+                        color = Color(0xFF5C6BC0)
+                    )
+                }
             }
         }
     }
@@ -135,7 +174,10 @@ fun MessageItem(
     time: String,
     count: Int?,
     color: Color,
-    otherUserId: String,
+    friendId: String,
+    friendAvatarUrl: String,
+    isLoadingAvatar: Boolean,
+    isOnline: Boolean,
     isAlert: Boolean = false
 ) {
     Row(
@@ -146,30 +188,45 @@ fun MessageItem(
             .background(Color.White)
             .padding(12.dp)
             .clickable {
-                navController.navigate("chat_message/$otherUserId")
+                navController.navigate("chat_message/$friendId")
             },
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Avatar with online dot
         Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(color),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.size(40.dp),
+            contentAlignment = Alignment.BottomEnd
         ) {
-            Text(
-                text = title.first().toString(),
-                color = Color.White,
-                fontWeight = FontWeight.Bold
+            if(isLoadingAvatar) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MainColor,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                FriendAvatar(friendAvatarUrl)
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(if (isOnline) Color(0xFF4CAF50) else Color.Gray)
+                    .border(1.dp, Color.White, CircleShape)
             )
         }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
+
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
             Text(title, fontWeight = FontWeight.Bold)
             Text(message, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+        Spacer(modifier = Modifier.width(4.dp))
         Column(horizontalAlignment = Alignment.End) {
-            Text(time, fontSize = 12.sp)
+            Text(ChatTimeFormatter.formatTimestamp(time), fontSize = 12.sp)
             if (count != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Box(
@@ -186,224 +243,3 @@ fun MessageItem(
     }
 }
 
-@Composable
-fun ChatMessageScreen(
-    navController: NavController,
-    chatViewModel: ChatViewModel = hiltViewModel(),
-    otherUserId: String
-) {
-    val currentUserId = AuthStorage.getUserIdFromToken(LocalContext.current)
-
-    var messageContent by remember { mutableStateOf("") }
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(Unit) {
-        chatViewModel.getChatWithOtherUser(otherUserId)
-    }
-
-    val chatMessagesResult = chatViewModel.chatMessages.collectAsState()
-    val chatMessages = chatMessagesResult.value?.getOrNull() ?: emptyList()
-
-    Scaffold(
-        topBar = {
-            ChatTopBar(
-                userName = "Test User",
-                isOnline = true,
-                onBackClick = { navController.popBackStack() },
-                onInfoClick = { /* Show chat info/details */ }
-            )
-        },
-        bottomBar = {
-            MessageInputBar(
-                messageText = messageContent,
-                onMessageChange = { messageContent = it },
-                onSendClick = {
-                    if (messageContent.isNotBlank()) {
-                        chatViewModel.sendMessage(otherUserId, messageContent)
-                        messageContent = "" // Clear input after sending
-                    }
-                }
-            )
-        },
-        modifier = Modifier.fillMaxSize()
-    ) { paddingValues ->
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF53dba9))
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            reverseLayout = true,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(chatMessages.reversed()) { message ->
-                MessageBubble(
-                    message,
-                    isSentByCurrentUser = message.senderId == currentUserId,
-                    otherUserAvatarRes = R.drawable.profile_image
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun MessageBubble(
-    message: ChatMessage,
-    isSentByCurrentUser: Boolean,
-    otherUserAvatarRes: Int // e.g., R.drawable.avatar_other_user
-) {
-    val backgroundColor = if (isSentByCurrentUser) Color(0xFFDCF8C6) else Color.White
-    val alignment = if (isSentByCurrentUser) Arrangement.End else Arrangement.Start
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = alignment,
-        verticalAlignment = Alignment.Top
-    ) {
-        // Avatar on the left only for received messages
-        if (!isSentByCurrentUser) {
-            Image(
-                painter = painterResource(id = otherUserAvatarRes),
-                contentDescription = "Other User Avatar",
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-        }
-
-        Column(
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(backgroundColor)
-                .padding(12.dp)
-                .widthIn(max = 280.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(text = message.content)
-            Text(
-                text = ChatTimeFormatter.formatTimestamp(message.sentAt),
-                fontSize = 10.sp,
-                color = Color.Gray,
-                modifier = Modifier.align(Alignment.End),
-            )
-        }
-
-
-    }
-}
-
-
-@Composable
-fun ChatTopBar(
-    userName: String,
-    isOnline: Boolean,
-    onBackClick: () -> Unit,
-    onInfoClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF46F2C9))
-            .height(56.dp)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Back button
-        Icon(
-            imageVector = Icons.Default.ArrowCircleLeft,
-            contentDescription = "Back",
-            modifier = Modifier
-                .size(28.dp)
-                .clickable { onBackClick() }
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Avatar with online dot
-        Box(
-            modifier = Modifier.size(40.dp),
-            contentAlignment = Alignment.BottomEnd
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.profile_image), // Replace with actual image
-                contentDescription = "User Avatar",
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(Color.Gray)
-            )
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(if (isOnline) Color(0xFF4CAF50) else Color.Gray)
-                    .border(1.dp, Color.White, CircleShape)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Name and Online/Offline
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(userName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(
-                if (isOnline) "Online" else "Offline",
-                fontSize = 12.sp,
-                color = if (isOnline) Color(0xFF4CAF50) else Color.Gray
-            )
-        }
-
-        // Info icon
-        Icon(
-            imageVector = Icons.Default.Info,
-            contentDescription = "Info",
-            modifier = Modifier
-                .size(24.dp)
-                .clickable { onInfoClick() }
-        )
-    }
-}
-
-@Composable
-fun MessageInputBar(
-    messageText: String,
-    onMessageChange: (String) -> Unit,
-    onSendClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .background(Color.White, shape = RoundedCornerShape(24.dp))
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = messageText,
-            onValueChange = onMessageChange,
-            placeholder = { Text("Type a message") },
-            modifier = Modifier.weight(1f).heightIn(max = 100.dp),
-            maxLines = 4,
-            shape = RoundedCornerShape(20.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent
-            )
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Button(
-            onClick = onSendClick,
-            shape = CircleShape,
-        ) {
-            Text("Send")
-        }
-    }
-}

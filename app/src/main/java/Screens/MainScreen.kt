@@ -19,6 +19,7 @@ import DI.Composables.HomeSection.HomePageHeaderSection
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Navigation.Routes
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.FriendViewModel
 import ProfileScreen
 import ViewModels.AuthViewModel
 import android.app.Activity
@@ -56,10 +57,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.friendsapp.FriendsScreen
 import com.example.moneymanagement_frontend.R
 
 @Composable
-fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
+fun MainScreen(
+    authViewModel: AuthViewModel = hiltViewModel(),
+    friendViewModel: FriendViewModel = hiltViewModel()
+) {
 
     SetLightStatusBar()
 
@@ -86,10 +91,11 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(BottomNavItem.Home.route) {
-                GeneralTemplate(
-                    contentHeader = { HomePageHeaderSection(navController) },
-                    contentBody = { HomeScreen() }
-                )
+//                GeneralTemplate(
+//                    contentHeader = { HomePageHeaderSection(navController) },
+//                    contentBody = { HomeScreen() }
+//                )
+                FriendsScreen(navController = navController)
             }
 
             composable("add_transaction") {
@@ -116,10 +122,10 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
 
             composable(
                 route = Routes.ChatMessage,
-                arguments = listOf(navArgument("otherUserId") { type = NavType.StringType })
+                arguments = listOf(navArgument("friendId") { type = NavType.StringType })
             ) { backStackEntry ->
-                val otherUserId = backStackEntry.arguments?.getString("otherUserId") ?: ""
-                ChatMessageScreen(navController = navController ,otherUserId = otherUserId)
+                val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
+                ChatMessageScreen(navController = navController , friendId = friendId)
             }
 
             composable(BottomNavItem.Transaction.route) {

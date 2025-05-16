@@ -8,6 +8,8 @@ import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
+import DI.Models.Chat.LatestChat
+import DI.Models.Chat.LatestChatResponses
 import DI.Models.Friend.AcceptFriendRequestResponse
 import DI.Models.Friend.AddFriendRequest
 import DI.Models.Friend.AddFriendResponse
@@ -16,6 +18,7 @@ import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.Models.Friend.RejectFriendRequestResponse
 import DI.Models.Ocr.OcrData
+import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
 import DI.Models.UserInfo.UpdatedProfile
 import DI.Models.Wallet
@@ -33,6 +36,9 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
+
+    // Authentication
+
     @POST("Accounts/SignUp")
     suspend fun signUp(@Body request: SignUpRequest): Response<ResponseBody>
 
@@ -42,11 +48,10 @@ interface ApiService {
     @POST("Accounts/RefreshToken")
     suspend fun refreshToken(@Body token: RefreshTokenRequest): Response<ResponseBody>
 
+    // Aggregation
+
     @GET("Categories")
     suspend fun getCategories(): List<Category>
-
-
-
 
     @GET("Wallets")
     suspend fun getWallets(): List<Wallet>
@@ -66,14 +71,23 @@ interface ApiService {
     @GET("Statistics/category-breakdown")
     suspend fun getCategoryBreakdown(@Query("startDate") startDate: String, @Query("endDate") endDate: String): List<CategoryBreakdown>
 
+    // Ocr
+
     @POST("Gemini/extract-ocr")
     suspend fun extractOcr(@Body ocrString: String): OcrData
+
+    // Chat
 
     @GET("Messages/chats")
     suspend fun getAllChats(): List<Chat>
 
     @GET("Messages/{receiverId}")
     suspend fun getChatWithOtherUser(@Path("receiverId") otherUserId: String): List<ChatMessage>
+
+    @GET("Messages/latest")
+    suspend fun getLatestChats(): LatestChatResponses
+
+    // Friend
 
     @GET("Friends")
     suspend fun getAllFriends(): List<Friend>
@@ -93,14 +107,18 @@ interface ApiService {
     @DELETE("Friends/{friendId}")
     suspend fun deleteFriend(@Path("friendId") friendId: String): Response<DeleteFriendResponse>
 
+    // Profile
+
     @GET("Accounts/profile")
     suspend fun getProfile(): Profile
 
     @Multipart
     @POST("Accounts/avatar")
-    suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): Response<Unit>
+    suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): Response<AvatarUploadResponse>
 
-    @Multipart
     @PUT("Accounts/profile")
     suspend fun updateProfile(@Body updatedProfile: UpdatedProfile): Response<Void>
+
+    @GET("Accounts/users/{userId}")
+    suspend fun getOtherUserProfile(@Path("userId") userId: String): Profile
 }

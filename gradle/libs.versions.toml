@@ -3,13 +3,16 @@ activityCompose = "1.10.1"
 agp = "8.8.2"
 androidxSecurityCryptoKtx = "1.1.0-alpha06"
 coilCompose = "2.5.0"
+compiler = "4.16.0"
 composeBom = "2025.03.00"
 composeBomVersion = "2023.10.01"
 composeCharts = "latest_version"
 composeChartsVersion = "0.1.0"
 converterGson = "2.9.0"
+datastorePreferences = "1.1.6"
 foundation = "1.8.1"
 githubComposeCharts = "0.1.2"
+glide = "4.16.0"
 javaJwt = "4.4.0"
 kotlin = "2.1.0"
 coreKtx = "1.15.0"
@@ -41,6 +44,7 @@ androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 androidx-compose-bom-v20231001 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-runtime-ktx-v286 = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtxVersion" }
@@ -58,11 +62,13 @@ androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "compiler" }
 compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }
 compose-charts-v010 = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeChartsVersion" }
 compose-charts-v012 = { module = "io.github.ehsannarmani:compose-charts", version.ref = "githubComposeCharts" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
+glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 java-jwt = { module = "com.auth0:java-jwt", version.ref = "javaJwt" }
 jetbrains-kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroidVersion" }
 jetbrains-kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServicesVersion" }

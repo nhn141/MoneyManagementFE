@@ -48,13 +48,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,7 +77,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 @Composable
@@ -87,16 +93,6 @@ fun EditProfileScreen(
     LaunchedEffect(Unit) {
         launch {
             profileViewModel.getProfile()
-        }
-
-        launch {
-            profileViewModel.uploadAvatarState.collect { uploadedState ->
-                if(uploadedState) {
-                    Toast.makeText(context, "Avatar uploaded successfully!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Failed to upload avatar.", Toast.LENGTH_SHORT).show()
-                }
-            }
         }
 
         launch {
@@ -144,15 +140,32 @@ fun EditProfileScreen(
     }
 
 
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    val uploadAvatarResult = profileViewModel.uploadAvatarState.collectAsState()
+    val avatarUrl = uploadAvatarResult.value?.getOrNull() ?: profile?.avatarUrl
 
+    val avatarVersion = profileViewModel.avatarVersion.collectAsState().value
+    val isLoadingAvatar = profileViewModel.isLoadingAvatar.collectAsState()
+
+    val coroutineScope = rememberCoroutineScope()
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
-        uri?.let { it ->
-            val file = uriToFile(it, context)
-            file?.let { profileViewModel.uploadAvatar(it) }
+        uri?.let {
+            coroutineScope.launch(Dispatchers.IO) {
+                try {
+                    val file = uriToFile(it, context)
+                    if (file != null) {
+                        profileViewModel.uploadAvatar(file)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, "Successfully uploaded avatar", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Failed to upload avatar", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
     }
 
@@ -265,13 +278,21 @@ fun EditProfileScreen(
                                 .background(MainColor.copy(alpha = 0.05f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            if(profile?.avatarUrl != null) {
-                                AvatarImage(profile.avatarUrl)
-                            } else {
-                                Icon(
-                                    painter = painterResource(R.drawable.profile_image),
-                                    contentDescription = "Default Avatar"
+                            if(isLoadingAvatar.value) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MainColor,
+                                    strokeWidth = 2.dp
                                 )
+                            } else {
+                                if(avatarUrl != null) {
+                                    AvatarImage(avatarUrl, avatarVersion)
+                                } else {
+                                    Icon(
+                                        painter = painterResource(R.drawable.profile_image),
+                                        contentDescription = "Default Avatar"
+                                    )
+                                }
                             }
                         }
 

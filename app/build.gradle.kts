@@ -128,7 +128,11 @@ dependencies {
     implementation(libs.java.jwt)
 
     // Display Avatar
-    implementation(libs.coil.compose)
+    implementation (libs.glide)
+    annotationProcessor (libs.compiler)
+
+    // Data Store Across Restart
+    implementation (libs.androidx.datastore.preferences)
 
 
 }
