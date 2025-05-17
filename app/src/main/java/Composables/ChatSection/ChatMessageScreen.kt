@@ -4,6 +4,7 @@ import DI.API.TokenHandler.AuthStorage
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Composables.ProfileSection.MainColor
 import DI.Models.Chat.ChatMessage
+import DI.Navigation.Routes
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
@@ -63,10 +64,10 @@ import com.example.moneymanagement_frontend.R
 @Composable
 fun ChatMessageScreen(
     navController: NavController,
-    chatViewModel: ChatViewModel = hiltViewModel(),
+    chatViewModel: ChatViewModel,
     friendId: String,
-    profileViewModel: ProfileViewModel = hiltViewModel(),
-    friendViewModel: FriendViewModel = hiltViewModel()
+    profileViewModel: ProfileViewModel,
+    friendViewModel: FriendViewModel
 ) {
     val currentUserId = AuthStorage.getUserIdFromToken(LocalContext.current)
 
@@ -95,7 +96,7 @@ fun ChatMessageScreen(
                 friendAvatarUrl = friendAvatar.avatarUrl,
                 isLoadingAvatar = isLoadingAvatar.value,
                 onBackClick = { navController.popBackStack() },
-                onInfoClick = { /* Show chat info/details */ }
+                onInfoClick = { navController.navigate("friend_profile/$friendId") }
             )
         },
         bottomBar = {

@@ -19,14 +19,16 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.reactivex.rxjava3.core.Single
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val repository: ChatRepository,
+    private val chatRepository: ChatRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
+
     private var hubConnection: HubConnection? = null
 
     private val _messages = mutableStateListOf<ChatMessage>()
@@ -36,16 +38,17 @@ class ChatViewModel @Inject constructor(
     val onlineUsers: List<String> = _onlineUsers
 
     private val _chats = MutableStateFlow<Result<List<Chat>>?>(null)
-    val chats: StateFlow<Result<List<Chat>>?> = _chats
+    val chats: StateFlow<Result<List<Chat>>?> = _chats.asStateFlow()
 
     private val _chatMessages = MutableStateFlow<Result<List<ChatMessage>>?>(null)
-    val chatMessages: StateFlow<Result<List<ChatMessage>>?> = _chatMessages
+    val chatMessages: StateFlow<Result<List<ChatMessage>>?> = _chatMessages.asStateFlow()
 
     private val _latestChats = MutableStateFlow<Result<List<LatestChat>>?>(null)
-    val latestChats: StateFlow<Result<List<LatestChat>>?> = _latestChats
+    val latestChats: StateFlow<Result<List<LatestChat>>?> = _latestChats.asStateFlow()
 
     init {
         connectToSignalR()
+        getLatestChats()
     }
 
     fun connectToSignalR() {
@@ -113,21 +116,21 @@ class ChatViewModel @Inject constructor(
 
     fun getAllChats() {
         viewModelScope.launch {
-            val result = repository.getAllChats()
+            val result = chatRepository.getAllChats()
             _chats.value = result
         }
     }
 
     fun getChatWithOtherUser(otherUserId: String) {
         viewModelScope.launch {
-            val result = repository.getChatWithOtherUser(otherUserId)
+            val result = chatRepository.getChatWithOtherUser(otherUserId)
             _chatMessages.value = result
         }
     }
 
     fun getLatestChats() {
         viewModelScope.launch {
-            val result = repository.getLatestChats()
+            val result = chatRepository.getLatestChats()
             result.onSuccess { chatMap ->
                 val latestMessages = chatMap.values.toList()
                 _latestChats.value = Result.success(latestMessages)

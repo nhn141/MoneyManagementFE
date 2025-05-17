@@ -13,6 +13,7 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.tasks.await
@@ -24,7 +25,7 @@ class OcrViewModel @Inject constructor(
     private val _scanResults = MutableStateFlow("Select an image to scan...")
 
     private val _ocrResult = MutableStateFlow<OcrData?>(null)
-    val ocrResult: StateFlow<OcrData?> = _ocrResult
+    val ocrResult: StateFlow<OcrData?> = _ocrResult.asStateFlow()
 
     private val textRecognizer: TextRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 

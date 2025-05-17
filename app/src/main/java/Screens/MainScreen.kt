@@ -87,6 +87,7 @@ fun MainLayout(content: @Composable (NavHostController, Modifier) -> Unit) {
     }
 }
 
+/*
 @Composable
 fun MainScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
@@ -202,7 +203,7 @@ fun MainScreen(
             }
         }
     }
-}
+} */
 
 @Composable
 fun SetLightStatusBar() {

@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,10 +20,10 @@ class AnalysisViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var _periodGraph = MutableStateFlow<Result<PeriodGraph>?>(null)
-    val periodGraph: StateFlow<Result<PeriodGraph>?> = _periodGraph
+    val periodGraph: StateFlow<Result<PeriodGraph>?> = _periodGraph.asStateFlow()
 
     private var _categoryBreakdown = MutableStateFlow<Result<List<CategoryBreakdown>>?>(null)
-    val categoryBreakdown: StateFlow<Result<List<CategoryBreakdown>>?> = _categoryBreakdown
+    val categoryBreakdown: StateFlow<Result<List<CategoryBreakdown>>?> = _categoryBreakdown.asStateFlow()
     init {
         getDailyTransactions()
         getWeeklyTransactions()

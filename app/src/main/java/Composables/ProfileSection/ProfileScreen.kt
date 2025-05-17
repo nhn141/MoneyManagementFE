@@ -2,7 +2,6 @@ import DI.Composables.ProfileSection.AvatarImage
 import DI.Composables.ProfileSection.BackgroundColor
 import DI.Composables.ProfileSection.CardColor
 import DI.Composables.ProfileSection.DividerColor
-import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.ProfileSection.MainColor
 import DI.Composables.ProfileSection.TextPrimaryColor
 import DI.Composables.ProfileSection.TextSecondaryColor
@@ -25,10 +24,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,7 +32,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -46,18 +40,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.moneymanagement_frontend.R
 
 @Composable
 fun ProfileScreen(
+    appNavController: NavController,
     navController: NavController,
-    authViewModel: AuthViewModel = hiltViewModel(),
-    profileViewModel: ProfileViewModel = hiltViewModel()
+    authViewModel: AuthViewModel,
+    profileViewModel: ProfileViewModel
 ) {
-
-    LaunchedEffect(Unit) {
-        profileViewModel.getProfile()
-    }
 
     val profileResult = profileViewModel.profile.collectAsState()
     val profile = profileResult.value?.getOrNull()
@@ -80,7 +70,7 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Profile Card
-                ProfileHeaderCard(profile, navController)
+                ProfileHeaderCard(profile, navController, profileViewModel)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -140,7 +130,12 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { authViewModel.logout() },
+                    onClick = {
+                        authViewModel.logout()
+                        appNavController.navigate(Routes.Auth) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth(0.5f)
                         .padding(vertical = 8.dp)
@@ -190,7 +185,7 @@ fun TopAppBar() {
 fun ProfileHeaderCard(
     profile: Profile?,
     navController: NavController,
-    profileViewModel: ProfileViewModel = hiltViewModel()
+    profileViewModel: ProfileViewModel
 ) {
     val avatarVersion = profileViewModel.avatarVersion.collectAsState().value
 

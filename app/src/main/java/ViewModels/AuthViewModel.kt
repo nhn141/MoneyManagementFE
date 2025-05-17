@@ -20,16 +20,16 @@ class AuthViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _isAuthenticated = MutableStateFlow(false)
-    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated
+    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
 
     private val _loginState = MutableStateFlow<Result<String>?>(null)
-    val loginState: StateFlow<Result<String>?> = _loginState
+    val loginState: StateFlow<Result<String>?> = _loginState.asStateFlow()
 
     private val _registerState = MutableStateFlow<Result<String>?>(null)
-    val registerState: StateFlow<Result<String>?> = _registerState
+    val registerState: StateFlow<Result<String>?> = _registerState.asStateFlow()
 
     private val _refreshTokenState = MutableStateFlow<Result<String>?>(null)
-    val refreshTokenState: StateFlow<Result<String>?> = _refreshTokenState
+    val refreshTokenState: StateFlow<Result<String>?> = _refreshTokenState.asStateFlow()
 
     init {
         viewModelScope.launch {

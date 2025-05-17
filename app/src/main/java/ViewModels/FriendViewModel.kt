@@ -43,7 +43,7 @@ class FriendViewModel @Inject constructor(
     val deleteFriendEvent = _deleteFriendEvent.asSharedFlow()
 
     init {
-        Log.d("FriendViewModel", "FriendViewModel initialized")
+        Log.d("FriendViewModel", "init called")
         getAllFriends()
     }
 

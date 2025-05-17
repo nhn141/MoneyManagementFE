@@ -49,10 +49,10 @@ import java.time.format.TextStyle
 import java.util.*
 
 @Composable
-fun CalendarScreen() {
+fun CalendarScreen(analysisViewModel: AnalysisViewModel) {
     GeneralTemplate(
         contentHeader = { CalendarHeader() },
-        contentBody = { CalendarBody() },
+        contentBody = { CalendarBody(analysisViewModel) },
         fraction = 0.1f
     )
 }
@@ -65,7 +65,7 @@ fun CalendarHeader() {
 }
 
 @Composable
-fun CalendarBody(analysisViewModel: AnalysisViewModel = hiltViewModel()) {
+fun CalendarBody(analysisViewModel: AnalysisViewModel) {
     val currentDate = LocalDate.of(2025, 4, 21)
     val startMonth = remember { YearMonth.of(2000, 1) }
     val endMonth = remember { YearMonth.of(2100, 12) }

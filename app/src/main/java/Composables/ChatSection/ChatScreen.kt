@@ -1,18 +1,13 @@
 package DI.Composables.ChatSection
 
-import DI.API.TokenHandler.AuthStorage
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Composables.ProfileSection.MainColor
-import DI.Models.Chat.Chat
-import DI.Models.Chat.ChatMessage
-import DI.Models.Friend.Friend
-import DI.Navigation.Routes
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
-import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.compose.foundation.Image
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,12 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,39 +30,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowCircleLeft
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.IconButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.graphics.SolidColor
 import androidx.navigation.NavController
-import com.example.moneymanagement_frontend.R
-import okhttp3.Route
+import androidx.compose.ui.text.TextStyle
 
 @Composable
 fun ChatScreen(
     navController: NavController,
-    chatViewModel: ChatViewModel = hiltViewModel(),
-    profileViewModel: ProfileViewModel = hiltViewModel(),
-    friendViewModel: FriendViewModel = hiltViewModel()
+    chatViewModel: ChatViewModel,
+    profileViewModel: ProfileViewModel,
+    friendViewModel: FriendViewModel
 ) {
+    // State for search query
+    var searchQuery by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
         chatViewModel.getLatestChats()
     }
@@ -97,9 +81,20 @@ fun ChatScreen(
         }
     }
 
+    // Filter chats based on search query
+    val filteredChats = remember(chatsWithAvatars, searchQuery) {
+        if(searchQuery.isEmpty()) {
+            chatsWithAvatars
+        } else {
+            chatsWithAvatars.filter { chat ->
+                chat.latestMessage.receiverName.contains(searchQuery, ignoreCase = true) ||
+                chat.latestMessage.content.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
     val friendsResult = friendViewModel.friends.collectAsState()
     val friends = friendsResult.value?.getOrNull() ?: emptyList()
-    Log.d("Friends", friends.toString())
 
     Column(
         modifier = Modifier
@@ -109,7 +104,11 @@ fun ChatScreen(
     ) {
         Text("Messages", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(modifier = Modifier.height(16.dp))
-        SearchBar()
+        SearchBar(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            onClearQuery = { searchQuery = "" }
+        )
         Spacer(modifier = Modifier.height(16.dp))
         if(chatsWithAvatars.isEmpty()) {
             Box(
@@ -122,22 +121,44 @@ fun ChatScreen(
                     strokeWidth = 5.dp
                 )
             }
+        } else if(filteredChats.isEmpty() && searchQuery.isNotEmpty()) {
+            // Show "No results found" when search has no matches
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "No conversations found",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.W600
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Try a different search term",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 16.sp
+                    )
+                }
+            }
+
         } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                items(chatsWithAvatars.size) { index ->
+                items(filteredChats.size) { index ->
                     MessageItem(
                         navController = navController,
-                        title = chatsWithAvatars[index].latestMessage.receiverName,
-                        message = chatsWithAvatars[index].latestMessage.content,
-                        time = chatsWithAvatars[index].latestMessage.sentAt,
-                        count = chatsWithAvatars[index].unreadCount,
-                        friendId = chatsWithAvatars[index].latestMessage.receiverId,
-                        friendAvatarUrl = chatsWithAvatars[index].avatarUrl ?: "",
+                        title = filteredChats[index].latestMessage.receiverName,
+                        message = filteredChats[index].latestMessage.content,
+                        time = filteredChats[index].latestMessage.sentAt,
+                        count = filteredChats[index].unreadCount,
+                        friendId = filteredChats[index].latestMessage.receiverId,
+                        friendAvatarUrl = filteredChats[index].avatarUrl ?: "",
                         isLoadingAvatar = isLoadingAvatar.value,
                         isOnline = friends.firstOrNull {
-                            it.userId == chatsWithAvatars[index].latestMessage.receiverId
+                            it.userId == filteredChats[index].latestMessage.receiverId
                         }?.isOnline ?: false,
                         color = Color(0xFF5C6BC0)
                     )
@@ -148,7 +169,11 @@ fun ChatScreen(
 }
 
 @Composable
-fun SearchBar() {
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClearQuery: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -157,12 +182,59 @@ fun SearchBar() {
             .background(Color(0x809AE7C5)),
         contentAlignment = Alignment.CenterStart
     ) {
-        Text(
-            text = "\uD83D\uDD0D Search conversations...",
-            color = Color.White,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(start = 16.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search",
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                textStyle = TextStyle(color = Color.White, fontSize = 16.sp),
+                cursorBrush = SolidColor(Color.White),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            ) { innerTextField ->  
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (query.isEmpty()) {
+                        Text(
+                            text = "Search conversations...",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 16.sp
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+
+            // Clear button appears when there's text
+            AnimatedVisibility(
+                visible = query.isNotEmpty(),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                IconButton(
+                    onClick = onClearQuery,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
     }
 }
 

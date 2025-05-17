@@ -85,16 +85,12 @@ import java.io.File
 @Composable
 fun EditProfileScreen(
     navController: NavController,
-    profileViewModel: ProfileViewModel = hiltViewModel()
+    profileViewModel: ProfileViewModel
 ) {
 
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        launch {
-            profileViewModel.getProfile()
-        }
-
         launch {
             profileViewModel.updatedProfileState.collect { updatedState ->
                 if(updatedState) {

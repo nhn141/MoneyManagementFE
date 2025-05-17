@@ -1,10 +1,16 @@
 package com.example.friendsapp
 
+import DI.Composables.ProfileSection.FriendAvatar
 import DI.Models.Friend.AddFriendRequest
 import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.ViewModels.FriendViewModel
+import DI.ViewModels.ProfileViewModel
+import android.util.Log
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -12,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowCircleLeft
@@ -32,8 +39,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -62,7 +71,8 @@ fun FriendsScreenTheme(content: @Composable () -> Unit) {
 
 @Composable
 fun FriendsScreen(
-    friendViewModel: FriendViewModel = hiltViewModel(),
+    friendViewModel: FriendViewModel,
+    profileViewModel: ProfileViewModel,
     navController: NavController
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
@@ -102,12 +112,15 @@ fun FriendsScreen(
         }
     }
 
+    var searchQuery by remember { mutableStateOf("") }
+
     Scaffold(
         topBar = { CustomTopBar(
             title = "My Friends",
-            onBackClick = { navController.popBackStack() },
             onFriendRequestsClick = { showPendingRequestsDialog = true },
-            onSearchClick = { /* Search action */ }
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            onClearQuery = { searchQuery = "" }
         ) },
         floatingActionButton = {
             FloatingActionButton(
@@ -122,7 +135,14 @@ fun FriendsScreen(
             }
         }
     ) { innerPadding ->
-        FriendsList(Modifier.padding(innerPadding), friendViewModel)
+        FriendsList(
+            modifier = Modifier.padding(innerPadding),
+            friendViewModel = friendViewModel,
+            pendingRequests = friendRequests.size,
+            profileViewModel = profileViewModel,
+            navController = navController,
+            searchQuery = searchQuery
+        )
 
         // Add Friend Dialog
         if (showAddDialog) {
@@ -295,21 +315,35 @@ fun PendingRequestItem(
     }
 }
 
-
-
-
 @Composable
 fun FriendsList(
     modifier: Modifier = Modifier,
-    friendViewModel: FriendViewModel
+    friendViewModel: FriendViewModel,
+    pendingRequests: Int,
+    profileViewModel: ProfileViewModel,
+    navController: NavController,
+    searchQuery: String
 ) {
-
-    LaunchedEffect(Unit) {
-        friendViewModel.getAllFriends()
-    }
-
     val friendsResult = friendViewModel.friends.collectAsState()
     val friends = friendsResult.value?.getOrNull() ?: emptyList()
+
+    val filteredFriends = remember(friends, searchQuery) {
+        if(searchQuery.isEmpty()) {
+            friends
+        } else {
+            friends.filter { friend ->
+                friend.displayName.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    LaunchedEffect(filteredFriends) {
+        val friendIds = filteredFriends.map { it.userId }
+        profileViewModel.getFriendAvatars(friendIds)
+    }
+
+    val friendAvatars = profileViewModel.friendAvatars.collectAsState().value
+    val isLoadingAvatar = profileViewModel.isLoadingAvatar.collectAsState()
 
     Column(
         modifier = modifier
@@ -323,10 +357,30 @@ fun FriendsList(
             ) {
                 Text("No friends found.", style = MaterialTheme.typography.bodyLarge)
             }
+        } else if(filteredFriends.isEmpty() && searchQuery.isNotEmpty()) {
+            // Show "No results found" when search has no matches
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "No friends found",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.W600
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Try a different search term",
+                        color = Color.Black.copy(alpha = 0.7f),
+                        fontSize = 16.sp
+                    )
+                }
+            }
         } else {
 
             val onlineFriendCount = friends.count { it.isOnline }
-            FriendsStatsSummary(friends.size, onlineFriendCount)
+            FriendsStatsSummary(friends.size, onlineFriendCount, pendingRequests)
 
             LazyColumn(
                 modifier = Modifier
@@ -335,8 +389,14 @@ fun FriendsList(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-                items(friends) { friend ->
-                    FriendCard(friend, friendViewModel)
+                items(filteredFriends) { friend ->
+                    FriendCard(
+                        friend = friend,
+                        friendViewModel = friendViewModel,
+                        friendAvatarUrl = friendAvatars.find { it.userId == friend.userId }?.avatarUrl ?: "",
+                        isLoadingAvatar = isLoadingAvatar.value,
+                        navController = navController
+                    )
                 }
             }
         }
@@ -344,7 +404,7 @@ fun FriendsList(
 }
 
 @Composable
-fun FriendsStatsSummary(friendCount: Int, onlineFriendCount: Int = 0, ) {
+fun FriendsStatsSummary(friendCount: Int, onlineFriendCount: Int, pendingRequest: Int) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -363,7 +423,7 @@ fun FriendsStatsSummary(friendCount: Int, onlineFriendCount: Int = 0, ) {
         ) {
             StatItem(count = friendCount, label = "Friends")
             StatItem(count = onlineFriendCount, label = "Online")
-            StatItem(count = 5, label = "Pending")
+            StatItem(count = pendingRequest, label = "Pending")
         }
     }
 }
@@ -388,7 +448,13 @@ fun StatItem(count: Int, label: String) {
 }
 
 @Composable
-fun FriendCard(friend: Friend, friendViewModel: FriendViewModel) {
+fun FriendCard(
+    friend: Friend,
+    friendViewModel: FriendViewModel,
+    friendAvatarUrl: String,
+    isLoadingAvatar: Boolean,
+    navController: NavController
+) {
 
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -419,35 +485,27 @@ fun FriendCard(friend: Friend, friendViewModel: FriendViewModel) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar with status indicator
+            // Avatar with online dot
             Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .padding(4.dp)
+                modifier = Modifier.size(40.dp),
+                contentAlignment = Alignment.BottomEnd
             ) {
-                // Avatar
-                Icon(
-                    painter = painterResource(R.drawable.profile_image),
-                    contentDescription = "Avatar for ${friend.username}",
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(MainColor.copy(alpha = 0.2f))
-                        .padding(8.dp),
-                    tint = MainColor
-                )
+                if(isLoadingAvatar) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = DI.Composables.ProfileSection.MainColor,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    FriendAvatar(friendAvatarUrl)
+                }
 
-                // Status indicator
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(16.dp)
+                        .size(12.dp)
                         .clip(CircleShape)
-                        .background(
-                            if(friend.isOnline) Color.Green
-                            else Color.Gray
-                        )
-                        .border(2.dp, Color.White, CircleShape)
+                        .background(if (friend.isOnline) Color(0xFF4CAF50) else Color.Gray)
+                        .border(1.dp, Color.White, CircleShape)
                 )
             }
 
@@ -469,7 +527,7 @@ fun FriendCard(friend: Friend, friendViewModel: FriendViewModel) {
                 )
             }
 
-            IconButton(onClick = { /* Message action */ }) {
+            IconButton(onClick = { navController.navigate("chat_message/${friend.userId}") }) {
                 Icon(
                     imageVector = Icons.Default.ChatBubble,
                     contentDescription = "Message",
@@ -491,10 +549,14 @@ fun FriendCard(friend: Friend, friendViewModel: FriendViewModel) {
 @Composable
 fun CustomTopBar(
     title: String,
-    onBackClick: () -> Unit = {},
     onFriendRequestsClick: () -> Unit = {},
-    onSearchClick: () -> Unit = {}
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClearQuery: () -> Unit
 ) {
+
+    var onSearchMode by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -507,40 +569,95 @@ fun CustomTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Back Icon
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.Default.SubdirectoryArrowLeft,
-                    contentDescription = "Back",
-                    tint = Color.White
+            if(onSearchMode) {
+                CustomSearchBar(
+                    query = query,
+                    onQueryChange = onQueryChange,
+                    onClearQuery = {
+                        onClearQuery()
+                        onSearchMode = false
+                    }
                 )
-            }
+            } else {
+                // Title
+                Text(
+                    text = title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.W600,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp)
+                )
 
-            // Title
-            Text(
-                text = title,
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f).padding(start = 8.dp)
+                // Friend Requests Icon
+                IconButton(onClick = onFriendRequestsClick) {
+                    Icon(
+                        imageVector = Icons.Filled.Contacts,
+                        contentDescription = "Friends",
+                        tint = Color.White
+                    )
+                }
+
+                // Search Icon
+                IconButton(onClick = {
+                    onSearchMode = true
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = "Search",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CustomSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClearQuery: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            textStyle = TextStyle(color = Color.White, fontSize = 16.sp),
+            cursorBrush = SolidColor(Color.White),
+            modifier = Modifier
+                .padding(horizontal = 8.dp, vertical = 16.dp)
+        ) { innerTextField ->
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (query.isEmpty()) {
+                    Text(
+                        text = "Search conversations...",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 16.sp
+                    )
+                }
+                innerTextField()
+            }
+        }
+
+        IconButton(
+            onClick = { onClearQuery() },
+            modifier = Modifier.size(24.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Clear",
+                tint = Color.White
             )
-
-            // Friend Requests Icon
-            IconButton(onClick = onFriendRequestsClick) {
-                Icon(
-                    imageVector = Icons.Filled.Contacts,
-                    contentDescription = "Friends",
-                    tint = Color.White
-                )
-            }
-
-            // Search Icon
-            IconButton(onClick = onSearchClick) {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = "Search",
-                    tint = Color.White
-                )
-            }
         }
     }
 }

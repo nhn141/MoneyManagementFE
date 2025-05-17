@@ -33,28 +33,28 @@ class ProfileViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _uploadAvatarState = MutableStateFlow<Result<String>?>(null)
-    val uploadAvatarState: StateFlow<Result<String>?> = _uploadAvatarState
+    val uploadAvatarState: StateFlow<Result<String>?> = _uploadAvatarState.asStateFlow()
 
     private val _profile = MutableStateFlow<Result<Profile>?>(null)
-    val profile: StateFlow<Result<Profile>?> = _profile
+    val profile: StateFlow<Result<Profile>?> = _profile.asStateFlow()
 
     private val _updatedProfileState = MutableSharedFlow<Boolean>()
     val updatedProfileState = _updatedProfileState.asSharedFlow()
 
     private val _avatarVersion = MutableStateFlow("")
-    val avatarVersion: StateFlow<String> = _avatarVersion
+    val avatarVersion: StateFlow<String> = _avatarVersion.asStateFlow()
 
     private val _isLoadingAvatar = MutableStateFlow(false)
-    val isLoadingAvatar: StateFlow<Boolean> = _isLoadingAvatar
-
-    private val _otherUserProfile = MutableStateFlow<List<Result<Profile>>?>(null)
-    val otherUserProfile: StateFlow<List<Result<Profile>>?> = _otherUserProfile
+    val isLoadingAvatar: StateFlow<Boolean> = _isLoadingAvatar.asStateFlow()
 
     private val _friendAvatars = MutableStateFlow<List<UserAvatar>>(emptyList())
-    val friendAvatars: StateFlow<List<UserAvatar>> = _friendAvatars
+    val friendAvatars: StateFlow<List<UserAvatar>> = _friendAvatars.asStateFlow()
 
     private val _friendAvatar = MutableStateFlow(UserAvatar("", ""))
-    val friendAvatar: StateFlow<UserAvatar> = _friendAvatar
+    val friendAvatar: StateFlow<UserAvatar> = _friendAvatar.asStateFlow()
+
+    private val _friendProfile = MutableStateFlow<Result<Profile>?>(null)
+    val friendProfile: StateFlow<Result<Profile>?> = _friendProfile.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -62,6 +62,7 @@ class ProfileViewModel @Inject constructor(
                 _avatarVersion.value = it
             }
         }
+        getProfile()
     }
 
     fun uploadAvatar(file: File) {
@@ -96,10 +97,10 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun getOtherUserProfile(userIds: List<String>) {
+    fun getFriendProfile(friendId: String) {
         viewModelScope.launch {
-            val result = profileRepository.getOtherUserProfiles(userIds)
-            _otherUserProfile.value = result
+            val result = profileRepository.getFriendProfile(friendId)
+            _friendProfile.value = result
         }
     }
 

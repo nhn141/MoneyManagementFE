@@ -47,7 +47,7 @@ import ir.ehsannarmani.compose_charts.models.LabelProperties
 @Composable
 fun AnalysisBody(
     navController: NavController,
-    analysisViewModel: AnalysisViewModel = hiltViewModel()
+    analysisViewModel: AnalysisViewModel
 ) {
     val periodGraphResult = analysisViewModel.periodGraph.collectAsState()
 
