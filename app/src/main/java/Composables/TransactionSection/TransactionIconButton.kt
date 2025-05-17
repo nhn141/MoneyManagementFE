@@ -1,6 +1,5 @@
 package DI.Composables.TransactionSection
 
-import DI.Models.Category.Category
 import DI.Models.Category.CategoryIconStorage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues

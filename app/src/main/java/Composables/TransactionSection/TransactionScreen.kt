@@ -1,7 +1,6 @@
 package DI.Composables.TransactionSection
 
 import DI.Composables.CategorySection.GeneralTemplate
-import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
 import DI.ViewModels.CategoryViewModel
@@ -56,9 +55,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
-import java.util.TimeZone
 
 @Composable
 fun TransactionPageScreen(navController: NavController) {
@@ -277,9 +274,11 @@ fun TransactionHeaderSection(navController: NavController) {
 
 @Composable
 fun TransactionBodySection(navController: NavController) {
-    var date by remember { mutableStateOf("") }
     val showSearchDialog = remember { mutableStateOf(false) }
     val showDatePickerDialog = remember { mutableStateOf(false) }
+    val selectedDate = remember { mutableStateOf<String>("") }
+    val formatterDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val formatterDateOnly = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     val viewModel: TransactionScreenViewModel = hiltViewModel()
     val categoryViewModel: CategoryViewModel = hiltViewModel()
     val transactions = viewModel.filteredTransactions.value
@@ -390,36 +389,32 @@ fun TransactionBodySection(navController: NavController) {
                 }
 
                 Text(
-                    text = date,
+                    text = selectedDate.value,
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Black,
                     modifier = Modifier.padding(end = 8.dp)
                 )
 
-                // DatePicker Dialog
                 if (showDatePickerDialog.value) {
                     DatePickerModal(
                         onDateSelected = { millis ->
-                            if (millis != null) {
-                                val zoneId = ZoneId.systemDefault()
-                                val selectedDate = Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate()
+                            showDatePickerDialog.value = false
+                            millis?.let {
+                                val localDate = Instant.ofEpochMilli(it)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
 
-                                val displayFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.getDefault())
-                                date = selectedDate.format(displayFormatter)
+                                selectedDate.value = localDate.format(formatterDateOnly)
 
-                                val fromDate = Date.from(selectedDate.atStartOfDay(zoneId).toInstant())
-                                val toDate = Date.from(selectedDate.atTime(LocalTime.MAX).atZone(zoneId).toInstant())
+                                val from = localDate.atStartOfDay().format(formatterDateTime)
+                                val to = localDate.atTime(LocalTime.MAX).format(formatterDateTime)
 
-                                val isoFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).apply {
-                                    timeZone = TimeZone.getTimeZone("UTC")
-                                }
-                                viewModel.fetchTransactionsByDateRange(
-                                    from = isoFormatter.format(fromDate),
-                                    to = isoFormatter.format(toDate)
-                                )
+                                viewModel.fetchTransactionsByDateRange(from, to)
                             }
                         },
-                        onDismiss = { showDatePickerDialog.value = false }
+                        onDismiss = {
+                            showDatePickerDialog.value = false
+                        }
                     )
                 }
 
@@ -554,16 +549,53 @@ fun SearchDialog(
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     val formatter = remember {
-        SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     }
     var startDate by remember { mutableStateOf("") }
     var endDate by remember { mutableStateOf("") }
     var type by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var amountRange by remember { mutableStateOf("") }
+
+    fun formatAmount(amount: String): String {
+        return amount.toIntOrNull()?.let {
+            "%,d".format(it).replace(",", ".")
+        } ?: amount
+    }
+
+    val rawAmountRanges = listOf("0-50000", "50000-200000", "200000-500000", "500000-1000000", "1000000+")
+    val amountRangeMap = rawAmountRanges.associate { range ->
+        val display = if (range.contains("-")) {
+            val (start, end) = range.split("-")
+            "${formatAmount(start)} - ${formatAmount(end)}"
+        } else {
+            formatAmount(range) + "+"
+        }
+        display to range
+    }
+
+    val reverseAmountRangeMap = amountRangeMap.entries.associate { it.value to it.key }
     var keywords by remember { mutableStateOf("") }
     var timeRange by remember { mutableStateOf("") }
+    val timeRangeMap = mapOf(
+        "00:00-08:00" to "00:00:00-08:00:00",
+        "08:00-16:00" to "08:00:00-16:00:00",
+        "16:00-00:00" to "16:00:00-23:59:59"
+    )
+
+    val reverseTimeRangeMap = timeRangeMap.entries.associate { it.value to it.key }
     var dayOfWeek by remember { mutableStateOf("") }
+    val dayOfWeekMap = mapOf(
+        "Monday" to "Mon",
+        "Tuesday" to "Tue",
+        "Wednesday" to "Wed",
+        "Thursday" to "Thu",
+        "Friday" to "Fri",
+        "Saturday" to "Sat",
+        "Sunday" to "Sun"
+    )
+
+    val reverseDayOfWeekMap = dayOfWeekMap.entries.associate { it.value to it.key }
     val categoriesResult by viewModel.categories.collectAsState()
     val categoryNames = categoriesResult?.getOrNull()?.map { it.name } ?: emptyList()
 
@@ -610,10 +642,12 @@ fun SearchDialog(
                             onOptionSelected = { type = it }
                         )
                         SearchDropdownField(
-                            label = "Amount Range ($)",
-                            options = listOf("0-50", "50-100", "100-500", "500-1000", "1000+"),
-                            selectedOption = amountRange,
-                            onOptionSelected = { amountRange = it }
+                            label = "Amount Range (VND)",
+                            options = amountRangeMap.keys.toList(),
+                            selectedOption = reverseAmountRangeMap[amountRange] ?: "",
+                            onOptionSelected = { selected ->
+                                amountRange = amountRangeMap[selected] ?: ""
+                            }
                         )
                         SearchField(label = "Keywords", value = keywords, onChange = { keywords = it })
                     }
@@ -641,15 +675,19 @@ fun SearchDialog(
                         )
                         SearchDropdownField(
                             label = "Day of Week",
-                            options = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
-                            selectedOption = dayOfWeek,
-                            onOptionSelected = { dayOfWeek = it }
+                            options = dayOfWeekMap.keys.toList(),
+                            selectedOption = reverseDayOfWeekMap[dayOfWeek] ?: "",
+                            onOptionSelected = { selected ->
+                                dayOfWeek = dayOfWeekMap[selected] ?: ""
+                            }
                         )
                         SearchDropdownField(
                             label = "Time Range",
-                            options = listOf("0h-8h", "8h-16h", "16h-0h"),
-                            selectedOption = timeRange,
-                            onOptionSelected = { timeRange = it }
+                            options = timeRangeMap.keys.toList(),
+                            selectedOption = reverseTimeRangeMap[timeRange] ?: "",
+                            onOptionSelected = { selected ->
+                                timeRange = timeRangeMap[selected] ?: ""
+                            }
                         )
                     }
                 }

@@ -29,15 +29,18 @@ import com.example.moneymanagement_frontend.R
 
 @Composable
 fun CategoriesGrid(
-    navController: NavController,
-    categories: List<Category>
+    navController: NavController
 ) {
     val viewModel: CategoryViewModel = hiltViewModel()
+    val categoriesResult by viewModel.categories.collectAsState()
+    val categories = categoriesResult?.getOrNull() ?: emptyList()
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val addResult by viewModel.addCategoryResult.collectAsState()
     val iconStorage = remember { CategoryIconStorage(context) }
     var selectedIcon by remember { mutableIntStateOf(R.drawable.ic_more) }
+    val addResult by viewModel.addCategoryResult.collectAsState()
+    val updateResult by viewModel.updateCategoryResult.collectAsState()
+    val deleteResult by viewModel.deleteCategoryResult.collectAsState()
 
     LaunchedEffect(addResult) {
         addResult?.let {
@@ -55,6 +58,31 @@ fun CategoriesGrid(
         }
     }
 
+    LaunchedEffect(updateResult) {
+        updateResult?.let {
+            if (it.isSuccess) {
+                Toast.makeText(context, "Category updated successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Failed to update category", Toast.LENGTH_SHORT).show()
+            }
+            viewModel.clearUpdateCategoryResult()
+        }
+    }
+
+    LaunchedEffect(deleteResult) {
+        deleteResult?.let {
+            if (it.isSuccess) {
+                Toast.makeText(context, "Category deleted successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Delete failed. Please remove all transactions under this category first.", Toast.LENGTH_SHORT).show()
+            }
+            viewModel.clearDeleteCategoryResult()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.getCategories()
+    }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -75,6 +103,9 @@ fun CategoriesGrid(
                 category = category,
                 onClick = {
                     navController.navigate("category_specific_type")
+                },
+                onDelete = { categoryToDelete ->
+                    viewModel.deleteCategory(categoryToDelete.categoryID)
                 }
             )
         }

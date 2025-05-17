@@ -9,6 +9,7 @@ import DI.Models.Wallet
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel
 import DI.ViewModels.WalletViewModel
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -187,6 +189,7 @@ fun TransactionEditBody(
     var type by remember { mutableStateOf(transaction.type) }
     val isIncome = type.equals("income", ignoreCase = true)
     val isExpense = type.equals("expense", ignoreCase = true)
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -337,13 +340,18 @@ fun TransactionEditBody(
                     transactionDate = updatedTransaction.transactionDate
                 ) { success ->
                     if (success) {
+                        Toast.makeText(context, "Transaction updated successfully", Toast.LENGTH_SHORT).show()
                         navController.popBackStack()
+                    } else {
+                        Toast.makeText(context, "Failed to update transaction", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
             shape = RoundedCornerShape(24.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0068FF)),
-            modifier = Modifier.fillMaxWidth(0.6f).height(48.dp)
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .height(48.dp)
         ) {
             Text("Save", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.White)
         }

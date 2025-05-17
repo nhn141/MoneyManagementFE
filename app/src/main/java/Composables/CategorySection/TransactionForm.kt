@@ -4,9 +4,11 @@ import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel
 import DI.ViewModels.WalletViewModel
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -38,6 +41,7 @@ import java.util.Calendar
 import com.vanpra.composematerialdialogs.*
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
+import java.text.NumberFormat
 import java.time.LocalDate
 import java.text.SimpleDateFormat
 import java.time.LocalTime
@@ -51,9 +55,10 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
                     onTypeChange: (String) -> Unit) {
     val categoryViewModel: CategoryViewModel = hiltViewModel()
     val walletViewModel: WalletViewModel = hiltViewModel()
-
+    val context = LocalContext.current
     val categoriesResult by categoryViewModel.categories.collectAsState()
     val walletsResult by walletViewModel.wallets.collectAsState()
+
 
     LaunchedEffect(Unit) {
         categoryViewModel.getCategories()
@@ -84,8 +89,23 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
     var categoryName by remember { mutableStateOf("") }
     var walletId by remember { mutableStateOf("") }
     var walletName by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
+
+    fun formatAmount(input: String): String {
+        return input.toLongOrNull()?.let {
+            NumberFormat.getNumberInstance(Locale.US).format(it)
+        } ?: input
+    }
+
+    fun unformatAmount(formatted: String): String {
+        return formatted.replace(",", "").replace(".", "")
+    }
+
+    var rawAmount by remember { mutableStateOf("") }
+
+    val formattedAmount by remember(rawAmount) {
+        mutableStateOf(formatAmount(rawAmount))
+    }
 
 
     Column(
@@ -116,9 +136,29 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
 
         TransactionTextField(
             label = "Amount",
-            value = amount,
-            onValueChange = { amount = it }
+            value = formattedAmount,
+            onValueChange = {
+                rawAmount = unformatAmount(it.filter { char -> char.isDigit() })
+            }
         )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Button(
+                onClick = {
+                    rawAmount += "000"
+                },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                modifier = Modifier.height(36.dp)
+            ) {
+                Text("[000]", color = Color.Black)
+            }
+        }
 
         TransactionTextField(
             label = "Title",
@@ -193,7 +233,7 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
 
         Button(
             onClick = {
-                val parsedAmount = amount.toDoubleOrNull()
+                val parsedAmount = unformatAmount(formattedAmount).toDoubleOrNull()
                 if (parsedAmount != null) {
                     viewModel.createTransaction(
                         amount = parsedAmount,
@@ -203,8 +243,15 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
                         type = type,
                         transactionDate = storageDate
                     ) { success ->
-                        if (success) navController.popBackStack()
+                        if (success) {
+                            Toast.makeText(context, "Transaction saved successfully", Toast.LENGTH_SHORT).show()
+                            navController.popBackStack()
+                        } else {
+                            Toast.makeText(context, "Failed to save transaction", Toast.LENGTH_SHORT).show()
+                        }
                     }
+                } else {
+                    Toast.makeText(context, "Invalid amount", Toast.LENGTH_SHORT).show()
                 }
             },
             shape = RoundedCornerShape(24.dp),

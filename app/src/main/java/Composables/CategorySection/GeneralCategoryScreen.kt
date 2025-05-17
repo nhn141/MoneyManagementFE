@@ -31,7 +31,7 @@ fun GeneralCategoryScreen(navController: NavController) {
         },
         contentBody = {
             categoriesResult?.onSuccess { categories ->
-                CategoriesGrid(navController = navController, categories = categories)
+                CategoriesGrid(navController = navController)
             } ?: run {
                 Box(
                     modifier = Modifier.fillMaxSize(),

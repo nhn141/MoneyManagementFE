@@ -35,6 +35,15 @@
         @POST("Categories")
         suspend fun addCategory(@Body category: Category): Response<Category>
 
+        @GET("Categories/{id}")
+        suspend fun getCategoryById(@retrofit2.http.Path("id") id: String): Response<Category>
+
+        @PUT("Categories")
+        suspend fun updateCategory(@Body category: Category): Response<Category>
+
+        @DELETE("Categories/{id}")
+        suspend fun deleteCategory(@retrofit2.http.Path("id") id: String): Response<ResponseBody>
+
         @POST("Wallets")
         suspend fun createWallet(@Body wallet: Wallet): Response<ResponseBody>
 
