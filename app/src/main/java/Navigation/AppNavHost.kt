@@ -1,6 +1,8 @@
 package DI.Navigation
 
 import ViewModels.AuthViewModel
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
@@ -10,6 +12,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 
+@RequiresApi(Build.VERSION_CODES.O)
 val LocalMainNavBackStackEntry = compositionLocalOf<NavBackStackEntry> {
     error("No parent NavBackStackEntry provided")
 }
@@ -24,4 +27,5 @@ fun AppNavHost(authViewModel: AuthViewModel = hiltViewModel()) {
         mainGraph(navController)
     }
 }
+
 

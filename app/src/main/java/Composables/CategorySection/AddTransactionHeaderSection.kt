@@ -19,8 +19,12 @@ import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 
 @Composable
-fun AddTransactionHeaderSection(navController: NavController) {
-    var isIncome by remember { mutableStateOf(true) }
+fun AddTransactionHeaderSection(
+    navController: NavController,
+    currentType: String,
+    onTypeChange: (String) -> Unit
+) {
+    val isIncome = currentType == "Income"
 
     Column(
         modifier = Modifier.background(Color(0xFF53DBA9)),
@@ -37,13 +41,7 @@ fun AddTransactionHeaderSection(navController: NavController) {
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null, // Removes the ripple effect
-                        onClick = {
-                            navController.popBackStack()
-                        }
-                    )
+                    .clickable(onClick = { navController.popBackStack() })
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_arrow_back),
@@ -56,44 +54,36 @@ fun AddTransactionHeaderSection(navController: NavController) {
                 modifier = Modifier
                     .background(Color.White, shape = CircleShape)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clickable { isIncome = !isIncome },
+                    .clickable {
+                        onTypeChange(if (isIncome) "Expense" else "Income")
+                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Text("Add", color = Color.Black, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    text = "Add",
-                    color = Color.Black,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Text(
-                    text = "Income",
+                    "Income",
                     color = if (isIncome) Color(0xFF4CAF50) else Color.Gray,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
                 Text(
-                    text = "Expense",
+                    "Expense",
                     color = if (!isIncome) Color(0xFFF44336) else Color.Gray,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
-            Box(
+            Icon(
+                painter = painterResource(R.drawable.ic_notifications),
+                contentDescription = "notifications",
+                tint = Color.White,
                 modifier = Modifier
-                    .clickable { }
-                    .size(40.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_notifications),
-                    contentDescription = "notifications",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+                    .size(40.dp)
+                    .padding(8.dp)
+            )
         }
     }
 }
+

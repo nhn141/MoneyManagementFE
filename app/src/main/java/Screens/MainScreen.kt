@@ -10,9 +10,14 @@ import DI.Composables.GeneralTemplate
 import DI.Models.BalanceInfo
 import DI.Models.BottomNavItem
 import DI.Composables.NavbarSection.BottomNavigationBar
-import DI.Composables.CategorySection.CategoriesGrid
-import DI.Composables.CategorySection.Category
+import DI.Composables.CategorySection.GeneralCategoryScreen
 import DI.Composables.CategorySection.HeaderSection
+import DI.Composables.ProfileSection.ProfileHeaderSection
+import DI.Composables.ProfileSection.ProfileScreen
+import DI.Composables.HomeSection.HomePageScreen
+import DI.Composables.TransactionSection.TransactionDetailScreen
+import DI.Composables.TransactionSection.TransactionEditScreen
+import DI.Composables.TransactionSection.TransactionPageScreen
 import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.HomeSection.HomePageHeaderSection
@@ -25,8 +30,10 @@ import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import ProfileScreen
 import ViewModels.AuthViewModel
+import android.os.Build
 import android.app.Activity
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -66,6 +73,7 @@ import androidx.navigation.navArgument
 import com.example.friendsapp.FriendsScreen
 import com.example.moneymanagement_frontend.R
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainLayout(content: @Composable (NavHostController, Modifier) -> Unit) {
     val innerNavController = rememberNavController()
@@ -119,6 +127,10 @@ fun MainScreen(
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(BottomNavItem.Home.route) {
+                HomePageScreen(navController)
+//                GeneralTemplate(
+//                    contentHeader = { HomePageHeaderSection(navController) },
+//                    contentBody = { HomeScreen() }
 //                GeneralTemplate(
 //                    contentHeader = { HomePageHeaderSection(navController) },
 //                    contentBody = { HomeScreen() }
@@ -134,6 +146,19 @@ fun MainScreen(
                 GeneralTemplate(
                     contentHeader = { Category_SpecificType_Header(navController) },
                     contentBody = { Category_SpecificType_Body(navController) }
+                )
+            }
+
+            composable("transaction_detail/{transactionId}") { backStackEntry ->
+                val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+                TransactionDetailScreen(navController = navController, transactionId = transactionId)
+            }
+            composable("transaction_edit/{transactionId}") { backStackEntry ->
+                val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+
+                TransactionEditScreen(
+                    navController = navController,
+                    transactionId = transactionId
                 )
             }
 
@@ -157,6 +182,7 @@ fun MainScreen(
             }
 
             composable(BottomNavItem.Transaction.route) {
+                TransactionPageScreen(navController)
 //                GeneralTemplate(
 //                    contentHeader = { TransactionHeader() },
 //                    contentBody = { TransactionScreen() },
@@ -166,23 +192,7 @@ fun MainScreen(
             }
 
             composable(BottomNavItem.Category.route) {
-                val categories = mutableListOf(
-                    Category("Food", R.drawable.ic_food),
-                    Category("Transport", R.drawable.ic_transport),
-                    Category("Medicine", R.drawable.ic_medicine),
-                    Category("Groceries", R.drawable.ic_groceries),
-                    Category("Rent", R.drawable.ic_rent),
-                    Category("Gifts", R.drawable.ic_gifts),
-                    Category("Savings", R.drawable.ic_savings),
-                    Category("Entertainment", R.drawable.ic_entertainment),
-                    Category("More", R.drawable.ic_more)
-                )
-                GeneralTemplate(
-                    //contentHeader = { Category_SpecificType_Header(navController) },
-                    //contentBody = { Category_SpecificType_Body() }
-                    contentHeader = { HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00"), navController) },
-                    contentBody = { CategoriesGrid(categories, navController) }
-                )
+                GeneralCategoryScreen(navController)
             }
 
             composable(BottomNavItem.Profile.route) {

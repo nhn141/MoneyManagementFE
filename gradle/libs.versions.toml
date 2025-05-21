@@ -35,6 +35,7 @@ roomCompiler = "2.7.1"
 roomRuntime = "2.7.1"
 securityCryptoKtx = "1.0.0"
 securityCryptoVersion = "1.0.0"
+supportAnnotations = "28.0.0"
 signalrVersion = "6.0.1"
 textRecognition = "16.0.1"
 
@@ -83,6 +84,7 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 microsoft-signalr = { module = "com.microsoft.signalr:signalr", version.ref = "signalrVersion" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 androidx-security-crypto-ktx = { group = "androidx.security", name = "security-crypto-ktx", version.ref = "securityCryptoKtx" }
+support-annotations = { group = "com.android.support", name = "support-annotations", version.ref = "supportAnnotations" }
 text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "textRecognition" }
 
 [plugins]

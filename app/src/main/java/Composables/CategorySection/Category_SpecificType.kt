@@ -187,7 +187,7 @@ fun AddTransactionsButton(navController: NavController) {
             .fillMaxSize()
             .padding(horizontal = 45.dp, vertical = 12.dp)
             .clip(RoundedCornerShape(50))
-            .background(Color(0xFF00D09E)) // Green color
+            .background(Color(0xFF00D09E))
             .clickable { navController.navigate("add_transaction") },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center

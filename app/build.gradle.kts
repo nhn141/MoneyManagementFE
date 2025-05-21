@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.security.crypto.ktx)
     implementation (libs.androidx.security.crypto)
     implementation (libs.androidx.security.crypto.ktx.v110alpha06)
+    implementation(libs.support.annotations)
 
 
     testImplementation(libs.junit)
@@ -109,6 +110,9 @@ dependencies {
 
     implementation ("com.squareup.okhttp3:okhttp:4.10.0")
     implementation ("com.squareup.okhttp3:logging-interceptor:4.10.0")
+
+
+    implementation ("io.github.vanpra.compose-material-dialogs:datetime:0.8.1-rc")
 
     // Compose Charts
     implementation(libs.compose.charts.v012)
