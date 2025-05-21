@@ -3,6 +3,7 @@ package DI.Composables.CategorySection
 import DI.ViewModels.TransactionScreenViewModel
 import android.os.Build
 import androidx.annotation.RequiresApi
+import DI.Composables.GeneralTemplate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

@@ -1,4 +1,4 @@
-import DI.Composables.CategorySection.GeneralTemplate
+import DI.Composables.GeneralTemplate
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

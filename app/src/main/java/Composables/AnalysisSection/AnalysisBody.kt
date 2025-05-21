@@ -47,7 +47,7 @@ import ir.ehsannarmani.compose_charts.models.LabelProperties
 @Composable
 fun AnalysisBody(
     navController: NavController,
-    analysisViewModel: AnalysisViewModel = hiltViewModel()
+    analysisViewModel: AnalysisViewModel
 ) {
     val periodGraphResult = analysisViewModel.periodGraph.collectAsState()
 
@@ -82,7 +82,6 @@ fun AnalysisBody(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFDFF7E2))
                 .padding(5.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically

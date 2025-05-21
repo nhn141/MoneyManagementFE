@@ -1,4 +1,4 @@
-package DI.Composables.CategorySection
+package DI.Composables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

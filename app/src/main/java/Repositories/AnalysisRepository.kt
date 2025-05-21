@@ -6,6 +6,7 @@ import DI.Models.Analysis.MonthlyTransactions
 import DI.Models.Analysis.TransactionByCalendar
 import DI.Models.Analysis.WeeklyTransactions
 import DI.Models.Analysis.YearlyTransactions
+import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,7 +16,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
         return try {
             val mockTransactions = listOf(
                 TransactionByCalendar(
-                    title = "Grocery Shopping",
+                    description = "Grocery Shopping",
                     date = "2025-04-14",
                     time = "10:00 AM",
                     dayOfWeek = "Monday",
@@ -24,7 +25,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                     category = "Groceries"
                 ),
                 TransactionByCalendar(
-                    title = "Salary",
+                    description = "Salary",
                     date = "2025-04-15",
                     time = "9:00 AM",
                     dayOfWeek = "Tuesday",
@@ -33,7 +34,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                     category = "Salary"
                 ),
                 TransactionByCalendar(
-                    title = "Electric Bill",
+                    description = "Electric Bill",
                     date = "2025-04-16",
                     time = "2:00 PM",
                     dayOfWeek = "Wednesday",
@@ -42,7 +43,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                     category = "Utilities"
                 ),
                 TransactionByCalendar(
-                    title = "Freelance Work",
+                    description = "Freelance Work",
                     date = "2025-04-17",
                     time = "6:00 PM",
                     dayOfWeek = "Thursday",
@@ -77,7 +78,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                     totalExpense = 4000.0,
                     transactions = listOf(
                         TransactionByCalendar(
-                            title = "Salary",
+                            description = "Salary",
                             date = "2025-04-01",
                             time = "9:00 AM",
                             dayOfWeek = "Tuesday",
@@ -86,7 +87,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             category = "Salary"
                         ),
                         TransactionByCalendar(
-                            title = "Rent Payment",
+                            description = "Rent Payment",
                             date = "2025-04-05",
                             time = "3:00 PM",
                             dayOfWeek = "Saturday",
@@ -102,7 +103,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                     totalExpense = 5000.0,
                     transactions = listOf(
                         TransactionByCalendar(
-                            title = "Freelance Work",
+                            description = "Freelance Work",
                             date = "2025-04-12",
                             time = "4:00 PM",
                             dayOfWeek = "Sunday",
@@ -111,7 +112,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             category = "Freelance"
                         ),
                         TransactionByCalendar(
-                            title = "Grocery Shopping",
+                            description = "Grocery Shopping",
                             date = "2025-04-14",
                             time = "10:00 AM",
                             dayOfWeek = "Monday",
@@ -127,7 +128,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                     totalExpense = 4500.0,
                     transactions = listOf(
                         TransactionByCalendar(
-                            title = "Freelance Work",
+                            description = "Freelance Work",
                             date = "2025-04-20",
                             time = "4:00 PM",
                             dayOfWeek = "Sunday",
@@ -136,7 +137,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             category = "Freelance"
                         ),
                         TransactionByCalendar(
-                            title = "Internet Bill",
+                            description = "Internet Bill",
                             date = "2025-04-22",
                             time = "1:00 PM",
                             dayOfWeek = "Tuesday",
@@ -152,7 +153,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                     totalExpense = 6000.0,
                     transactions = listOf(
                         TransactionByCalendar(
-                            title = "Salary",
+                            description = "Salary",
                             date = "2025-04-30",
                             time = "9:00 AM",
                             dayOfWeek = "Thursday",
@@ -161,7 +162,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             category = "Salary"
                         ),
                         TransactionByCalendar(
-                            title = "Electric Bill",
+                            description = "Electric Bill",
                             date = "2025-04-29",
                             time = "2:00 PM",
                             dayOfWeek = "Wednesday",
@@ -203,7 +204,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             totalExpense = 2000.0,
                             transactions = listOf(
                                 TransactionByCalendar(
-                                    title = "Freelance Work",
+                                    description = "Freelance Work",
                                     date = "2025-01-05",
                                     time = "4:00 PM",
                                     dayOfWeek = "Sunday",
@@ -212,7 +213,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                                     category = "Freelance"
                                 ),
                                 TransactionByCalendar(
-                                    title = "Grocery Shopping",
+                                    description = "Grocery Shopping",
                                     date = "2025-01-07",
                                     time = "10:00 AM",
                                     dayOfWeek = "Tuesday",
@@ -235,7 +236,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             totalExpense = 2000.0,
                             transactions = listOf(
                                 TransactionByCalendar(
-                                    title = "Freelance Work",
+                                    description = "Freelance Work",
                                     date = "2025-02-03",
                                     time = "4:00 PM",
                                     dayOfWeek = "Monday",
@@ -244,7 +245,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                                     category = "Freelance"
                                 ),
                                 TransactionByCalendar(
-                                    title = "Internet Bill",
+                                    description = "Internet Bill",
                                     date = "2025-02-07",
                                     time = "1:00 PM",
                                     dayOfWeek = "Thursday",
@@ -288,7 +289,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             totalExpense = 2000.0,
                             transactions = listOf(
                                 TransactionByCalendar(
-                                    title = "Freelance Work",
+                                    description = "Freelance Work",
                                     date = "2025-01-05",
                                     time = "4:00 PM",
                                     dayOfWeek = "Sunday",
@@ -297,7 +298,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                                     category = "Freelance"
                                 ),
                                 TransactionByCalendar(
-                                    title = "Grocery Shopping",
+                                    description = "Grocery Shopping",
                                     date = "2025-01-07",
                                     time = "10:00 AM",
                                     dayOfWeek = "Tuesday",
@@ -320,7 +321,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             totalExpense = 2000.0,
                             transactions = listOf(
                                 TransactionByCalendar(
-                                    title = "Freelance Work",
+                                    description = "Freelance Work",
                                     date = "2025-02-03",
                                     time = "4:00 PM",
                                     dayOfWeek = "Monday",
@@ -329,7 +330,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                                     category = "Freelance"
                                 ),
                                 TransactionByCalendar(
-                                    title = "Internet Bill",
+                                    description = "Internet Bill",
                                     date = "2025-02-07",
                                     time = "1:00 PM",
                                     dayOfWeek = "Thursday",
@@ -355,7 +356,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             totalExpense = 2200.0,
                             transactions = listOf(
                                 TransactionByCalendar(
-                                    title = "Consulting",
+                                    description = "Consulting",
                                     date = "2026-01-05",
                                     time = "2:00 PM",
                                     dayOfWeek = "Monday",
@@ -364,7 +365,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                                     category = "Consulting"
                                 ),
                                 TransactionByCalendar(
-                                    title = "Dining Out",
+                                    description = "Dining Out",
                                     date = "2026-01-08",
                                     time = "7:00 PM",
                                     dayOfWeek = "Thursday",
@@ -387,7 +388,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                             totalExpense = 2200.0,
                             transactions = listOf(
                                 TransactionByCalendar(
-                                    title = "Consulting",
+                                    description = "Consulting",
                                     date = "2026-02-02",
                                     time = "1:00 PM",
                                     dayOfWeek = "Monday",
@@ -396,7 +397,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
                                     category = "Consulting"
                                 ),
                                 TransactionByCalendar(
-                                    title = "Electricity Bill",
+                                    description = "Electricity Bill",
                                     date = "2026-02-06",
                                     time = "12:00 PM",
                                     dayOfWeek = "Friday",
@@ -440,6 +441,7 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
     suspend fun getCategoryBreakdown(startDate: String, endDate: String): Result<List<CategoryBreakdown>> {
         return try {
             val response = apiService.getCategoryBreakdown(startDate, endDate)
+            Log.d("CategoryBreakdownResponse", response.toString())
             Result.success(response)
         } catch (e: Exception) {
             Result.failure(e)

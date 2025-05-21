@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,16 +32,16 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem.Analysis,
         BottomNavItem.Transaction,
         BottomNavItem.Category,
-        BottomNavItem.Profie
+        BottomNavItem.Profile
     )
 
     Surface(
-        shape = RoundedCornerShape(topStart = 75.dp, topEnd = 75.dp),
-        color = Color(0xFFEAF4E4),
+        shape = RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp),
+        color = Color(0xFFFFFFFF),
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp)
-            .background(color = Color(0xFFF1FFF3))
+            .navigationBarsPadding()
+            .background(color = Color(0xFF53dba9))
     ) {
         Row(
             modifier = Modifier
@@ -53,8 +54,8 @@ fun BottomNavigationBar(navController: NavController) {
             items.forEach { item ->
                 Box(
                     modifier = Modifier
-                        .size(66.dp)
-                        .padding(6.dp)
+                        .size(65.dp)
+                        .padding(10.dp)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null, // Removes the ripple effect
@@ -69,8 +70,8 @@ fun BottomNavigationBar(navController: NavController) {
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(66.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .size(65.dp)
+                            .clip(RoundedCornerShape(32.dp))
                             .background(if (currentRoute == item.route) Color(0xFF75C78E) else Color.Transparent),
                         contentAlignment = Alignment.Center
                     ) {
@@ -78,7 +79,7 @@ fun BottomNavigationBar(navController: NavController) {
                             painter = painterResource(id = item.icon),
                             contentDescription = item.title,
                             tint = if (currentRoute == item.route) Color.White else Color.Black.copy(alpha = 0.7f),
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }

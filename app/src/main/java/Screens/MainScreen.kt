@@ -6,7 +6,7 @@ import DI.Composables.AnalysisSection.CalendarScreen
 import DI.Composables.CategorySection.AddTransactionScreen
 import DI.Composables.CategorySection.Category_SpecificType_Body
 import DI.Composables.CategorySection.Category_SpecificType_Header
-import DI.Composables.CategorySection.GeneralTemplate
+import DI.Composables.GeneralTemplate
 import DI.Models.BalanceInfo
 import DI.Models.BottomNavItem
 import DI.Composables.NavbarSection.BottomNavigationBar
@@ -18,10 +18,20 @@ import DI.Composables.HomeSection.HomePageScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
 import DI.Composables.TransactionSection.TransactionPageScreen
+import DI.Composables.ChatSection.ChatMessageScreen
+import DI.Composables.ChatSection.ChatScreen
+import DI.Composables.HomeSection.HomePageHeaderSection
+import DI.Composables.ProfileSection.EditProfileScreen
+import DI.Navigation.LocalMainNavBackStackEntry
 import DI.Navigation.Routes
+import DI.Navigation.rememberParentEntry
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.ChatViewModel
+import DI.ViewModels.FriendViewModel
+import ProfileScreen
 import ViewModels.AuthViewModel
 import android.os.Build
+import android.app.Activity
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
@@ -36,31 +46,79 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.friendsapp.FriendsScreen
+import com.example.moneymanagement_frontend.R
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
+fun MainLayout(content: @Composable (NavHostController, Modifier) -> Unit) {
+    val innerNavController = rememberNavController()
+    val currentBackStackEntry by innerNavController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
+    SetLightStatusBar()
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            if (currentRoute in BottomNavItem.allRoutes.map { it.route }) {
+                BottomNavigationBar(innerNavController)
+            }
+        },
+        contentWindowInsets = WindowInsets.safeDrawing
+    ) { padding ->
+        content(innerNavController, Modifier.padding(padding))
+    }
+}
+
+/*
+@Composable
+fun MainScreen(
+    authViewModel: AuthViewModel = hiltViewModel(),
+    friendViewModel: FriendViewModel = hiltViewModel()
+) {
+
+    SetLightStatusBar()
+
     val navController = rememberNavController()
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
 //        containerColor = Color(0xFF53dba9),
-        bottomBar = { BottomNavigationBar(navController) },
+        bottomBar = {
+            val bottomNavRoutes = BottomNavItem.allRoutes.map { it.route }
+            if(currentRoute in bottomNavRoutes) {
+                BottomNavigationBar(navController)
+            }
+        },
         contentWindowInsets = WindowInsets.safeDrawing
     ) { paddingValues ->
         NavHost(
@@ -73,6 +131,11 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
 //                GeneralTemplate(
 //                    contentHeader = { HomePageHeaderSection(navController) },
 //                    contentBody = { HomeScreen() }
+//                GeneralTemplate(
+//                    contentHeader = { HomePageHeaderSection(navController) },
+//                    contentBody = { HomeScreen() }
+//                )
+                FriendsScreen(navController = navController)
             }
 
             composable("add_transaction") {
@@ -110,21 +173,59 @@ fun MainScreen(authViewModel: AuthViewModel = hiltViewModel()) {
                 CalendarScreen()
             }
 
+            composable(
+                route = Routes.ChatMessage,
+                arguments = listOf(navArgument("friendId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
+                ChatMessageScreen(navController = navController , friendId = friendId)
+            }
+
             composable(BottomNavItem.Transaction.route) {
                 TransactionPageScreen(navController)
+//                GeneralTemplate(
+//                    contentHeader = { TransactionHeader() },
+//                    contentBody = { TransactionScreen() },
+//                    fraction = 0.14f
+//                )
+                ChatScreen(navController)
             }
 
             composable(BottomNavItem.Category.route) {
                 GeneralCategoryScreen(navController)
             }
 
-            composable(BottomNavItem.Profie.route) {
-                GeneralTemplate(
-                    contentHeader = { ProfileHeaderSection() },
-                    contentBody = { ProfileScreen() }
-                )
+            composable(BottomNavItem.Profile.route) {
+//                GeneralTemplate(
+//                    contentHeader = { ProfileHeaderSection() },
+//                    contentBody = {
+//                       OcrScreen()
+//                    }
+//                )
+               ProfileScreen(navController)
+//                FriendsScreenTheme {
+//                    FriendsScreen(navController = navController)
+//                }
+            }
+
+            composable(Routes.EditProfile) {
+                EditProfileScreen(navController)
             }
         }
+    }
+} */
+
+@Composable
+fun SetLightStatusBar() {
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        val window = (view.context as Activity).window
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        window.statusBarColor = Color(0xFF53dba9).toArgb()
+
+        val insetsController = WindowInsetsControllerCompat(window, window.decorView)
+        insetsController.isAppearanceLightStatusBars = true  // 👉 This makes icons dark
     }
 }
 

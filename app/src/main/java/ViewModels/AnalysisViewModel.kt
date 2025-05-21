@@ -4,11 +4,13 @@ import DI.Models.Analysis.CategoryBreakdown
 import DI.Models.Analysis.PeriodData
 import DI.Models.Analysis.PeriodGraph
 import DI.Repositories.AnalysisRepository
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,10 +20,10 @@ class AnalysisViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var _periodGraph = MutableStateFlow<Result<PeriodGraph>?>(null)
-    val periodGraph: StateFlow<Result<PeriodGraph>?> = _periodGraph
+    val periodGraph: StateFlow<Result<PeriodGraph>?> = _periodGraph.asStateFlow()
 
     private var _categoryBreakdown = MutableStateFlow<Result<List<CategoryBreakdown>>?>(null)
-    val categoryBreakdown: StateFlow<Result<List<CategoryBreakdown>>?> = _categoryBreakdown
+    val categoryBreakdown: StateFlow<Result<List<CategoryBreakdown>>?> = _categoryBreakdown.asStateFlow()
     init {
         getDailyTransactions()
         getWeeklyTransactions()
@@ -182,8 +184,10 @@ class AnalysisViewModel @Inject constructor(
 
     fun getCategoryBreakdown(startDate: String, endDate: String) {
         viewModelScope.launch {
+            Log.d("CategoryBreakdown", "Fetching category breakdown data for dates: $startDate to $endDate")
             val result = analysisRepository.getCategoryBreakdown(startDate, endDate)
             _categoryBreakdown.value = result
+            Log.d("CategoryBreakdown", "Category breakdown data fetched successfully")
         }
     }
 

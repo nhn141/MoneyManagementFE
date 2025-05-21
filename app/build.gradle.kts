@@ -61,6 +61,7 @@ dependencies {
     implementation (libs.androidx.security.crypto.ktx.v110alpha06)
     implementation(libs.support.annotations)
 
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -119,4 +120,23 @@ dependencies {
     // The compose calendar library for Android
     coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("com.kizitonwose.calendar:compose:2.6.2")
+
+    // Ocr
+    implementation (libs.text.recognition)
+    implementation(libs.jetbrains.kotlinx.coroutines.android)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.jetbrains.kotlinx.coroutines.play.services)
+
+    // Chat
+    implementation (libs.microsoft.signalr)
+    implementation(libs.java.jwt)
+
+    // Display Avatar
+    implementation (libs.glide)
+    annotationProcessor (libs.compiler)
+
+    // Data Store Across Restart
+    implementation (libs.androidx.datastore.preferences)
+
+
 }
