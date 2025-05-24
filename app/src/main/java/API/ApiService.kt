@@ -1,5 +1,9 @@
 package API
 
+import DI.Models.Analysis.BarChart.DailySummary
+import DI.Models.Analysis.BarChart.MonthlySummary
+import DI.Models.Analysis.BarChart.WeeklySummary
+import DI.Models.Analysis.BarChart.YearlySummary
 import DI.Models.Analysis.CategoryBreakdown
 import DI.Models.Auth.RefreshTokenRequest
 import DI.Models.Auth.SignInRequest
@@ -87,6 +91,9 @@ interface ApiService {
     @GET("Messages/latest")
     suspend fun getLatestChats(): LatestChatResponses
 
+    @POST("Messages/read/{otherUserId}")
+    suspend fun markAllMessagesAsReadFromSingleChat(@Path("otherUserId") otherUserId: String): Response<ResponseBody>
+
     // Friend
 
     @GET("Friends")
@@ -121,4 +128,19 @@ interface ApiService {
 
     @GET("Accounts/users/{userId}")
     suspend fun getOtherUserProfile(@Path("userId") userId: String): Profile
+
+    // Calendar
+    @GET("Calendar/daily")
+    suspend fun getDailySummary(@Query("date") date: String): DailySummary
+
+    @GET("Calendar/weekly")
+    suspend fun getWeeklySummary(@Query("startDate") startDate: String): WeeklySummary
+
+    @GET("Calendar/monthly")
+    suspend fun getMonthlySummary(@Query("year") year: String, @Query("month") month: String): MonthlySummary
+
+    @GET("Calendar/yearly")
+    suspend fun getYearlySummary(@Query("year") year: String): YearlySummary
+
+
 }

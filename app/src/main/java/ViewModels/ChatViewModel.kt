@@ -6,19 +6,23 @@ import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
 import DI.Models.Chat.LatestChat
 import DI.Repositories.ChatRepository
+import DI.ViewModels.FriendViewModel.UiEvent
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.microsoft.signalr.HubConnection
 import com.microsoft.signalr.HubConnectionBuilder
 import com.microsoft.signalr.HubConnectionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.reactivex.rxjava3.core.Single
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -133,9 +137,19 @@ class ChatViewModel @Inject constructor(
             val result = chatRepository.getLatestChats()
             result.onSuccess { chatMap ->
                 val latestMessages = chatMap.values.toList()
+                Log.d("ChatViewModel", "Latest Chats: $latestMessages")
                 _latestChats.value = Result.success(latestMessages)
             }.onFailure {
                 _latestChats.value = Result.failure(it)
+            }
+        }
+    }
+
+    fun markAllMessagesAsReadFromSingleChat(friendId: String) {
+        viewModelScope.launch {
+            val result = chatRepository.markAllMessagesAsReadFromSingleChat(friendId)
+            if (result.isSuccess) {
+                getLatestChats()
             }
         }
     }

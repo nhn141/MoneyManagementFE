@@ -48,4 +48,23 @@ class ChatRepository @Inject constructor(private val apiService: ApiService) {
             Result.failure(e)
         }
     }
+
+    suspend fun markAllMessagesAsReadFromSingleChat(otherUserId: String): Result<String> {
+        return try {
+            val response = apiService.markAllMessagesAsReadFromSingleChat(otherUserId)
+            if(response.isSuccessful) {
+                val result = response.body()?.string()
+                if (!result.isNullOrEmpty()) {
+                    Result.success(result)
+                } else {
+                    Result.failure(Exception("Empty result received"))
+                }
+            } else {
+                val error = response.errorBody()?.string() ?: "Unknown error"
+                Result.failure(Exception("Request for marking all messages as read failed: $error"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

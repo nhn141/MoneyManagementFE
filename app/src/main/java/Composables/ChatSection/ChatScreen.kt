@@ -5,6 +5,7 @@ import DI.Composables.ProfileSection.MainColor
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -65,10 +66,16 @@ fun ChatScreen(
     val latestChats = latestChatsResult.value?.getOrNull() ?: emptyList()
     val friendAvatars = profileViewModel.friendAvatars.collectAsState().value
     val isLoadingAvatar = profileViewModel.isLoadingAvatar.collectAsState()
+    val profile = profileViewModel.profile.collectAsState().value?.getOrNull()
 
     LaunchedEffect(latestChats.toList()) { // Convert to list to trigger on changes
         if(latestChats.isNotEmpty()) {
-            val friendIds = latestChats.map { it.latestMessage.receiverId }
+            val friendIds = latestChats.map { chat ->
+                if(chat.latestMessage.senderName == profile?.displayName)
+                    chat.latestMessage.receiverId
+                else
+                    chat.latestMessage.senderId
+            }
             profileViewModel.getFriendAvatars(friendIds)
         }
     }
@@ -76,7 +83,12 @@ fun ChatScreen(
     // When both chats and avatars are ready, update chats with avatarUrls
     val chatsWithAvatars = remember(latestChats, friendAvatars) {
         latestChats.map { chat ->
-            val avatarUrl = friendAvatars.find { it.userId == chat.latestMessage.receiverId }?.avatarUrl ?: ""
+            val friendId =
+                if(chat.latestMessage.senderName == profile?.displayName)
+                    chat.latestMessage.receiverId
+                else
+                    chat.latestMessage.senderId
+            val avatarUrl = friendAvatars.find { it.userId == friendId }?.avatarUrl ?: ""
             chat.copy(avatarUrl = avatarUrl)
         }
     }
@@ -87,11 +99,18 @@ fun ChatScreen(
             chatsWithAvatars
         } else {
             chatsWithAvatars.filter { chat ->
-                chat.latestMessage.receiverName.contains(searchQuery, ignoreCase = true) ||
+                val friendName =
+                    if(chat.latestMessage.senderName == profile?.displayName)
+                        chat.latestMessage.receiverName
+                    else
+                        chat.latestMessage.senderName
+                friendName.contains(searchQuery, ignoreCase = true) ||
                 chat.latestMessage.content.contains(searchQuery, ignoreCase = true)
             }
         }
     }
+
+
 
     val friendsResult = friendViewModel.friends.collectAsState()
     val friends = friendsResult.value?.getOrNull() ?: emptyList()
@@ -150,11 +169,20 @@ fun ChatScreen(
                 items(filteredChats.size) { index ->
                     MessageItem(
                         navController = navController,
-                        title = filteredChats[index].latestMessage.receiverName,
-                        message = filteredChats[index].latestMessage.content,
+                        title =
+                            if(filteredChats[index].latestMessage.senderName == profile?.displayName)
+                                filteredChats[index].latestMessage.receiverName
+                            else filteredChats[index].latestMessage.senderName,
+                        message =
+                            if(filteredChats[index].latestMessage.senderName == profile?.displayName)
+                                "you: ${filteredChats[index].latestMessage.content}"
+                            else filteredChats[index].latestMessage.content,
                         time = filteredChats[index].latestMessage.sentAt,
                         count = filteredChats[index].unreadCount,
-                        friendId = filteredChats[index].latestMessage.receiverId,
+                        friendId =
+                            if(filteredChats[index].latestMessage.senderName == profile?.displayName)
+                                filteredChats[index].latestMessage.receiverId
+                            else filteredChats[index].latestMessage.senderId,
                         friendAvatarUrl = filteredChats[index].avatarUrl ?: "",
                         isLoadingAvatar = isLoadingAvatar.value,
                         isOnline = friends.firstOrNull {

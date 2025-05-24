@@ -8,6 +8,7 @@ import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.FriendSection.FriendProfileScreen
 import DI.Composables.GeneralTemplate
+import DI.Composables.OcrSection.OcrScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Models.BottomNavItem
 import DI.ViewModels.AnalysisViewModel
@@ -151,17 +152,18 @@ private fun InnerNavHost(
         }
 
         composable(BottomNavItem.Analysis.route) {
-            GeneralTemplate(
-                contentHeader = { AnalysisHeader() },
-                contentBody = { AnalysisBody(
-                    navController = navController,
-                    analysisViewModel = analysisViewModel)
-                }
+            AnalysisBody(
+                navController = navController,
+                analysisViewModel = analysisViewModel
             )
         }
 
         composable(Routes.Calendar) {
             CalendarScreen(analysisViewModel = analysisViewModel)
+        }
+
+        composable(BottomNavItem.Category.route) {
+            OcrScreen()
         }
     }
 }

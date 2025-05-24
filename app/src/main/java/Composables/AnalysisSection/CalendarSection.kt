@@ -6,9 +6,8 @@ import DI.Models.Analysis.CategoryBreakdownPieData
 import DI.Models.Analysis.DateSelection
 import DI.ViewModels.AnalysisViewModel
 import android.util.Log
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,13 +19,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,22 +54,6 @@ import java.util.*
 
 @Composable
 fun CalendarScreen(analysisViewModel: AnalysisViewModel) {
-    GeneralTemplate(
-        contentHeader = { CalendarHeader() },
-        contentBody = { CalendarBody(analysisViewModel) },
-        fraction = 0.1f
-    )
-}
-
-@Composable
-fun CalendarHeader() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "Calendar", fontSize = 24.sp, fontWeight = FontWeight.W600)
-    }
-}
-
-@Composable
-fun CalendarBody(analysisViewModel: AnalysisViewModel) {
     val currentDate = LocalDate.of(2025, 4, 21)
     val startMonth = remember { YearMonth.of(2000, 1) }
     val endMonth = remember { YearMonth.of(2100, 12) }
@@ -121,203 +109,240 @@ fun CalendarBody(analysisViewModel: AnalysisViewModel) {
 
     var statisticsMode by remember { mutableStateOf("Aggregate") }
 
-    Column(
+    // Modern gradient background
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFF8FAFF),
+                        Color(0xFFE8F4FD),
+                        Color(0xFFF0F9FF)
+                    )
+                )
+            )
     ) {
         Column(
-            modifier = Modifier.padding(top = 20.dp, start = 55.dp, end = 55.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            Row(
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // Modern Header Section
+            ModernHeaderSection(
+                selectedMonth = selectedMonth,
+                selectedYear = selectedYear,
+                months = months,
+                years = years,
+                monthExpanded = monthExpanded,
+                yearExpanded = yearExpanded,
+                onMonthExpandedChange = { monthExpanded = it },
+                onYearExpandedChange = { yearExpanded = it },
+                onMonthSelected = { month ->
+                    selectedMonth = month
+                    val monthIndex = months.indexOf(month) + 1
+                    coroutineScope.launch {
+                        state.scrollToMonth(YearMonth.of(selectedYear.toInt(), monthIndex))
+                    }
+                },
+                onYearSelected = { year ->
+                    selectedYear = year
+                    val monthIndex = months.indexOf(selectedMonth) + 1
+                    coroutineScope.launch {
+                        state.scrollToMonth(YearMonth.of(year.toInt(), monthIndex))
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Modern Calendar Card
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .shadow(8.dp, RoundedCornerShape(24.dp)),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                // Month Dropdown
-                Box {
-                    TextButton(onClick = { monthExpanded = !monthExpanded }) {
-                        Text(selectedMonth, color = Color(0xFF00D09E), fontSize = 20.sp)
-                        Icon(Icons.Default.ArrowDropDown, "Select Month", tint = Color(0xFF00D09E))
-                    }
-                    if (monthExpanded) {
-                        Popup(
-                            alignment = Alignment.TopStart,
-                            offset = IntOffset(0, 110)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(120.dp)
-                                    .heightIn(max = 200.dp)
-                                    .background(Color.White, RoundedCornerShape(8.dp))
-                                    .border(1.dp, Color(0xFF00D09E), RoundedCornerShape(8.dp))
-                                    .padding(8.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.verticalScroll(rememberScrollState())
-                                ) {
-                                    months.forEach { month ->
-                                        Text(
-                                            text = month,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 8.dp)
-                                                .clickable {
-                                                    selectedMonth = month
-                                                    monthExpanded = false
-                                                    val monthIndex = months.indexOf(month) + 1
-                                                    coroutineScope.launch {
-                                                        state.scrollToMonth(YearMonth.of(selectedYear.toInt(), monthIndex))
-                                                    }
-                                                },
-                                            color = Color(0xFF00D09E),
-                                            fontSize = 16.sp,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
+                Column(
+                    modifier = Modifier.padding(20.dp)
+                ) {
+                    // Days of Week Header
+                    ModernDaysOfWeekTitle(daysOfWeek = daysOfWeek)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Calendar Grid
+                    HorizontalCalendar(
+                        state = state,
+                        dayContent = { day ->
+                            ModernDay(
+                                day = day,
+                                selection = selection
+                            ) { clickedDay ->
+                                selection = handleRangeSelection(clickedDay.date, selection)
                             }
                         }
-                    }
-
-                }
-
-                // Year Dropdown
-                Box {
-                    TextButton(onClick = { yearExpanded = !yearExpanded }) {
-                        Text(selectedYear, color = Color(0xFF00D09E), fontSize = 20.sp)
-                        Icon(Icons.Default.ArrowDropDown, "Select Year", tint = Color(0xFF00D09E))
-                    }
-                    if (yearExpanded) {
-                        Popup(
-                            alignment = Alignment.TopStart,
-                            offset = IntOffset(0, 110)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(120.dp)
-                                    .heightIn(max = 200.dp)
-                                    .background(Color.White, RoundedCornerShape(8.dp))
-                                    .border(1.dp, Color(0xFF00D09E), RoundedCornerShape(8.dp))
-                                    .padding(8.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.verticalScroll(rememberScrollState())
-                                ) {
-                                    years.forEach { year ->
-                                        Text(
-                                            text = year,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 8.dp)
-                                                .clickable {
-                                                    selectedYear = year
-                                                    yearExpanded = false
-                                                    val monthIndex = months.indexOf(selectedMonth) + 1
-                                                    coroutineScope.launch {
-                                                        state.scrollToMonth(YearMonth.of(year.toInt(), monthIndex))
-                                                    }
-                                                },
-                                            color = Color(0xFF00D09E),
-                                            fontSize = 16.sp,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    )
                 }
             }
 
-            // Days of Week Header
-            DaysOfWeekTitle(daysOfWeek = daysOfWeek)
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Calendar Grid
-            HorizontalCalendar(
-                state = state,
-                dayContent = { day ->
-                    Day(
-                        day = day,
-                        selection = selection
-                    ) { clickedDay ->
-                        selection = handleRangeSelection(clickedDay.date, selection)
-                    }
-                },
-
+            // Modern Statistics Mode Toggle
+            ModernStatisticsModeToggle(
+                selectedMode = statisticsMode,
+                onModeSelected = { statisticsMode = it }
             )
-        }
-        Column(
-            modifier = Modifier.padding(top = 16.dp, start = 24.dp, end = 24.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                StatisticsModeButton(
-                    mode = "Aggregate",
-                    selectedMode = statisticsMode
-                ) { selected ->
-                    statisticsMode = selected
-                }
-                StatisticsModeButton(
-                    mode = "Pie Charts",
-                    selectedMode = statisticsMode
-                ) { selected ->
-                    statisticsMode = selected
-                }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Content Section
+            if (statisticsMode == "Aggregate") {
+                ModernCategoryAggregateSection(categoryBreakdown, selection)
+            } else {
+                ModernCategoryBreakdownPieChart(categoryBreakdown)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            if(statisticsMode == "Aggregate") {
-                CategoryAggregateSection(categoryBreakdown, selection)
-            } else {
-                CategoryBreakdownPieChart(categoryBreakdown)
-            }
         }
     }
 }
 
 @Composable
-fun StatisticsModeButton(
-    mode: String,
-    selectedMode: String,
-    onModeSelected: (String) -> Unit
+fun ModernHeaderSection(
+    selectedMonth: String,
+    selectedYear: String,
+    months: List<String>,
+    years: List<String>,
+    monthExpanded: Boolean,
+    yearExpanded: Boolean,
+    onMonthExpandedChange: (Boolean) -> Unit,
+    onYearExpandedChange: (Boolean) -> Unit,
+    onMonthSelected: (String) -> Unit,
+    onYearSelected: (String) -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (mode == selectedMode) Color(0xFF00D09E) else Color(0xFFDFF7E2))
-            .clickable { onModeSelected(mode) }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = mode,
-            fontWeight = FontWeight.W500,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 32.dp),
+        // Month Dropdown
+        ModernDropdown(
+            value = selectedMonth,
+            expanded = monthExpanded,
+            onExpandedChange = onMonthExpandedChange,
+            items = months,
+            onItemSelected = onMonthSelected
+        )
+
+        // Year Dropdown
+        ModernDropdown(
+            value = selectedYear,
+            expanded = yearExpanded,
+            onExpandedChange = onYearExpandedChange,
+            items = years,
+            onItemSelected = onYearSelected
         )
     }
 }
 
 @Composable
-fun DaysOfWeekTitle(daysOfWeek: List<DayOfWeek>) {
+fun ModernDropdown(
+    value: String,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    items: List<String>,
+    onItemSelected: (String) -> Unit
+) {
+    Box {
+        Card(
+            modifier = Modifier
+                .clickable { onExpandedChange(!expanded) }
+                .animateContentSize(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = value,
+                    color = Color(0xFF1A73E8),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Icon(
+                    Icons.Default.ArrowDropDown,
+                    contentDescription = "Dropdown",
+                    tint = Color(0xFF1A73E8),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        if (expanded) {
+            Popup(
+                alignment = Alignment.TopStart,
+                offset = IntOffset(0, 60)
+            ) {
+                Card(
+                    modifier = Modifier
+                        .width(160.dp)
+                        .heightIn(max = 240.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                            .padding(8.dp)
+                    ) {
+                        items.forEach { item ->
+                            Text(
+                                text = item,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onItemSelected(item)
+                                        onExpandedChange(false)
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                color = if (item == value) Color(0xFF1A73E8) else Color(0xFF374151),
+                                fontSize = 16.sp,
+                                fontWeight = if (item == value) FontWeight.SemiBold else FontWeight.Normal,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ModernDaysOfWeekTitle(daysOfWeek: List<DayOfWeek>) {
     Row(modifier = Modifier.fillMaxWidth()) {
         for (dayOfWeek in daysOfWeek) {
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
-                    color = Color(0xFF3299FF),
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.W500
+                    color = Color(0xFF6B7280),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -325,7 +350,7 @@ fun DaysOfWeekTitle(daysOfWeek: List<DayOfWeek>) {
 }
 
 @Composable
-fun Day(
+fun ModernDay(
     day: CalendarDay,
     selection: DateSelection,
     onClick: (CalendarDay) -> Unit
@@ -335,35 +360,116 @@ fun Day(
     val isEnd = selection.end?.equals(day.date) == true
     val isSelected = isStart || isEnd || isInRange
 
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.1f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+    )
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
+            .padding(2.dp)
             .then(
                 when {
                     isStart -> Modifier
-                        .background(Color(0xFF2E7D32), RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(Color(0xFF1A73E8), Color(0xFF4285F4))
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
                     isEnd -> Modifier
-                        .background(Color(0xFF2E7D32), RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(Color(0xFF4285F4), Color(0xFF1A73E8))
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
                     isInRange -> Modifier
-                        .background(Color(0xFFA5D6A7))
+                        .background(
+                            Color(0xFFE3F2FD),
+                            shape = RoundedCornerShape(8.dp)
+                        )
                     else -> Modifier
                 }
             )
-            .clickable(
-                enabled = true,
-                onClick = { onClick(day) }
-            ),
+            .clickable { onClick(day) },
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = day.date.dayOfMonth.toString(),
             color = when {
-                isSelected -> Color.White
-                day.position != DayPosition.MonthDate -> Color.Gray
-                else -> Color.Black
+                isStart || isEnd -> Color.White
+                isInRange -> Color(0xFF1A73E8)
+                day.position != DayPosition.MonthDate -> Color(0xFFD1D5DB)
+                else -> Color(0xFF374151)
             },
             fontSize = 16.sp,
-            fontWeight = if (isStart || isEnd) FontWeight.Bold else FontWeight.Normal
+            fontWeight = if (isStart || isEnd) FontWeight.Bold else FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+fun ModernStatisticsModeToggle(
+    selectedMode: String,
+    onModeSelected: (String) -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(4.dp)
+        ) {
+            ModernToggleButton(
+                text = "Aggregate",
+                isSelected = selectedMode == "Aggregate",
+                onClick = { onModeSelected("Aggregate") },
+                modifier = Modifier.weight(1f)
+            )
+            ModernToggleButton(
+                text = "Pie Charts",
+                isSelected = selectedMode == "Pie Charts",
+                onClick = { onModeSelected("Pie Charts") },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun ModernToggleButton(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val animatedElevation by animateDpAsState(
+        targetValue = 0.dp,
+        animationSpec = tween(300)
+    )
+
+    Card(
+        modifier = modifier
+            .clickable { onClick() }
+            .padding(2.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) Color.White else Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = animatedElevation)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            textAlign = TextAlign.Center,
+            color = if (isSelected) Color(0xFF1A73E8) else Color(0xFF6B7280),
+            fontSize = 16.sp,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
         )
     }
 }
@@ -383,32 +489,203 @@ fun handleRangeSelection(clickedDate: LocalDate, currentSelection: DateSelection
 }
 
 @Composable
-fun CategoryAggregateSection(categoryBreakdown: List<CategoryBreakdown?>, selection: DateSelection) {
+fun ModernCategoryAggregateSection(categoryBreakdown: List<CategoryBreakdown?>, selection: DateSelection) {
     val selectionDateRange = selection.getSelectionAsYearMonthRange()
-    if(categoryBreakdown.isEmpty()) {
-        Column(
+
+    if (categoryBreakdown.isEmpty()) {
+        Card(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            Text("No category breakdown data available", fontWeight = FontWeight.W500, fontSize = 16.sp, color = Color.Black)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "No Data Available",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 18.sp,
+                    color = Color(0xFF6B7280)
+                )
+                Text(
+                    "Select a date range to view analytics",
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp,
+                    color = Color(0xFF9CA3AF),
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
         }
     } else {
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(categoryBreakdown.size) { item ->
-                val category = categoryBreakdown[item]?.category ?: ""
-                val totalIncome = categoryBreakdown[item]?.totalIncome.toString()
-                val totalExpense = categoryBreakdown[item]?.totalExpenses.toString()
-                AggregateItem(category, selectionDateRange, totalIncome, totalExpense)
+            categoryBreakdown.forEach { item ->
+                val category = item?.category ?: ""
+                val totalIncome = item?.totalIncome.toString()
+                val totalExpense = item?.totalExpenses.toString()
+                ModernAggregateItem(category, selectionDateRange, totalIncome, totalExpense)
+            }
+        }
+    }
+}
+
+@Composable
+fun ModernAggregateItem(category: String, date: String, income: String, expense: String) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // Header Section
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(Color(0xFF4285F4), Color(0xFF1A73E8))
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_gifts),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = category,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF1F2937)
+                    )
+                    Text(
+                        text = date,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 13.sp,
+                        color = Color(0xFF6B7280)
+                    )
+                }
+            }
+
+            // Divider
+            Divider(
+                color = Color(0xFFE5E7EB),
+                thickness = 1.dp
+            )
+
+            // Statistics
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ModernStatisticItem(
+                    type = "Income",
+                    amount = income,
+                    icon = Icons.Default.TrendingUp,
+                    color = Color(0xFF10B981)
+                )
+                ModernStatisticItem(
+                    type = "Expense",
+                    amount = expense,
+                    icon = Icons.Default.TrendingDown,
+                    color = Color(0xFFEF4444)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ModernStatisticItem(
+    type: String,
+    amount: String,
+    icon: ImageVector,
+    color: Color
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.05f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(color.copy(alpha = 0.1f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = type,
+                        tint = color,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Text(
+                    text = type,
+                    color = Color(0xFF374151),
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp
+                )
+            }
+
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Text(
+                    text = amount,
+                    color = color,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
             }
         }
     }
 }
 
 fun generateColorFromHSV(index: Int, total: Int): Color {
-    val hue = (360f / total) * index  // evenly distribute hues
+    val hue = (360f / total) * index
     val saturation = 0.8f
     val value = 0.95f
 
@@ -416,17 +693,28 @@ fun generateColorFromHSV(index: Int, total: Int): Color {
     return Color(hsvColor)
 }
 
-
 @Composable
-fun CategoryBreakdownPieChart(categoryBreakdown: List<CategoryBreakdown?>) {
-    if(categoryBreakdown.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp),
-            contentAlignment = Alignment.Center
+fun ModernCategoryBreakdownPieChart(categoryBreakdown: List<CategoryBreakdown?>) {
+    if (categoryBreakdown.isEmpty()) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            Text("No data to display", color = Color.Gray)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "No data to display",
+                    color = Color(0xFF6B7280),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
         return
     }
@@ -457,200 +745,94 @@ fun CategoryBreakdownPieChart(categoryBreakdown: List<CategoryBreakdown?>) {
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        CustomPieChart("Income", incomeBreakdownList)
-        CustomPieChart("Expenses", expenseBreakdownList)
+        ModernCustomPieChart(
+            type = "Income",
+            breakdownList = incomeBreakdownList,
+            modifier = Modifier.weight(1f)
+        )
+        ModernCustomPieChart(
+            type = "Expenses",
+            breakdownList = expenseBreakdownList,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
 @Composable
-fun CustomPieChart(type: String, breakdownList: List<CategoryBreakdownPieData>) {
-    Column(
-        modifier = Modifier.verticalScroll(rememberScrollState())
-    ) {
-        Text(
-            text = type,
-            fontWeight = FontWeight.W500,
-            fontSize = 20.sp,
-            color = if(type == "Income") Color(0xFF00D09E) else Color(0xFFF86058),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(start = 32.dp, bottom = 16.dp)
-        )
-        PieChart(
-            modifier = Modifier.size(150.dp),
-            data = breakdownList.map { it ->
-                Pie(
-                    label = it.label,
-                    data = it.percentage,
-                    color = it.color,
-                    selectedColor = Color(0xFF00D09E)
-                )
-            },
-            selectedScale = 1.2f,
-            scaleAnimEnterSpec = spring<Float>(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
-            colorAnimEnterSpec = tween(300),
-            colorAnimExitSpec = tween(300),
-            scaleAnimExitSpec = tween(300),
-            spaceDegreeAnimExitSpec = tween(300),
-            style = Pie.Style.Fill
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Notes
-        breakdownList.forEach {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 4.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .background(it.color, shape = CircleShape)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "${it.label}: ${it.percentage}%",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.W500,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AggregateItem(category: String, date: String, income: String, expense: String) {
-    Box(
-        modifier = Modifier.fillMaxWidth()
-
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, Color(0xFF6DB6FE), RoundedCornerShape(16.dp))
-            .background(Color(0xFFF3FFFC))
-            .padding(32.dp)
+fun ModernCustomPieChart(
+    type: String,
+    breakdownList: List<CategoryBreakdownPieData>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                // Icon
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFF3299FF))
-                        .align(Alignment.CenterVertically)
-                        .padding(12.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_gifts),
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-
-                // Header and date
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(start = 8.dp, end = 8.dp)
-                ) {
-                    Text(
-                        text = category,
-                        fontWeight = FontWeight.W500,
-                        fontSize = 16.sp,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = date,
-                        fontWeight = FontWeight.W500,
-                        fontSize = 12.sp,
-                        color = Color(0xFF0068FF)
-                    )
-                }
-            }
-
-            // Slider
-            Box(
-                modifier = Modifier.fillMaxWidth()
-                    .background(
-                        color = Color(0xFF6DB6FE),
-                        shape = RectangleShape
-                    )
-                    .height(1.dp)
+            Text(
+                text = type,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                color = if (type == "Income") Color(0xFF10B981) else Color(0xFFEF4444),
+                modifier = Modifier.padding(bottom = 20.dp)
             )
 
-            // Item
-            StatisticItem(type = "Income", amount = income)
-            StatisticItem(type = "Expense", amount = expense)
-
-        }
-    }
-}
-
-@Composable
-private fun StatisticItem(type: String, amount: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .border(
-                1.dp,
-                if(type == "Income") Color(0xFF00D09E) else Color(0xFFF86058),
-                RoundedCornerShape(8.dp))
-            .background(if(type == "Income") Color(0xFFCFFFF3) else Color(0xFFFFE8E7))
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Vertical Slider
-                Box(
-                    modifier = Modifier
-                        .width(5.dp)
-                        .height(20.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if(type == "Income") Color(0xFF00D09E) else Color(0xFFF86058))
-                )
-                Text(
-                    text = type,
-                    color = if(type == "Income") Color(0xFF0A3D2D) else Color(0xFF5E1410),
-                    fontWeight = FontWeight.W500
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(end = 8.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFFFFFFF))
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = amount,
-                        color = if(type == "Income") Color(0xFF17A482) else Color(0xFFF86058),
-                        fontWeight = FontWeight.W600,
+            PieChart(
+                modifier = Modifier.size(180.dp),
+                data = breakdownList.map {
+                    Pie(
+                        label = it.label,
+                        data = it.percentage,
+                        color = it.color,
+                        selectedColor = Color(0xFF1A73E8)
                     )
+                },
+                selectedScale = 1.15f,
+                scaleAnimEnterSpec = spring<Float>(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                ),
+                colorAnimEnterSpec = tween(400),
+                colorAnimExitSpec = tween(400),
+                scaleAnimExitSpec = tween(400),
+                spaceDegreeAnimExitSpec = tween(400),
+                style = Pie.Style.Fill
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Legend
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                breakdownList.forEach { item ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .background(item.color, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "${item.label}: ${String.format("%.1f", item.percentage)}%",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF374151),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }
-
     }
 }

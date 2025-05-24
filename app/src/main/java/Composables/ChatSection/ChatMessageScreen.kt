@@ -8,6 +8,7 @@ import DI.Navigation.Routes
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -77,6 +78,7 @@ fun ChatMessageScreen(
     LaunchedEffect(Unit) {
         chatViewModel.getChatWithOtherUser(friendId)
         profileViewModel.getFriendAvatar(friendId)
+        chatViewModel.markAllMessagesAsReadFromSingleChat(friendId)
     }
 
     val chatMessagesResult = chatViewModel.chatMessages.collectAsState()
@@ -88,10 +90,12 @@ fun ChatMessageScreen(
     val friendsResult = friendViewModel.friends.collectAsState()
     val friends = friendsResult.value?.getOrNull() ?: emptyList()
 
+    val friendName = chatMessages.firstOrNull { it.senderId == friendId }?.senderName ?: ""
+
     Scaffold(
         topBar = {
             ChatTopBar(
-                userName = "Test User",
+                userName = friendName,
                 isOnline = friends.firstOrNull { it.userId == friendId}?.isOnline ?: false,
                 friendAvatarUrl = friendAvatar.avatarUrl,
                 isLoadingAvatar = isLoadingAvatar.value,
