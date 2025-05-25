@@ -3,24 +3,38 @@ package DI.Composables.CategorySection
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel
 import DI.ViewModels.WalletViewModel
+import DI.Models.Ocr.OcrData
+import DI.ViewModels.OcrViewModel
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,10 +46,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import java.util.Calendar
 import com.vanpra.composematerialdialogs.*
@@ -46,15 +63,21 @@ import java.time.LocalDate
 import java.text.SimpleDateFormat
 import java.time.LocalTime
 import java.util.Locale
+import androidx.compose.ui.geometry.Size
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.toSize
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TransactionForm(viewModel: TransactionScreenViewModel,
                     navController: NavController,
                     type: String,
-                    onTypeChange: (String) -> Unit) {
-    val categoryViewModel: CategoryViewModel = hiltViewModel()
-    val walletViewModel: WalletViewModel = hiltViewModel()
+                    onTypeChange: (String) -> Unit,
+                    categoryViewModel: CategoryViewModel,
+                    ocrViewModel: OcrViewModel,
+                    walletViewModel: WalletViewModel) {
     val context = LocalContext.current
     val categoriesResult by categoryViewModel.categories.collectAsState()
     val walletsResult by walletViewModel.wallets.collectAsState()
@@ -93,18 +116,34 @@ fun TransactionForm(viewModel: TransactionScreenViewModel,
 
     fun formatAmount(input: String): String {
         return input.toLongOrNull()?.let {
-            NumberFormat.getNumberInstance(Locale.US).format(it)
+            NumberFormat.getNumberInstance(Locale.US)
+                .format(it)
+                .replace(",", ".")
         } ?: input
     }
 
+
     fun unformatAmount(formatted: String): String {
-        return formatted.replace(",", "").replace(".", "")
+        return formatted.replace(".", "").replace(",", "")
     }
 
     var rawAmount by remember { mutableStateOf("") }
 
     val formattedAmount by remember(rawAmount) {
         mutableStateOf(formatAmount(rawAmount))
+    }
+
+    val ocrResult by ocrViewModel.ocrResult.collectAsState()
+
+    LaunchedEffect(ocrResult) {
+        ocrResult?.let { result ->
+            rawAmount = result.amount.toBigDecimal().toPlainString()
+
+            walletsResult?.getOrNull()?.find { it.walletName.equals("Bank", ignoreCase = true) }?.let { wallet ->
+                walletName = wallet.walletName
+                walletId = wallet.walletID
+            }
+        }
     }
 
 
@@ -296,46 +335,138 @@ fun TransactionTextField(
     Spacer(modifier = Modifier.height(8.dp))
 }
 
+
 @Composable
 fun DropdownSelector(
     label: String,
     selectedName: String,
     options: List<Pair<String, String>>,
-    onSelect: (String, String) -> Unit
+    onSelect: (String, String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "Select an option",
+    enabled: Boolean = true,
+    isError: Boolean = false,
+    errorMessage: String? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val animatedRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(durationMillis = 200),
+        label = "dropdown_rotation"
+    )
+    val textFieldSize = remember { mutableStateOf(Size.Zero) }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = selectedName,
-            onValueChange = {},
-            label = { Text(label) },
-            readOnly = true,
-            shape = RoundedCornerShape(24.dp),
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                    modifier = Modifier.clickable { expanded = true }
-                )
-            },
+    Column(modifier = modifier) {
+        Box(
             modifier = Modifier.fillMaxWidth()
-        )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
         ) {
-            options.forEach { (name, id) ->
-                DropdownMenuItem(
-                    text = { Text(name) },
-                    onClick = {
-                        onSelect(name, id)
-                        expanded = false
+            OutlinedTextField(
+                value = selectedName.ifEmpty { "" },
+                onValueChange = {},
+                label = { Text(label) },
+                placeholder = {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                },
+                readOnly = true,
+                enabled = enabled,
+                isError = isError,
+                shape = RoundedCornerShape(24.dp),
+                trailingIcon = {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable(
+                                enabled = enabled,
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = LocalIndication.current
+                            ) {
+                                expanded = !expanded
+                            }
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = if (expanded) "Collapse" else "Expand",
+                            tint = if (enabled) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                            },
+                            modifier = Modifier.rotate(animatedRotation)
+                        )
                     }
-                )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                        textFieldSize.value = coordinates.size.toSize()
+                    }
+                    .clickable(
+                        enabled = enabled,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        expanded = !expanded
+                    }
+            )
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .width(with(LocalDensity.current) { textFieldSize.value.width.toDp() })
+            ) {
+                options.forEach { (name, id) ->
+                    val isSelected = selectedName == name
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+                                )
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Selected",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        },
+                        onClick = {
+                            onSelect(name, id)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
+
+        // Error message
+        if (isError && !errorMessage.isNullOrBlank()) {
+            Text(
+                text = errorMessage,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
-    Spacer(modifier = Modifier.height(8.dp))
 }
 

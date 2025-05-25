@@ -10,10 +10,7 @@ import DI.Composables.GeneralTemplate
 import DI.Models.BalanceInfo
 import DI.Models.BottomNavItem
 import DI.Composables.NavbarSection.BottomNavigationBar
-import DI.Composables.CategorySection.GeneralCategoryScreen
 import DI.Composables.CategorySection.HeaderSection
-import DI.Composables.ProfileSection.ProfileHeaderSection
-import DI.Composables.ProfileSection.ProfileScreen
 import DI.Composables.HomeSection.HomePageScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen

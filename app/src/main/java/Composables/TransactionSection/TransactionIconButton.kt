@@ -1,5 +1,6 @@
 package DI.Composables.TransactionSection
 
+import DI.Composables.CategorySection.getIconResIdByName
 import DI.Models.Category.CategoryIconStorage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,16 +17,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.moneymanagement_frontend.R
 
 @Composable
-fun TransactionIconButton(navController: NavController,
-                          transactionID: String,
-                          categoryID: String) {
+fun TransactionIconButton(
+    navController: NavController,
+    transactionID: String,
+    categoryID: String
+) {
     val context = LocalContext.current
     val iconStorage = remember { CategoryIconStorage(context) }
-
-    val iconRes = iconStorage.getIcon(categoryID)
+    val iconKey = iconStorage.getIconKey(categoryID)
+    val iconRes = getIconResIdByName(context, iconKey)
 
     Button(
         onClick = {
@@ -45,16 +47,4 @@ fun TransactionIconButton(navController: NavController,
     }
 }
 
-fun getCategoryIcon(categoryName: String): Int {
-    return when (categoryName.trim().lowercase()) {
-        "savings" -> R.drawable.ic_savings
-        "medicine" -> R.drawable.ic_medicine
-        "groceries" -> R.drawable.ic_groceries
-        "rent" -> R.drawable.ic_rent
-        "transport" -> R.drawable.ic_transport
-        "food" -> R.drawable.ic_food
-        "entertainment" -> R.drawable.ic_entertainment
-        else -> R.drawable.ic_more
-    }
-}
 

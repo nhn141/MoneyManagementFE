@@ -4,6 +4,9 @@ import DI.ViewModels.TransactionScreenViewModel
 import android.os.Build
 import androidx.annotation.RequiresApi
 import DI.Composables.GeneralTemplate
+import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.OcrViewModel
+import DI.ViewModels.WalletViewModel
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,12 +18,35 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AddTransactionScreen(navController: NavController) {
-    val viewModel: TransactionScreenViewModel = hiltViewModel()
+fun AddTransactionScreen(
+    navController: NavController,
+    transactionViewModel: TransactionScreenViewModel,
+    categoryViewModel: CategoryViewModel,
+    walletViewModel: WalletViewModel,
+    ocrViewModel: OcrViewModel
+) {
     var type by remember { mutableStateOf("Expense") }
+
     GeneralTemplate(
-        contentHeader = { AddTransactionHeaderSection(navController, type) { newType -> type = newType } },
-        contentBody = { TransactionForm(viewModel, navController, type, onTypeChange = { type = it }) },
+        contentHeader = {
+            AddTransactionHeaderSection(
+                navController = navController,
+                currentType = type,
+                onTypeChange = { newType -> type = newType },
+                ocrViewModel = ocrViewModel
+            )
+        },
+        contentBody = {
+            TransactionForm(
+                transactionViewModel,
+                navController,
+                type,
+                onTypeChange = { type = it },
+                categoryViewModel = categoryViewModel,
+                walletViewModel = walletViewModel,
+                ocrViewModel = ocrViewModel
+            )
+        },
         fraction = 0.14f,
     )
 }

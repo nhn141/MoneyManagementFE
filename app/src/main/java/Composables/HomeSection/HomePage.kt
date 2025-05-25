@@ -1,7 +1,7 @@
 package DI.Composables.HomeSection
 
 import DI.Composables.CategorySection.CustomProgressBar
-import DI.Composables.CategorySection.GeneralTemplate
+import DI.Composables.GeneralTemplate
 import DI.Composables.TransactionSection.GeneralTransactionSummary
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel

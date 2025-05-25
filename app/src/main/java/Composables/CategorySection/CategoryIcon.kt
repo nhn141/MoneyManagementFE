@@ -1,15 +1,19 @@
 package DI.Composables.CategorySection
 
-import com.example.moneymanagement_frontend.R
+import android.content.Context
 
 val categoryIcons = listOf(
-    R.drawable.ic_savings,
-    R.drawable.ic_medicine,
-    R.drawable.ic_groceries,
-    R.drawable.ic_rent,
-    R.drawable.ic_transport,
-    R.drawable.ic_food,
-    R.drawable.ic_entertainment,
-    R.drawable.ic_gifts,
-    R.drawable.ic_more
+    "ic_savings",
+    "ic_medicine",
+    "ic_groceries",
+    "ic_rent",
+    "ic_transport",
+    "ic_food",
+    "ic_entertainment",
+    "ic_gifts",
+    "ic_more"
 )
+
+fun getIconResIdByName(context: Context, iconName: String): Int {
+    return context.resources.getIdentifier(iconName, "drawable", context.packageName)
+}

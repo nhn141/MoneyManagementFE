@@ -42,69 +42,66 @@ interface ApiService {
     @POST("Accounts/SignUp")
     suspend fun signUp(@Body request: SignUpRequest): Response<ResponseBody>
 
-        @POST("Accounts/SignIn")
-        suspend fun signIn(@Body request: SignInRequest): Response<ResponseBody>
+    @POST("Accounts/SignIn")
+    suspend fun signIn(@Body request: SignInRequest): Response<ResponseBody>
 
-        @POST("Accounts/RefreshToken")
-        suspend fun refreshToken(@Body token: RefreshTokenRequest): Response<ResponseBody>
+    @POST("Accounts/RefreshToken")
+    suspend fun refreshToken(@Body token: RefreshTokenRequest): Response<ResponseBody>
 
-        @GET("Categories")
-        suspend fun getCategories(): List<Category>
+    @GET("Categories")
+    suspend fun getCategories(): List<Category>
 
-        @GET("Wallets")
-        suspend fun getWallets(): List<Wallet>
+    @GET("Wallets")
+    suspend fun getWallets(): List<Wallet>
 
-        @POST("Categories")
-        suspend fun addCategory(@Body category: Category): Response<Category>
+    @POST("Categories")
+    suspend fun addCategory(@Body category: Category): Response<Category>
 
-        @GET("Categories/{id}")
-        suspend fun getCategoryById(@retrofit2.http.Path("id") id: String): Response<Category>
+    @GET("Categories/{id}")
+    suspend fun getCategoryById(@retrofit2.http.Path("id") id: String): Response<Category>
 
-        @PUT("Categories")
-        suspend fun updateCategory(@Body category: Category): Response<Category>
+    @PUT("Categories")
+    suspend fun updateCategory(@Body category: Category): Response<Category>
 
-        @DELETE("Categories/{id}")
-        suspend fun deleteCategory(@retrofit2.http.Path("id") id: String): Response<ResponseBody>
+    @DELETE("Categories/{id}")
+    suspend fun deleteCategory(@retrofit2.http.Path("id") id: String): Response<ResponseBody>
 
-        @POST("Wallets")
-        suspend fun createWallet(@Body wallet: Wallet): Response<ResponseBody>
+    @POST("Wallets")
+    suspend fun createWallet(@Body wallet: Wallet): Response<ResponseBody>
 
-        @GET("Transactions")
-        suspend fun getTransactions(): List<Transaction>
+    @GET("Transactions")
+    suspend fun getTransactions(): List<Transaction>
 
-        @PUT("Transactions")
-        suspend fun updateTransaction(@Body transaction: Transaction): Response<Transaction>
+    @PUT("Transactions")
+    suspend fun updateTransaction(@Body transaction: Transaction): Response<Transaction>
 
-        @POST("Transactions")
-        suspend fun createTransaction(@Body transaction : Transaction): Response<Transaction>
+    @POST("Transactions")
+    suspend fun createTransaction(@Body transaction : Transaction): Response<Transaction>
 
-        @GET("Transactions/{id}")
-        suspend fun getTransactionById(@retrofit2.http.Path("id") id: String): Response<Transaction>
+    @GET("Transactions/{id}")
+    suspend fun getTransactionById(@retrofit2.http.Path("id") id: String): Response<Transaction>
 
-        @DELETE("Transactions/{id}")
-        suspend fun deleteTransaction(@retrofit2.http.Path("id") id: String): Response<ResponseBody>
+    @DELETE("Transactions/{id}")
+    suspend fun deleteTransaction(@retrofit2.http.Path("id") id: String): Response<ResponseBody>
 
-        @GET("Transactions/date-range")
-        suspend fun getTransactionsByDateRange(
-            @Query("startDate") startDate: String,
-            @Query("endDate") endDate: String
-        ): Response<List<Transaction>>
+    @GET("Transactions/date-range")
+    suspend fun getTransactionsByDateRange(
+        @Query("startDate") startDate: String,
+        @Query("endDate") endDate: String
+    ): Response<List<Transaction>>
 
-        @GET("Transactions/search")
-        suspend fun searchTransactions(
-            @Query("startDate") startDate: String? = null,
-            @Query("endDate") endDate: String? = null,
-            @Query("type") type: String? = null,
-            @Query("category") category: String? = null,
-            @Query("amountRange") amountRange: String? = null,
-            @Query("keywords") keywords: String? = null,
-            @Query("timeRange") timeRange: String? = null,
-            @Query("dayOfWeek") dayOfWeek: String? = null
-        ): Response<List<Transaction>>
+    @GET("Transactions/search")
+    suspend fun searchTransactions(
+        @Query("startDate") startDate: String? = null,
+        @Query("endDate") endDate: String? = null,
+        @Query("type") type: String? = null,
+        @Query("category") category: String? = null,
+        @Query("amountRange") amountRange: String? = null,
+        @Query("keywords") keywords: String? = null,
+        @Query("timeRange") timeRange: String? = null,
+        @Query("dayOfWeek") dayOfWeek: String? = null
+    ): Response<List<Transaction>>
 
-        @GET("Statistics")
-        suspend fun getCategoryBreakdown(@Query("startDate") startDate: String, @Query("endDate") endDate: String): List<CategoryBreakdown>
-    }
     @GET("Statistics/category-breakdown")
     suspend fun getCategoryBreakdown(@Query("startDate") startDate: String, @Query("endDate") endDate: String): List<CategoryBreakdown>
 

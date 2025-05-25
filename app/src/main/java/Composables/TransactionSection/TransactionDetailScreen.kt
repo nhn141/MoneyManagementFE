@@ -1,6 +1,6 @@
 package DI.Composables.TransactionSection
 
-import DI.Composables.CategorySection.GeneralTemplate
+import DI.Composables.GeneralTemplate
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel
 import DI.ViewModels.WalletViewModel
@@ -42,9 +42,9 @@ import kotlinx.coroutines.launch
 fun TransactionDetailScreen(
     navController: NavController,
     transactionId: String,
-    viewModel: TransactionScreenViewModel = hiltViewModel(),
-    categoryViewModel: CategoryViewModel = hiltViewModel(),
-    walletViewModel: WalletViewModel = hiltViewModel()
+    viewModel: TransactionScreenViewModel,
+    categoryViewModel: CategoryViewModel,
+    walletViewModel: WalletViewModel
 ) {
     val selectedTransaction by viewModel.selectedTransaction
     val categories by categoryViewModel.categories.collectAsState()
@@ -198,7 +198,7 @@ fun TransactionDetailBody(
             DetailItem(label = "Wallet", value = walletName)
             DetailItem(label = "Date", value = date)
 
-            Spacer(modifier = Modifier.height(80.dp)) // Để tránh bị che bởi FAB
+            Spacer(modifier = Modifier.height(80.dp))
         }
 
         FloatingActionButton(

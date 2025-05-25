@@ -1,8 +1,8 @@
 package DI.Composables.TransactionSection
 
 import DI.Composables.CategorySection.DropdownSelector
-import DI.Composables.CategorySection.GeneralTemplate
 import DI.Composables.CategorySection.TransactionTextField
+import DI.Composables.GeneralTemplate
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Wallet
@@ -56,9 +56,9 @@ import java.util.Locale
 fun TransactionEditScreen(
     navController: NavController,
     transactionId: String,
-    viewModel: TransactionScreenViewModel = hiltViewModel(),
-    categoryViewModel: CategoryViewModel = hiltViewModel(),
-    walletViewModel: WalletViewModel = hiltViewModel()
+    viewModel: TransactionScreenViewModel,
+    categoryViewModel: CategoryViewModel,
+    walletViewModel: WalletViewModel
 ) {
     val selectedTransaction by viewModel.selectedTransaction
     val categories by categoryViewModel.categories.collectAsState()
@@ -237,20 +237,22 @@ fun TransactionEditBody(
         DropdownSelector(
             label = "Category",
             selectedName = categoryName,
-            options = categoryList.map { it.name to it.categoryID }
-        ) { name, id ->
-            categoryName = name
-            categoryId = id
-        }
+            options = categoryList.map { it.name to it.categoryID },
+            onSelect = { name, id ->
+                categoryName = name
+                categoryId = id
+            }
+        )
 
         DropdownSelector(
             label = "Wallet",
             selectedName = walletName,
-            options = walletList.map { it.walletName to it.walletID }
-        ) { name, id ->
-            walletName = name
-            walletId = id
-        }
+            options = walletList.map { it.walletName to it.walletID },
+            onSelect = { name, id ->
+                walletName = name
+                walletId = id
+            }
+        )
 
         TransactionTextField(
             label = "Date",

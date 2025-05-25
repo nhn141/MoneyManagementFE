@@ -1,6 +1,6 @@
 package DI.Composables.TransactionSection
 
-import DI.Composables.CategorySection.GeneralTemplate
+import DI.Composables.GeneralTemplate
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
 import DI.ViewModels.CategoryViewModel
@@ -11,10 +11,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
@@ -45,10 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.rememberNavController
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalTime
@@ -56,12 +54,17 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
-fun TransactionPageScreen(navController: NavController) {
+fun TransactionPageScreen(
+    navController: NavController,
+    transactionViewModel: TransactionScreenViewModel,
+    categoryViewModel: CategoryViewModel
+) {
     GeneralTemplate(
-        contentHeader = { TransactionHeaderSection(navController) },
-        contentBody = { TransactionBodySection(navController) },
+        contentHeader = { TransactionHeaderSection(navController, transactionViewModel) },
+        contentBody = { TransactionBodySection(navController, transactionViewModel, categoryViewModel) },
         fraction = 0.35f
     )
 }
@@ -92,8 +95,10 @@ fun Transaction.toGeneralTransactionItem(): GeneralTransactionItem {
 }
 
 @Composable
-fun TransactionHeaderSection(navController: NavController) {
-    val viewModel: TransactionScreenViewModel = hiltViewModel()
+fun TransactionHeaderSection(
+    navController: NavController,
+    viewModel: TransactionScreenViewModel
+) {
     val selected = viewModel.selectedType.value
 
     Column(
@@ -273,21 +278,36 @@ fun TransactionHeaderSection(navController: NavController) {
 }
 
 @Composable
-fun TransactionBodySection(navController: NavController) {
+fun TransactionBodySection(
+    navController: NavController,
+    viewModel: TransactionScreenViewModel,
+    categoryViewModel: CategoryViewModel
+) {
     val showSearchDialog = remember { mutableStateOf(false) }
     val showDatePickerDialog = remember { mutableStateOf(false) }
     val selectedDate = remember { mutableStateOf<String>("") }
     val formatterDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     val formatterDateOnly = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val viewModel: TransactionScreenViewModel = hiltViewModel()
-    val categoryViewModel: CategoryViewModel = hiltViewModel()
     val transactions = viewModel.filteredTransactions.value
+
+    val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         categoryViewModel.getCategories()
-    }
-    LaunchedEffect(Unit) {
         viewModel.fetchTransactions()
+    }
+
+    // Snap effect: cuộn tới item gần nhất khi scroll kết thúc
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress) {
+            val firstVisibleItem = listState.layoutInfo.visibleItemsInfo.firstOrNull()
+            firstVisibleItem?.let { item ->
+                val offset = item.offset
+                val threshold = item.size / 2
+                val targetIndex = if (offset < -threshold) item.index + 1 else item.index
+                listState.animateScrollToItem(targetIndex)
+            }
+        }
     }
 
     Box {
@@ -296,28 +316,34 @@ fun TransactionBodySection(navController: NavController) {
                 .fillMaxSize()
                 .padding(start = 25.dp, end = 25.dp, top = 70.dp)
         ) {
-            Column(
+            LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxHeight(0.9f)
-                    .verticalScroll(rememberScrollState())
             ) {
-                Spacer(modifier = Modifier.height(7.dp))
-
-                if (transactions.isNotEmpty()) {
-                    GeneralTransactionSummary(
-                        navController = navController,
-                        transactions = transactions
-                    )
-                } else {
-                    Text("No transactions found.")
+                item {
+                    Spacer(modifier = Modifier.height(7.dp))
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                if (transactions.isNotEmpty()) {
+                    itemsIndexed(transactions) { index, transaction ->
+                        GeneralTransactionRow(navController = navController, transaction = transaction)
+                    }
+                } else {
+                    item {
+                        Text("No transactions found.")
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
         }
 
+        // Nút chức năng ở góc trên bên phải
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -333,9 +359,7 @@ fun TransactionBodySection(navController: NavController) {
                         .clip(RoundedCornerShape(30.dp))
                         .background(Color(0xFF00D09E))
                         .size(30.dp)
-                        .clickable {
-                            showSearchDialog.value = true
-                        },
+                        .clickable { showSearchDialog.value = true },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -352,7 +376,6 @@ fun TransactionBodySection(navController: NavController) {
                         onDismiss = { showSearchDialog.value = false },
                         onSearch = { params ->
                             showSearchDialog.value = false
-
                             val request = TransactionSearchRequest(
                                 startDate = params.startDate,
                                 endDate = params.endDate,
@@ -368,16 +391,13 @@ fun TransactionBodySection(navController: NavController) {
                     )
                 }
 
-
-                // Nút Calendar (DatePicker)
+                // Nút Calendar
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(30.dp))
                         .background(Color(0xFF00D09E))
                         .size(30.dp)
-                        .clickable {
-                            showDatePickerDialog.value = true
-                        },
+                        .clickable { showDatePickerDialog.value = true },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -412,9 +432,7 @@ fun TransactionBodySection(navController: NavController) {
                                 viewModel.fetchTransactionsByDateRange(from, to)
                             }
                         },
-                        onDismiss = {
-                            showDatePickerDialog.value = false
-                        }
+                        onDismiss = { showDatePickerDialog.value = false }
                     )
                 }
 
@@ -825,14 +843,6 @@ fun SearchDropdownField(
             }
         }
     }
-}
-
-
-
-@Preview (showBackground = true)
-@Composable
-fun TransactionPageScreenPreview() {
-    TransactionPageScreen(navController = rememberNavController())
 }
 
 
