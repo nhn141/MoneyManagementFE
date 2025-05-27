@@ -2,6 +2,7 @@ package DI.Composables.AnalysisSection
 
 import DI.Navigation.Routes
 import DI.ViewModels.AnalysisViewModel
+import ViewModels.AuthViewModel
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -55,6 +56,7 @@ import ir.ehsannarmani.compose_charts.models.HorizontalIndicatorProperties
 import ir.ehsannarmani.compose_charts.models.IndicatorCount
 import ir.ehsannarmani.compose_charts.models.IndicatorPosition
 import ir.ehsannarmani.compose_charts.models.LabelProperties
+import java.time.LocalDate
 import java.util.Locale
 
 fun HandleSelectedPeriodTitle(selectedPeriod: String): String {
@@ -70,8 +72,22 @@ fun HandleSelectedPeriodTitle(selectedPeriod: String): String {
 @Composable
 fun AnalysisBody(
     navController: NavController,
+    authViewModel: AuthViewModel,
     analysisViewModel: AnalysisViewModel
 ) {
+    // Reload init data when token is refreshed
+    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
+    LaunchedEffect(refreshTokenState) {
+        if (refreshTokenState?.isSuccess == true) {
+            val today = LocalDate.now()
+            analysisViewModel.getDailySummary(today.toString())
+            analysisViewModel.getWeeklySummary(today.toString())
+            analysisViewModel.getMonthlySummary(today.year.toString(), today.monthValue.toString())
+            analysisViewModel.getYearlySummary(today.year.toString())
+        }
+    }
+
+
     val periodGraphResult = analysisViewModel.periodGraph.collectAsState()
 
     val periods = listOf("Daily", "Weekly", "Monthly", "Yearly")

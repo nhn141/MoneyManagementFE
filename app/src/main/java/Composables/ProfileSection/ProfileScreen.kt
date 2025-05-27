@@ -24,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +49,13 @@ fun ProfileScreen(
     authViewModel: AuthViewModel,
     profileViewModel: ProfileViewModel
 ) {
+    // Reload init data when token is refreshed
+    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
+    LaunchedEffect(refreshTokenState) {
+        if (refreshTokenState?.isSuccess == true) {
+            profileViewModel.getProfile()
+        }
+    }
 
     val profileResult = profileViewModel.profile.collectAsState()
     val profile = profileResult.value?.getOrNull()
@@ -217,7 +225,7 @@ fun ProfileHeaderCard(
                 contentAlignment = Alignment.Center
             ) {
                 Log.d("AvatarVersionProfile", avatarVersion)
-                AvatarImage(profile.avatarUrl, avatarVersion)
+                AvatarImage(profile.avatarUrl ?: "", avatarVersion)
             }
 
             Spacer(modifier = Modifier.height(16.dp))

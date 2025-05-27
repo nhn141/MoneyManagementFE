@@ -1,6 +1,5 @@
 package DI.ViewModels
 
-import DI.Models.Analysis.BarChart.MonthlySummary
 import DI.Models.Analysis.CategoryBreakdown
 import DI.Models.Analysis.PeriodData
 import DI.Models.Analysis.PeriodGraph
@@ -8,7 +7,6 @@ import DI.Repositories.AnalysisRepository
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +41,7 @@ class AnalysisViewModel @Inject constructor(
         return normalized.take(3)
     }
 
-    private fun getDailySummary(date: String) {
+    fun getDailySummary(date: String) {
         viewModelScope.launch {
             val result = analysisRepository.getDailySummary(date)
             result.onSuccess { dailySummary ->
@@ -79,42 +77,6 @@ class AnalysisViewModel @Inject constructor(
         }
     }
 
-    private fun getDailyTransactions() {
-        viewModelScope.launch {
-            val result = analysisRepository.getMockDailyTransactions()
-            result.onSuccess { dailyTransactions ->
-                // Convert transactions into PeriodData
-                val periodData = PeriodData(
-                    labels = dailyTransactions.transactions.map { it.dayOfWeek },
-                    income = dailyTransactions.transactions.map { if(it.type == "Income") it.amount else 0.0},
-                    expenses = dailyTransactions.transactions.map { if(it.type == "Expense") it.amount else 0.0},
-                    totalIncome = dailyTransactions.totalIncome,
-                    totalExpenses = dailyTransactions.totalExpense
-                )
-
-                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
-                val updatedMap = currentMap.toMutableMap().apply {
-                    put("Daily", periodData)
-                }
-
-                _periodGraph.value = Result.success(
-                    PeriodGraph(
-                        isLoading = false,
-                        dataByPeriod = updatedMap
-                    )
-                )
-            }.onFailure {
-                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
-                _periodGraph.value = Result.success(
-                    PeriodGraph(
-                        isLoading = false,
-                        dataByPeriod = currentMap // preserve previously fetched data
-                    )
-                )
-            }
-        }
-    }
-
     private fun weekNumberConfig(weekNumber: Int): String {
         return when (weekNumber) {
             1 -> "1st Wk"
@@ -125,7 +87,7 @@ class AnalysisViewModel @Inject constructor(
         }
     }
 
-    private fun getWeeklySummary(startDate: String) {
+    fun getWeeklySummary(startDate: String) {
         viewModelScope.launch {
             val result = analysisRepository.getWeeklySummary(startDate)
             result.onSuccess { weeklySummary ->
@@ -161,42 +123,7 @@ class AnalysisViewModel @Inject constructor(
         }
     }
 
-    private fun getWeeklyTransactions() {
-        viewModelScope.launch {
-            val result = analysisRepository.getMockWeeklyTransactions()
-            result.onSuccess { weeklyTransactions ->
-                val periodData = PeriodData(
-                    labels = weeklyTransactions.transactions.map { weekNumberConfig(it.weekNumber) },
-                    income = weeklyTransactions.transactions.map { it.totalIncome },
-                    expenses = weeklyTransactions.transactions.map { it.totalExpense },
-                    totalIncome = weeklyTransactions.totalIncome,
-                    totalExpenses = weeklyTransactions.totalExpense
-                )
-
-                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
-                val updatedMap = currentMap.toMutableMap().apply {
-                    put("Weekly", periodData)
-                }
-
-                _periodGraph.value = Result.success(
-                    PeriodGraph(
-                        isLoading = false,
-                        dataByPeriod = updatedMap
-                    )
-                )
-            }.onFailure {
-                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
-                _periodGraph.value = Result.success(
-                    PeriodGraph(
-                        isLoading = false,
-                        dataByPeriod = currentMap // preserve previously fetched data
-                    )
-                )
-            }
-        }
-    }
-
-    private fun getMonthlySummary(year: String, month: String) {
+    fun getMonthlySummary(year: String, month: String) {
         viewModelScope.launch {
             val result = analysisRepository.getMonthlySummary(year, month)
             result.onSuccess { monthlySummary ->
@@ -232,42 +159,7 @@ class AnalysisViewModel @Inject constructor(
         }
     }
 
-    private fun getMonthlyTransactions() {
-        viewModelScope.launch {
-            val result = analysisRepository.getMockMonthlyTransactions()
-            result.onSuccess { monthlyTransactions ->
-                val periodData = PeriodData(
-                    labels = monthlyTransactions.transactions.map { it.month },
-                    income = monthlyTransactions.transactions.map { it.totalIncome },
-                    expenses = monthlyTransactions.transactions.map { it.totalExpense },
-                    totalIncome = monthlyTransactions.totalIncome,
-                    totalExpenses = monthlyTransactions.totalExpense
-                )
-
-                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
-                val updatedMap = currentMap.toMutableMap().apply {
-                    put("Monthly", periodData)
-                }
-
-                _periodGraph.value = Result.success(
-                    PeriodGraph(
-                        isLoading = false,
-                        dataByPeriod = updatedMap
-                    )
-                )
-            }.onFailure {
-                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
-                _periodGraph.value = Result.success(
-                    PeriodGraph(
-                        isLoading = false,
-                        dataByPeriod = currentMap // preserve previously fetched data
-                    )
-                )
-            }
-        }
-    }
-
-    private fun getYearlySummary(year: String) {
+    fun getYearlySummary(year: String) {
         viewModelScope.launch {
             val result = analysisRepository.getYearlySummary(year)
             result.onSuccess { yearlySummary ->
@@ -302,40 +194,6 @@ class AnalysisViewModel @Inject constructor(
             }
         }
     }
-    private fun getYearlyTransactions() {
-        viewModelScope.launch {
-            val result = analysisRepository.getMockYearlyTransactions()
-            result.onSuccess { yearlyTransactionsList ->
-                val periodData = PeriodData(
-                    labels = yearlyTransactionsList.map { it.year },
-                    income = yearlyTransactionsList.map { it.totalIncome },
-                    expenses = yearlyTransactionsList.map { it.totalExpense },
-                    totalIncome = yearlyTransactionsList.sumOf { it.totalIncome },
-                    totalExpenses = yearlyTransactionsList.sumOf { it.totalExpense }
-                )
-
-                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
-                val updatedMap = currentMap.toMutableMap().apply {
-                    put("Yearly", periodData)
-                }
-
-                _periodGraph.value = Result.success(
-                    PeriodGraph(
-                        isLoading = false,
-                        dataByPeriod = updatedMap
-                    )
-                )
-            }.onFailure {
-                val currentMap = _periodGraph.value?.getOrNull()?.dataByPeriod ?: emptyMap()
-                _periodGraph.value = Result.success(
-                    PeriodGraph(
-                        isLoading = false,
-                        dataByPeriod = currentMap // preserve previously fetched data
-                    )
-                )
-            }
-        }
-    }
 
     fun getCategoryBreakdown(startDate: String, endDate: String) {
         viewModelScope.launch {
@@ -346,12 +204,6 @@ class AnalysisViewModel @Inject constructor(
         }
     }
 
-    fun getMockCategoryBreakdown(startDate: String, endDate: String) {
-        viewModelScope.launch {
-            val result = analysisRepository.getCategoryBreakdownMock(startDate, endDate)
-            _categoryBreakdown.value = result
-        }
-    }
 }
 
 

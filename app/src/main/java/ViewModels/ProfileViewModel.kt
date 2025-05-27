@@ -6,17 +6,11 @@ import DI.Models.UserInfo.UserAvatar
 import DI.Repositories.ProfileRepository
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,6 +57,7 @@ class ProfileViewModel @Inject constructor(
             }
         }
         getProfile()
+        Log.d("ProfileViewModel", "ProfileViewModel initialized")
     }
 
     fun uploadAvatar(file: File) {
@@ -80,6 +75,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun getProfile() {
+        Log.d("ProfileViewModel", "getProfile called")
         viewModelScope.launch {
             val result = profileRepository.getProfile()
             _profile.value = result

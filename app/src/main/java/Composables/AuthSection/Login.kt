@@ -148,9 +148,6 @@ fun LoginScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(50.dp))
-                CustomRow { Text(text = "or login in with") }
-                SocialLoginSection()
-                Spacer(modifier = Modifier.height(20.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center

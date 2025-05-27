@@ -1,5 +1,5 @@
 package DI.Models.Auth
 
 data class RefreshTokenRequest(
-    val token: String
+    val expiredToken: String
 )

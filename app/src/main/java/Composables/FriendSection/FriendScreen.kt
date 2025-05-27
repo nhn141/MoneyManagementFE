@@ -6,11 +6,8 @@ import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
-import android.util.Log
+import ViewModels.AuthViewModel
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -21,18 +18,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowCircleLeft
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SubdirectoryArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,15 +32,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.moneymanagement_frontend.R
 import kotlinx.coroutines.launch
 
 // Define main color as provided
@@ -71,10 +58,19 @@ fun FriendsScreenTheme(content: @Composable () -> Unit) {
 
 @Composable
 fun FriendsScreen(
+    authViewModel: AuthViewModel,
     friendViewModel: FriendViewModel,
     profileViewModel: ProfileViewModel,
     navController: NavController
 ) {
+    // Reload init data when token is refreshed
+    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
+    LaunchedEffect(refreshTokenState) {
+        if (refreshTokenState?.isSuccess == true) {
+            friendViewModel.getAllFriends()
+        }
+    }
+
     var showAddDialog by remember { mutableStateOf(false) }
     var friendIdInput by remember { mutableStateOf("") }
 

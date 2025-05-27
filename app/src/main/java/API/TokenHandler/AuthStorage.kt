@@ -2,6 +2,7 @@ package DI.API.TokenHandler
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.auth0.jwt.JWT
@@ -26,6 +27,7 @@ object AuthStorage {
 
     fun storeToken(context: Context, token: String) {
         getEncryptedPrefs(context).edit().putString(TOKEN_KEY, token).apply()
+        Log.d("AuthStorage", "Stored token: $token")
     }
 
     fun getToken(context: Context): String? {
@@ -34,6 +36,7 @@ object AuthStorage {
 
     fun clearToken(context: Context) {
         getEncryptedPrefs(context).edit().remove(TOKEN_KEY).apply()
+        Log.d("AuthStorage", "Cleared token")
     }
 
     // Decode token and get userId

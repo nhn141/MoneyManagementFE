@@ -12,59 +12,58 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun TokenExpirationHandler(navController: NavController, authViewModel: AuthViewModel = hiltViewModel()) {
-    val showDialog = remember { mutableStateOf(false) }
+    val showSessionExpiredDialog = remember { mutableStateOf(false) }
     val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
     val authenticatedState by authViewModel.isAuthenticated.collectAsState()
 
-    // Observe token expiration
     LaunchedEffect(Unit) {
-        AuthInterceptor.tokenExpiredFlow.collectLatest {
-            Log.d("TokenExpiredState", AuthInterceptor.tokenExpiredFlow.toString())
-            showDialog.value = true
-            Log.d("ShowDialogValue", showDialog.value.toString())
+        AuthInterceptor.tokenExpiredFlow.collect {
+            Log.d("TokenExpirationHandler", "Token expired event received")
+            showSessionExpiredDialog.value = true
         }
     }
 
-    LaunchedEffect(refreshTokenState, authenticatedState) {
-        Log.d("OnAuthenticatedStateChange", authenticatedState.toString())
-        // If user stay in
+    // Handle refresh token state
+    LaunchedEffect(refreshTokenState) {
         refreshTokenState?.let { result ->
-            showDialog.value = false
-            result.onFailure {
+            showSessionExpiredDialog.value = false
+            result.onSuccess { token ->
+                Log.d("TokenExpirationHandler", "Token refresh successful: $token")
+                // Stay on current screen
+            }.onFailure { throwable ->
+                Log.e("TokenExpirationHandler", "Token refresh failed: ${throwable.message}")
                 navController.navigate(Routes.Auth) {
                     popUpTo(Routes.Auth) { inclusive = true }
                 }
             }
-            // Success case: stay on current screen (no navigation needed)
         }
+    }
 
-        // If user log out
-        if(!authenticatedState) {
+    // Handle unauthenticated state only when not refreshing
+    LaunchedEffect(authenticatedState) {
+        if (!authenticatedState && refreshTokenState == null) {
+            Log.d("TokenExpirationHandler", "Navigating to Auth due to authenticatedState = false and no refresh in progress")
             navController.navigate(Routes.Auth) {
                 popUpTo(Routes.Auth) { inclusive = true }
             }
         }
     }
 
-    Log.d("ShowDiaLogBeforeAlert", showDialog.value.toString())
-    if (showDialog.value) {
-        Log.d("AlertDialog", "Activated!")
+    if (showSessionExpiredDialog.value) {
+        Log.d("TokenExpirationHandler", "Showing AlertDialog")
         AlertDialog(
             onDismissRequest = { /* Prevent dismissing without action */ },
             title = { Text("Session Expired") },
             text = { Text("Your session has expired. Would you like to stay in or log out?") },
             confirmButton = {
                 TextButton(onClick = {
-                    showDialog.value = false
+                    showSessionExpiredDialog.value = false
+                    Log.d("TokenExpirationHandler", "Stay In clicked, refreshing token")
                     authViewModel.refreshToken()
                 }) {
                     Text("Stay In")
@@ -72,7 +71,8 @@ fun TokenExpirationHandler(navController: NavController, authViewModel: AuthView
             },
             dismissButton = {
                 TextButton(onClick = {
-                    showDialog.value = false
+                    showSessionExpiredDialog.value = false
+                    Log.d("TokenExpirationHandler", "Log Out clicked")
                     authViewModel.logout()
                 }) {
                     Text("Log Out")

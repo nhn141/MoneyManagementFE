@@ -5,7 +5,7 @@ import DI.Composables.ProfileSection.MainColor
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
-import android.util.Log
+import ViewModels.AuthViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -51,10 +51,20 @@ import androidx.compose.ui.text.TextStyle
 @Composable
 fun ChatScreen(
     navController: NavController,
+    authViewModel: AuthViewModel,
     chatViewModel: ChatViewModel,
     profileViewModel: ProfileViewModel,
     friendViewModel: FriendViewModel
 ) {
+    // Reload init data when token is refreshed
+    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
+    LaunchedEffect(refreshTokenState) {
+        if (refreshTokenState?.isSuccess == true) {
+            chatViewModel.connectToSignalR()
+            chatViewModel.getLatestChats()
+        }
+    }
+
     // State for search query
     var searchQuery by remember { mutableStateOf("") }
 
@@ -134,11 +144,12 @@ fun ChatScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(50.dp),
-                    color = Color.White,
-                    strokeWidth = 5.dp
-                )
+//                CircularProgressIndicator(
+//                    modifier = Modifier.size(50.dp),
+//                    color = Color.White,
+//                    strokeWidth = 5.dp
+//                )
+                Text("No conversations found.", fontSize = 16.sp)
             }
         } else if(filteredChats.isEmpty() && searchQuery.isNotEmpty()) {
             // Show "No results found" when search has no matches
