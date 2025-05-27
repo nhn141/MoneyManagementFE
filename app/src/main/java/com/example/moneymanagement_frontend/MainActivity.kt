@@ -18,8 +18,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-
 import dagger.hilt.android.AndroidEntryPoint
+import theme.MoneyManagementTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -35,7 +35,9 @@ class MainActivity : ComponentActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
-            AppNavHost()
+            MoneyManagementTheme {
+                AppNavHost()
+            }
         }
     }
 }
