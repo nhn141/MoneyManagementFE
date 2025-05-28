@@ -15,7 +15,7 @@ import DI.Composables.OcrSection.OcrScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
-import DI.Composables.TransactionSection.TransactionPageScreen
+import DI.Composables.TransactionSection.TransactionScreen
 import DI.Models.BalanceInfo
 import DI.Models.BottomNavItem
 import DI.ViewModels.AnalysisViewModel
@@ -120,18 +120,18 @@ private fun InnerNavHost(
             }
         }
         composable(BottomNavItem.Transaction.route) {
-            ChatScreen(
-                authViewModel = authViewModel,
-                chatViewModel = chatViewModel,
-                profileViewModel = profileViewModel,
-                friendViewModel = friendViewModel,
-                navController = navController
-            )
-//            TransactionPageScreen(
-//                navController = navController,
-//                transactionViewModel = transactionViewModel,
-//                categoryViewModel = categoryViewModel
+//            ChatScreen(
+//                authViewModel = authViewModel,
+//                chatViewModel = chatViewModel,
+//                profileViewModel = profileViewModel,
+//                friendViewModel = friendViewModel,
+//                navController = navController
 //            )
+            TransactionScreen(
+                navController = navController,
+                viewModel = transactionViewModel,
+                categoryViewModel = categoryViewModel
+            )
         }
 
         composable(
@@ -200,8 +200,6 @@ private fun InnerNavHost(
         }
 
         composable(BottomNavItem.Category.route) {
-            val balanceInfo = BalanceInfo("100", "100", "100")
-
             CategoryScreen(
                 navController = navController,
                 categoryViewModel = categoryViewModel

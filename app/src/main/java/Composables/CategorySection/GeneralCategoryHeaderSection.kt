@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -44,33 +43,12 @@ fun CategoryHeader(navController: NavController) {
                 )
             )
     ) {
-        // Decorative circles background
-        Box(
-            modifier = Modifier
-                .offset(x = (-30).dp, y = (-20).dp)
-                .size(80.dp)
-                .background(
-                    Color.White.copy(alpha = 0.1f),
-                    CircleShape
-                )
-        )
-
-        Box(
-            modifier = Modifier
-                .offset(x = 300.dp, y = 60.dp)
-                .size(60.dp)
-                .background(
-                    Color.White.copy(alpha = 0.08f),
-                    CircleShape
-                )
-        )
-
         // Main header content
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(top = 50.dp),
+                .padding(top = 40.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -135,11 +113,6 @@ fun CategoryHeader(navController: NavController) {
                             )
                         ),
                         CircleShape
-                    )
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = CircleShape,
-                        ambientColor = Color.Black.copy(alpha = 0.1f)
                     ),
                 contentAlignment = Alignment.Center
             ) {

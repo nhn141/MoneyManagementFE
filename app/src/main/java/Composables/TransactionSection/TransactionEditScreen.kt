@@ -10,18 +10,33 @@ import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel
 import DI.ViewModels.WalletViewModel
 import android.widget.Toast
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,13 +48,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import java.util.Calendar
@@ -73,15 +90,27 @@ fun TransactionEditScreen(
         }
     }
 
-    GeneralTemplate(
-        contentHeader = {
-            TransactionEditHeader(navController = navController)
-        },
-        contentBody = {
-            if (isLoaded && selectedTransaction != null && categories != null && wallets != null) {
-                val categoryList = categories?.getOrNull() ?: emptyList()
-                val walletList = wallets?.getOrNull() ?: emptyList()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFA5DABC),
+                        Color(0xFF87EAAF),
+                        Color(0xFF00BE7C).copy(alpha = 0.1f)
+                    )
+                )
+            )
+    ) {
+        if (isLoaded && selectedTransaction != null && categories != null && wallets != null) {
+            val categoryList = categories?.getOrNull() ?: emptyList()
+            val walletList = wallets?.getOrNull() ?: emptyList()
 
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                TransactionEditHeader(navController = navController)
                 TransactionEditBody(
                     transaction = selectedTransaction!!,
                     categoryList = categoryList,
@@ -89,52 +118,70 @@ fun TransactionEditScreen(
                     viewModel = viewModel,
                     navController = navController
                 )
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+            }
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
-    )
+    }
 }
-
-
 
 
 @Composable
 fun TransactionEditHeader(
     navController: NavController,
 ) {
-    Column(
-        modifier = Modifier.background(Color(0xFF53DBA9)),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(
+            bottomStart = 24.dp,
+            bottomEnd = 24.dp
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 10.dp)
-                .padding(horizontal = 18.dp, vertical = 8.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .statusBarsPadding()
         ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_arrow_back),
-                contentDescription = "Back",
-                tint = Color.White,
+            Box(
                 modifier = Modifier
-                    .size(28.dp)
-                    .clickable(onClick = { navController.popBackStack() })
-            )
+                    .size(40.dp)
+                    .background(
+                        color = Color(0xFFF5F5F5),
+                        shape = CircleShape
+                    )
+                    .clickable { navController.popBackStack() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_arrow_back),
+                    contentDescription = "Back",
+                    tint = Color(0xFF2D3748),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
 
             Text(
                 text = "Edit Transaction",
-                color = Color.Black,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
+                color = Color(0xFF2D3748),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp
             )
+
+            // Spacer to balance the layout
+            Spacer(modifier = Modifier.size(40.dp))
         }
     }
 }
@@ -152,7 +199,7 @@ fun TransactionEditBody(
     }
 
     val dateFormatDisplay = remember {
-        SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault())
+        SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
     }
 
     val selectedDateTime = remember {
@@ -191,172 +238,285 @@ fun TransactionEditBody(
     val isExpense = type.equals("expense", ignoreCase = true)
     val context = LocalContext.current
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 25.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 20.dp)
+            .padding(top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        contentPadding = PaddingValues(bottom = 32.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .background(if (isIncome) Color(0xFF1DC418) else Color.LightGray, shape = RoundedCornerShape(12.dp))
-                    .clickable { type = "Income" }
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
+        item {
+            // Transaction Type Selection Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                Text("INCOME", color = Color.White, fontWeight = FontWeight.Bold)
-            }
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Transaction Type",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF4A5568),
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
 
-            Box(
-                modifier = Modifier
-                    .background(if (isExpense) Color(0xFFC62828) else Color.LightGray, shape = RoundedCornerShape(12.dp))
-                    .clickable { type = "Expense" }
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
-            ) {
-                Text("EXPENSE", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-        }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        TransactionTypeButton(
+                            text = "INCOME",
+                            isSelected = isIncome,
+                            selectedColor = Color(0xFF48BB78),
+                            onClick = { type = "Income" },
+                            modifier = Modifier.weight(1f)
+                        )
 
-        TransactionTextField(
-            label = "Title",
-            value = title,
-            onValueChange = { title = it }
-        )
-
-        TransactionTextField(
-            label = "Amount",
-            value = amount,
-            onValueChange = { amount = it }
-        )
-
-        DropdownSelector(
-            label = "Category",
-            selectedName = categoryName,
-            options = categoryList.map { it.name to it.categoryID },
-            onSelect = { name, id ->
-                categoryName = name
-                categoryId = id
-            }
-        )
-
-        DropdownSelector(
-            label = "Wallet",
-            selectedName = walletName,
-            options = walletList.map { it.walletName to it.walletID },
-            onSelect = { name, id ->
-                walletName = name
-                walletId = id
-            }
-        )
-
-        TransactionTextField(
-            label = "Date",
-            value = displayDate,
-            onValueChange = {},
-            isDropdown = true,
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.DateRange,
-                    contentDescription = "Calendar",
-                    modifier = Modifier.clickable { dateDialogState.show() }
-                )
-            }
-        )
-
-        MaterialDialog(
-            dialogState = dateDialogState,
-            buttons = {
-                positiveButton("Next") { timeDialogState.show() }
-                negativeButton("Cancel")
-            }
-        ) {
-            datepicker(
-                initialDate = selectedDateTime.value?.let {
-                    LocalDate.of(it.get(Calendar.YEAR), it.get(Calendar.MONTH) + 1, it.get(Calendar.DAY_OF_MONTH))
-                } ?: LocalDate.now(),
-                title = "Select a date"
-            ) { localDate ->
-                val currentCal = selectedDateTime.value ?: Calendar.getInstance()
-                val newCal = Calendar.getInstance().apply {
-                    timeInMillis = currentCal.timeInMillis
-                    set(Calendar.YEAR, localDate.year)
-                    set(Calendar.MONTH, localDate.monthValue - 1)
-                    set(Calendar.DAY_OF_MONTH, localDate.dayOfMonth)
-                }
-                selectedDateTime.value = newCal
-            }
-        }
-
-        MaterialDialog(
-            dialogState = timeDialogState,
-            buttons = {
-                positiveButton("OK")
-                negativeButton("Cancel")
-            }
-        ) {
-            timepicker(
-                initialTime = selectedDateTime.value?.let {
-                    LocalTime.of(it.get(Calendar.HOUR_OF_DAY), it.get(Calendar.MINUTE))
-                } ?: LocalTime.now(),
-                title = "Select a time"
-            ) { time ->
-                val currentCal = selectedDateTime.value ?: Calendar.getInstance()
-                val newCal = Calendar.getInstance().apply {
-                    timeInMillis = currentCal.timeInMillis
-                    set(Calendar.HOUR_OF_DAY, time.hour)
-                    set(Calendar.MINUTE, time.minute)
-                    set(Calendar.SECOND, 0)
-                }
-                selectedDateTime.value = newCal
-            }
-
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = {
-                val updatedTransaction = transaction.copy(
-                    description = title,
-                    amount = amount.toDoubleOrNull() ?: 0.0,
-                    categoryID = categoryId,
-                    walletID = walletId,
-                    type = type,
-                    transactionDate = selectedDateTime.value?.let {
-                        dateFormatStorage.format(it.time)
-                    } ?: ""
-                )
-
-                viewModel.updateTransaction(
-                    transactionID = updatedTransaction.transactionID,
-                    amount = updatedTransaction.amount,
-                    description = updatedTransaction.description,
-                    categoryId = updatedTransaction.categoryID,
-                    walletId = updatedTransaction.walletID,
-                    type = updatedTransaction.type,
-                    transactionDate = updatedTransaction.transactionDate
-                ) { success ->
-                    if (success) {
-                        Toast.makeText(context, "Transaction updated successfully", Toast.LENGTH_SHORT).show()
-                        navController.popBackStack()
-                    } else {
-                        Toast.makeText(context, "Failed to update transaction", Toast.LENGTH_SHORT).show()
+                        TransactionTypeButton(
+                            text = "EXPENSE",
+                            isSelected = isExpense,
+                            selectedColor = Color(0xFFE53E3E),
+                            onClick = { type = "Expense" },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
-            },
-            shape = RoundedCornerShape(24.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0068FF)),
-            modifier = Modifier
-                .fillMaxWidth(0.6f)
-                .height(48.dp)
-        ) {
-            Text("Save", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.White)
+            }
+        }
+
+        item {
+            // Form Fields Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    TransactionTextField(
+                        label = "Title",
+                        value = title,
+                        onValueChange = { title = it },
+                        leadingIcon = Icons.Default.Edit,
+                        placeholder = "Enter transaction title"
+                    )
+
+                    TransactionTextField(
+                        label = "Amount",
+                        value = amount,
+                        onValueChange = { amount = it },
+                        keyboardType = KeyboardType.Number,
+                        leadingIcon = Icons.Default.AttachMoney,
+                        placeholder = "0.00"
+                    )
+
+                    DropdownSelector(
+                        label = "Category",
+                        selectedName = categoryName,
+                        options = categoryList.map { it.name to it.categoryID.toString() },
+                        onSelect = { name, id ->
+                            categoryName = name
+                            categoryId = id
+                        },
+                        icon = Icons.Default.Category,
+                        placeholder = "Select category"
+                    )
+
+                    DropdownSelector(
+                        label = "Wallet",
+                        selectedName = walletName,
+                        options = walletList.map { it.walletName to it.walletID.toString() },
+                        onSelect = { name, id ->
+                            walletName = name
+                            walletId = id
+                        },
+                        icon = Icons.Default.AccountBalanceWallet,
+                        placeholder = "Select wallet"
+                    )
+
+                    TransactionTextField(
+                        label = "Date & Time",
+                        value = displayDate,
+                        onValueChange = {},
+                        isDropdown = true,
+                        leadingIcon = Icons.Default.DateRange,
+                        placeholder = "Select date and time",
+                        trailingIcon = {
+                            IconButton(onClick = { dateDialogState.show() }) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    contentDescription = "Select Date",
+                                    tint = Color(0xFF00D09E)
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        item {
+            // Save Button
+            Button(
+                onClick = {
+                    val updatedTransaction = transaction.copy(
+                        description = title,
+                        amount = amount.toDoubleOrNull() ?: 0.0,
+                        categoryID = categoryId,
+                        walletID = walletId,
+                        type = type,
+                        transactionDate = selectedDateTime.value?.let {
+                            dateFormatStorage.format(it.time)
+                        } ?: ""
+                    )
+
+                    viewModel.updateTransaction(
+                        transactionID = updatedTransaction.transactionID,
+                        amount = updatedTransaction.amount,
+                        description = updatedTransaction.description,
+                        categoryId = updatedTransaction.categoryID,
+                        walletId = updatedTransaction.walletID,
+                        type = updatedTransaction.type,
+                        transactionDate = updatedTransaction.transactionDate
+                    ) { success ->
+                        if (success) {
+                            Toast.makeText(context, "Transaction updated successfully", Toast.LENGTH_SHORT).show()
+                            navController.popBackStack()
+                        } else {
+                            Toast.makeText(context, "Failed to update transaction", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF667eea)
+                ),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 8.dp,
+                    pressedElevation = 4.dp
+                )
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Save Changes",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+
+    // Date and Time Dialogs
+    MaterialDialog(
+        dialogState = dateDialogState,
+        buttons = {
+            positiveButton("Next") { timeDialogState.show() }
+            negativeButton("Cancel")
+        }
+    ) {
+        datepicker(
+            initialDate = selectedDateTime.value?.let {
+                LocalDate.of(it.get(Calendar.YEAR), it.get(Calendar.MONTH) + 1, it.get(Calendar.DAY_OF_MONTH))
+            } ?: LocalDate.now(),
+            title = "Select a date"
+        ) { localDate ->
+            val currentCal = selectedDateTime.value ?: Calendar.getInstance()
+            val newCal = Calendar.getInstance().apply {
+                timeInMillis = currentCal.timeInMillis
+                set(Calendar.YEAR, localDate.year)
+                set(Calendar.MONTH, localDate.monthValue - 1)
+                set(Calendar.DAY_OF_MONTH, localDate.dayOfMonth)
+            }
+            selectedDateTime.value = newCal
+        }
+    }
+
+    MaterialDialog(
+        dialogState = timeDialogState,
+        buttons = {
+            positiveButton("OK")
+            negativeButton("Cancel")
+        }
+    ) {
+        timepicker(
+            initialTime = selectedDateTime.value?.let {
+                LocalTime.of(it.get(Calendar.HOUR_OF_DAY), it.get(Calendar.MINUTE))
+            } ?: LocalTime.now(),
+            title = "Select a time"
+        ) { time ->
+            val currentCal = selectedDateTime.value ?: Calendar.getInstance()
+            val newCal = Calendar.getInstance().apply {
+                timeInMillis = currentCal.timeInMillis
+                set(Calendar.HOUR_OF_DAY, time.hour)
+                set(Calendar.MINUTE, time.minute)
+                set(Calendar.SECOND, 0)
+            }
+            selectedDateTime.value = newCal
         }
     }
 }
+
+@Composable
+fun TransactionTypeButton(
+    text: String,
+    isSelected: Boolean,
+    selectedColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val animatedElevation by animateDpAsState(
+        targetValue = if (isSelected) 8.dp else 2.dp,
+        animationSpec = tween(300)
+    )
+
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.05f else 1f,
+        animationSpec = tween(300)
+    )
+
+    Card(
+        modifier = modifier
+            .scale(animatedScale)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = animatedElevation),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) selectedColor else Color(0xFFF7FAFC)
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) Color.White else Color(0xFF718096)
+            )
+        }
+    }
+}
+
+// Using existing TransactionTextField and DropdownSelector components
+
 

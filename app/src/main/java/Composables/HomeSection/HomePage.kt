@@ -2,7 +2,6 @@ package DI.Composables.HomeSection
 
 import DI.Composables.CategorySection.CustomProgressBar
 import DI.Composables.GeneralTemplate
-import DI.Composables.TransactionSection.GeneralTransactionSummary
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel
 import androidx.compose.foundation.background
@@ -247,14 +246,14 @@ fun HomePageBody(
         ) {
             Spacer(modifier = Modifier.height(7.dp))
 
-            if (transactions.isNotEmpty()) {
-                GeneralTransactionSummary(
-                    navController = navController,
-                    transactions = transactions
-                )
-            } else {
-                Text("No transactions found.")
-            }
+//            if (transactions.isNotEmpty()) {
+//                GeneralTransactionSummary(
+//                    navController = navController,
+//                    transactions = transactions
+//                )
+//            } else {
+//                Text("No transactions found.")
+//            }
 
             Spacer(modifier = Modifier.height(16.dp))
         }

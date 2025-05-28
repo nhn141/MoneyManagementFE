@@ -1,42 +1,33 @@
 package DI.Composables.TransactionSection
 
-import DI.Composables.GeneralTemplate
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionScreenViewModel
 import DI.ViewModels.WalletViewModel
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.moneymanagement_frontend.R
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
-
 
 @Composable
 fun TransactionDetailScreen(
@@ -49,6 +40,7 @@ fun TransactionDetailScreen(
     val selectedTransaction by viewModel.selectedTransaction
     val categories by categoryViewModel.categories.collectAsState()
     val wallets by walletViewModel.wallets.collectAsState()
+    val context = LocalContext.current
     var isLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(transactionId) {
@@ -59,52 +51,59 @@ fun TransactionDetailScreen(
         }
     }
 
-    GeneralTemplate(
-        contentHeader = {
-            TransactionDetailHeader(
-                navController = navController,
-                onEditClick = {
-                    if (isLoaded && selectedTransaction != null) {
-                        navController.navigate("transaction_edit/${selectedTransaction!!.transactionID}")
-                    }
-                }
-            )
-        },
-        contentBody = {
-            if (isLoaded && selectedTransaction != null && categories != null && wallets != null) {
-                val generalTransaction = selectedTransaction!!.toGeneralTransactionItem()
-
-                val categoryList = categories?.getOrNull() ?: emptyList()
-                val walletList = wallets?.getOrNull() ?: emptyList()
-
-                val category = categoryList.find { it.categoryID == generalTransaction.categoryID }
-                val wallet = walletList.find { it.walletID == generalTransaction.walletID }
-
-                TransactionDetailBody(
-                    navController = navController,
-                    title = generalTransaction.title,
-                    categoryName = category?.name ?: "Unknown",
-                    amount = generalTransaction.amount,
-                    walletName = wallet?.walletName ?: "Unknown",
-                    date = generalTransaction.timestamp ?: "Unknown",
-                    type = if (generalTransaction.isIncome) "Income" else "Expense",
-                    transactionId = transactionId,
-                    viewModel = viewModel
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFA5DABC),
+                        Color(0xFF87EAAF),
+                        Color(0xFF00BE7C).copy(alpha = 0.1f)
+                    )
                 )
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+            )
+    ) {
+        TransactionDetailHeader(
+            navController = navController,
+            onEditClick = {
+                if (isLoaded && selectedTransaction != null) {
+                    navController.navigate("transaction_edit/${selectedTransaction!!.transactionID}")
                 }
             }
-        },
-        fraction = 0.14f
-    )
+        )
+
+        if (isLoaded && selectedTransaction != null && categories != null && wallets != null) {
+            val generalTransaction = selectedTransaction!!.toGeneralTransactionItem()
+
+            val categoryList = categories?.getOrNull() ?: emptyList()
+            val walletList = wallets?.getOrNull() ?: emptyList()
+
+            val category = categoryList.find { it.categoryID == generalTransaction.categoryID }
+            val wallet = walletList.find { it.walletID == generalTransaction.walletID }
+
+            TransactionDetailBody(
+                navController = navController,
+                title = generalTransaction.title,
+                categoryName = category?.name ?: "Unknown",
+                amount = generalTransaction.amount,
+                walletName = wallet?.walletName ?: "Unknown",
+                date = generalTransaction.timestamp ?: "Unknown",
+                type = if (generalTransaction.isIncome) "Income" else "Expense",
+                transactionId = transactionId,
+                viewModel = viewModel,
+                context = context
+            )
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+    }
 }
-
-
 
 
 @Composable
@@ -112,42 +111,70 @@ fun TransactionDetailHeader(
     navController: NavController,
     onEditClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier.background(Color(0xFF53DBA9)),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 10.dp)
-                .padding(horizontal = 18.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.95f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_arrow_back),
-                contentDescription = "Back",
-                tint = Color.White,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
-                    .size(28.dp)
-                    .clickable(onClick = { navController.popBackStack() })
-            )
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
+            ) {
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(
+                            Color(0xFF667eea).copy(alpha = 0.1f),
+                            CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFF667eea),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
 
-            Text(
-                text = "Transaction Detail",
-                color = Color.Black,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
+                Text(
+                    text = "Transaction Detail",
+                    color = Color(0xFF2D3748),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
 
-            Icon(
-                painter = painterResource(R.drawable.ic_edit),
-                contentDescription = "Edit",
-                tint = Color.White,
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable(onClick = onEditClick)
-            )
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(
+                            Color(0xFF48BB78).copy(alpha = 0.1f),
+                            CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = Color(0xFF48BB78),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -162,167 +189,338 @@ fun TransactionDetailBody(
     date: String,
     type: String,
     transactionId: String,
-    viewModel: TransactionScreenViewModel
+    viewModel: TransactionScreenViewModel,
+    context: Context
 ) {
-    val typeColor = if (type.equals("Income", ignoreCase = true)) Color(0xFF1DC418) else Color(0xFFC62828)
+    val typeColor = if (type.equals("Income", ignoreCase = true))
+        Color(0xFF48BB78) else Color(0xFFE53E3E)
+    val typeIcon = if (type.equals("Income", ignoreCase = true))
+        Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
+
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-
     Box(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 25.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            Text(
-                text = type.uppercase(),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = typeColor,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp)
-            )
+            item {
+                // Transaction Type Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.95f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .background(
+                                    typeColor.copy(alpha = 0.1f),
+                                    CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = typeIcon,
+                                contentDescription = type,
+                                tint = typeColor,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
 
-            DetailItem(label = "Title", value = title)
-            DetailItem(label = "Category", value = categoryName)
-            DetailItem(label = "Amount", value = amount)
-            DetailItem(label = "Wallet", value = walletName)
-            DetailItem(label = "Date", value = date)
+                        Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(80.dp))
+                        Text(
+                            text = type.uppercase(),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = typeColor,
+                            letterSpacing = 1.sp
+                        )
+
+                        Text(
+                            text = amount,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF2D3748),
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+            }
+
+            item {
+                // Transaction Details Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.95f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        Text(
+                            text = "Transaction Details",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2D3748),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        ModernDetailItem(
+                            icon = Icons.Default.Title,
+                            label = "Title",
+                            value = title,
+                            iconTint = Color(0xFF667eea)
+                        )
+
+                        ModernDetailItem(
+                            icon = Icons.Default.Category,
+                            label = "Category",
+                            value = categoryName,
+                            iconTint = Color(0xFF9F7AEA)
+                        )
+
+                        ModernDetailItem(
+                            icon = Icons.Default.AccountBalanceWallet,
+                            label = "Wallet",
+                            value = walletName,
+                            iconTint = Color(0xFF38B2AC)
+                        )
+
+                        ModernDetailItem(
+                            icon = Icons.Default.DateRange,
+                            label = "Date",
+                            value = date,
+                            iconTint = Color(0xFFED8936)
+                        )
+                    }
+                }
+            }
         }
 
+        // Modern Delete FAB
         FloatingActionButton(
-            onClick = {
-                showDeleteDialog = true
-            },
-            containerColor = Color(0xFFD32F2F),
+            onClick = { showDeleteDialog = true },
+            containerColor = Color(0xFFE53E3E),
             contentColor = Color.White,
-            shape = CircleShape,
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(16.dp)
+                .padding(20.dp)
+                .size(64.dp),
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = 12.dp,
+                pressedElevation = 16.dp
+            )
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_delete),
+                imageVector = Icons.Default.Delete,
                 contentDescription = "Delete",
-                tint = Color.White,
-                modifier = Modifier
-                    .size(28.dp)
+                modifier = Modifier.size(28.dp)
             )
         }
-        if (showDeleteDialog) {
-            AlertDialog(
-                onDismissRequest = { showDeleteDialog = false },
-                shape = RoundedCornerShape(16.dp),
-                title = {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = Color(0xFFD32F2F),
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Text(
-                            text = "Delete Transaction",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                },
-                text = {
-                    Text(
-                        text = "Are you sure you want to delete this transaction? This action cannot be undone.",
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showDeleteDialog = false
-                            viewModel.deleteTransaction(transactionId) { success ->
-                                if (success) {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Transaction deleted successfully")
-                                        navController.popBackStack()
-                                    }
-                                }
 
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFD32F2F),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        Text("Delete")
+        // Modern Delete Dialog
+        if (showDeleteDialog) {
+            ModernDeleteDialog(
+                onDismiss = { showDeleteDialog = false },
+                onConfirm = {
+                    showDeleteDialog = false
+                    viewModel.deleteTransaction(transactionId) { success ->
+                        if (success) {
+                            showToast(context, "Transaction deleted successfully ✓")
+                            navController.popBackStack()
+                        } else {
+                            showToast(context, "Failed to delete transaction ✗")
+                        }
                     }
-                },
-                dismissButton = {
-                    OutlinedButton(
-                        onClick = { showDeleteDialog = false },
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        Text("Cancel")
-                    }
-                },
-                modifier = Modifier.padding(16.dp)
+                }
             )
         }
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 100.dp)
-        )
     }
 }
 
 @Composable
-fun DetailItem(label: String, value: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
+fun ModernDetailItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+    iconTint: Color
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = Color.Gray,
-            fontSize = 14.sp
-        )
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp))
-                .padding(14.dp)
+                .size(48.dp)
+                .background(
+                    iconTint.copy(alpha = 0.1f),
+                    RoundedCornerShape(12.dp)
+                ),
+            contentAlignment = Alignment.Center
         ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF718096),
+                letterSpacing = 0.25.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.bodyLarge,
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF2D3748),
+                lineHeight = 20.sp
             )
         }
     }
+}
+
+@Composable
+fun ModernDeleteDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(
+                            Color(0xFFE53E3E).copy(alpha = 0.1f),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = Color(0xFFE53E3E),
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Delete Transaction",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = Color(0xFF2D3748),
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        text = {
+            Text(
+                text = "Are you sure you want to delete this transaction? This action cannot be undone.",
+                textAlign = TextAlign.Center,
+                fontSize = 16.sp,
+                color = Color(0xFF4A5568),
+                lineHeight = 22.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = onConfirm,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE53E3E),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Delete",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFF4A5568)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                ) {
+                    Text(
+                        text = "Cancel",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+        },
+        dismissButton = null,
+        modifier = Modifier.padding(16.dp)
+    )
+}
+
+// Toast utility function
+fun showToast(context: Context, message: String) {
+    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 }
 

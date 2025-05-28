@@ -5,9 +5,9 @@ import DI.Models.Category.CategoryIconStorage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -33,9 +33,9 @@ fun TransactionIconButton(
         onClick = {
             navController.navigate("transaction_detail/$transactionID")
         },
-        modifier = Modifier.size(48.dp),
+        modifier = Modifier.size(54.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0068FF)),
-        shape = MaterialTheme.shapes.medium,
+        shape = CircleShape,
         contentPadding = PaddingValues(0.dp)
     ) {
         Image(
