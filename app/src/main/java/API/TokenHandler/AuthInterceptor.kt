@@ -1,6 +1,7 @@
 package DI.API.TokenHandler
 
 import android.content.Context
+import android.util.Base64
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,6 +25,7 @@ class AuthInterceptor @Inject constructor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val token = AuthStorage.getToken(context)
+        Log.d("AuthInterceptor", "Using token jti: ${token?.let { parseJti(it) } ?: "null"}")
         val request = if (token != null) {
             chain.request().newBuilder()
                 .addHeader("Authorization", "Bearer $token")
@@ -31,15 +33,22 @@ class AuthInterceptor @Inject constructor(
         } else {
             chain.request()
         }
-
         val response = chain.proceed(request)
-
-        if (response.code == 401) {
-            Log.d("AuthInterceptor", "Token expired!")
-            // Emit token expiration event
+        Log.d("AuthInterceptor", "Response code: ${response.code} for URL: ${chain.request().url}")
+        if (response.code == 401 || response.code == 403) {
+            Log.d("AuthInterceptor", "Token expired! Response code: ${response.code}")
             _tokenExpiredFlow.tryEmit(Unit)
         }
-
         return response
+    }
+
+    private fun parseJti(token: String): String? {
+        return try {
+            val payload = token.split(".")[1]
+            val decoded = String(Base64.decode(payload, Base64.URL_SAFE))
+            decoded.substringAfter("\"jti\":\"").substringBefore("\"")
+        } catch (e: Exception) {
+            "unknown"
+        }
     }
 }

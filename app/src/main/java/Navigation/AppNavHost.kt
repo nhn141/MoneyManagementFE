@@ -1,5 +1,6 @@
 package DI.Navigation
 
+import DI.API.TokenHandler.TokenExpirationHandler
 import ViewModels.AuthViewModel
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -19,6 +20,7 @@ val LocalMainNavBackStackEntry = compositionLocalOf<NavBackStackEntry> {
 
 @Composable
 fun AppNavHost(authViewModel: AuthViewModel = hiltViewModel()) {
+
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
     val navController = rememberNavController()
 

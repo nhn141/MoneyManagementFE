@@ -1,46 +1,33 @@
 package DI.Composables.AuthSection
 
-import AuthScreen
-import AuthTextField
-import CustomButton
-import CustomRow
 import DI.Navigation.Routes
-import SocialLoginSection
 import ViewModels.AuthViewModel
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.colorResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.moneymanagement_frontend.R
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
-
 
 @Composable
 fun LoginScreen(
@@ -50,12 +37,13 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val loginState by viewModel.loginState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    // Khi trạng thái loginState thay đổi, hiển thị Snackbar
     LaunchedEffect(loginState) {
         loginState?.let { result ->
             if (result.isSuccess) {
@@ -68,7 +56,7 @@ fun LoginScreen(
             } else {
                 snackbarHostState.showSnackbar("Login failed: ${result.exceptionOrNull()?.message}")
             }
-            viewModel.resetLoginState() // 🔥 Reset state ngay sau khi hiển thị thông báo
+            viewModel.resetLoginState()
         }
     }
 
@@ -76,96 +64,233 @@ fun LoginScreen(
     var passwordError by remember { mutableStateOf<String?>(null)}
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
-        AuthScreen("Welcome", 0.3f) {
-            Column(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .padding(start = 35.dp, end = 35.dp, top = 25.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .imePadding() // This handles keyboard padding automatically
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(60.dp)) // Increased top spacing for login
+
+            Text(
+                text = "Welcome Back",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Sign in to continue",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(40.dp)) // Increased spacing
+
+            InputField(
+                value = email,
+                onValueChange = { email = it; emailError = null },
+                label = "Email",
+                icon = Icons.Default.Email,
+                error = emailError
+            )
+
+            PasswordInputField(
+                value = password,
+                onValueChange = { password = it; passwordError = null },
+                label = "Password",
+                error = passwordError
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
                 Text(
-                    text = "Email",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.W500,
-                    color = colorResource(R.color.textColor),
-                    modifier = Modifier.padding(start = 20.dp, bottom = 10.dp)
+                    text = "Forgot Password?",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    modifier = Modifier.clickable { }
                 )
-                AuthTextField(
-                    value = email,
-                    onValueChange = {
-                        email = it
-                        emailError = null },
-                    placeholder = "Ex: example@example.com",
-                    isError = emailError != null)
-                if (emailError != null) {
-                    ErrorAlert(emailError!!)
-                }
-                Spacer(modifier = Modifier.height(25.dp))
-                Text(
-                    text = "Password",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.W500,
-                    color = colorResource(R.color.textColor),
-                    modifier = Modifier.padding(start = 20.dp, bottom = 10.dp)
-                )
-                AuthTextField(
-                    value = password,
-                    onValueChange = {
-                        password = it
-                        passwordError = null },
-                    placeholder = "●●●●●●●●",
-                    isPassword = true,
-                    isError = passwordError != null)
-                if (passwordError != null) {
-                    ErrorAlert(passwordError!!)
-                }
-                Spacer(modifier = Modifier.height(50.dp))
-
-                CustomRow {
-                    CustomButton("Log In") {
-                        val emailResult = Validator.validateField("email", email)
-                        val passwordResult = Validator.validateField("password", password)
-
-                        emailError = emailResult.errorMessage
-                        passwordError = passwordResult.errorMessage
-
-                        if(emailResult.isValid && passwordResult.isValid) {
-                            viewModel.login(email, password)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-                CustomRow {
-                    Text(
-                        text = "Forgot Password?",
-                        color = colorResource(R.color.textColor),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.clickable { },
-                        textAlign = TextAlign.Center
-                    )
-                }
-                Spacer(modifier = Modifier.height(50.dp))
-                CustomRow { Text(text = "or login in with") }
-                SocialLoginSection()
-                Spacer(modifier = Modifier.height(20.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(text = "Don't have an account?", fontSize = 14.sp, color = Color.Black)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Sign Up",
-                        fontSize = 14.sp,
-                        color = Color.Blue.copy(0.5f),
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { onNavigateToRegister() }
-                    )
-                }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = {
+                    keyboardController?.hide() // Hide keyboard when button is pressed
+
+                    val emailResult = Validator.validateField("email", email)
+                    val passwordResult = Validator.validateField("password", password)
+
+                    emailError = emailResult.errorMessage
+                    passwordError = passwordResult.errorMessage
+
+                    if(emailResult.isValid && passwordResult.isValid) {
+                        viewModel.login(email, password)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Log In", fontSize = 16.sp)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Don't have an account? ",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Sign Up",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onNavigateToRegister() }
+                )
+            }
+
+            // Add extra padding at the bottom to ensure content is not hidden behind keyboard
+            Spacer(modifier = Modifier.height(40.dp))
         }
+    }
+}
+
+@Composable
+private fun InputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: ImageVector,
+    error: String? = null
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            leadingIcon = {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp)),
+            isError = error != null,
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                cursorColor = MaterialTheme.colorScheme.primary,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+
+        AnimatedVisibility(visible = error != null) {
+            Text(
+                text = error ?: "",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun PasswordInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    error: String? = null
+) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp)),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            isError = error != null,
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                cursorColor = MaterialTheme.colorScheme.primary,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+
+        AnimatedVisibility(visible = error != null) {
+            Text(
+                text = error ?: "",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

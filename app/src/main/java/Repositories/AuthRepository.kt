@@ -5,8 +5,6 @@ import DI.Models.Auth.SignInRequest
 import DI.Models.Auth.SignUpRequest
 import DI.Models.Auth.RefreshTokenRequest
 import android.util.Log
-import okhttp3.ResponseBody
-import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,16 +19,20 @@ class AuthRepository @Inject constructor(private val apiService: ApiService) {
             if (response.isSuccessful) {
                 val token = response.body()?.string()
                 if (!token.isNullOrEmpty()) {
+                    Log.d("AuthRepository", "Login success: $token")
                     Result.success(token)
                 } else {
+                    Log.d("AuthRepository", "Login Failed")
                     Result.failure(Exception("Empty token received"))
                 }
             } else {
                 val error = response.errorBody()?.string() ?: "Unknown error"
+                Log.d("AuthRepository", "Login failed: $error")
                 Result.failure(Exception("Login failed: $error"))
             }
 
         } catch (e: Exception) {
+            Log.d("AuthRepository", "Login exception: ${e.message}")
             Result.failure(e)
         }
     }
@@ -59,21 +61,19 @@ class AuthRepository @Inject constructor(private val apiService: ApiService) {
 
     suspend fun refreshToken(token: String): Result<String> {
         return try {
-            val request = RefreshTokenRequest(token)
+            val request = RefreshTokenRequest(expiredToken = token)
+            Log.d("AuthRepository", "Sending refresh token request: $request")
             val response = apiService.refreshToken(request)
 
-            if (response.isSuccessful) {
-                val refreshToken = response.body()?.string()
-                if (!refreshToken.isNullOrEmpty()) {
-                    Result.success(refreshToken)
-                } else {
-                    Result.failure(Exception("Empty refresh token received"))
-                }
+            if (response.success && response.token.isNotEmpty()) {
+                Log.d("AuthRepository", "Refresh token success: ${response.token}")
+                Result.success(response.token)
             } else {
-                val error = response.errorBody()?.string() ?: "Unknown error"
-                Result.failure(Exception("Request for refresh token failed: $error"))
+                Log.e("AuthRepository", "Invalid refresh token response: ${response.message}")
+                Result.failure(Exception("Invalid refresh token response: ${response.message}"))
             }
         } catch (e: Exception) {
+            Log.e("AuthRepository", "Refresh token exception: ${e.message}")
             Result.failure(e)
         }
     }

@@ -21,8 +21,10 @@ class ProfileRepository @Inject constructor(
     suspend fun getProfile(): Result<Profile> {
         return try {
             val response = apiService.getProfile()
+            Log.d("ProfileRepositoryFirst", "Profile response: $response")
             Result.success(response)
         } catch (e: Exception) {
+            Log.d("ProfileRepositoryFail", "fail $e")
             Result.failure(e)
         }
     }

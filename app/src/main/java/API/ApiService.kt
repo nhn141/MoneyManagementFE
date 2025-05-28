@@ -1,14 +1,18 @@
 package API
 
+import DI.Models.Analysis.BarChart.DailySummary
+import DI.Models.Analysis.BarChart.MonthlySummary
+import DI.Models.Analysis.BarChart.WeeklySummary
+import DI.Models.Analysis.BarChart.YearlySummary
 import DI.Models.Analysis.CategoryBreakdown
 import DI.Models.Auth.RefreshTokenRequest
+import DI.Models.Auth.RefreshTokenResponse
 import DI.Models.Auth.SignInRequest
 import DI.Models.Auth.SignUpRequest
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
-import DI.Models.Chat.LatestChat
 import DI.Models.Chat.LatestChatResponses
 import DI.Models.Friend.AcceptFriendRequestResponse
 import DI.Models.Friend.AddFriendRequest
@@ -46,7 +50,7 @@ interface ApiService {
     suspend fun signIn(@Body request: SignInRequest): Response<ResponseBody>
 
     @POST("Accounts/RefreshToken")
-    suspend fun refreshToken(@Body token: RefreshTokenRequest): Response<ResponseBody>
+    suspend fun refreshToken(@Body token: RefreshTokenRequest): RefreshTokenResponse
 
     @GET("Categories")
     suspend fun getCategories(): List<Category>
@@ -121,6 +125,9 @@ interface ApiService {
     @GET("Messages/latest")
     suspend fun getLatestChats(): LatestChatResponses
 
+    @POST("Messages/read/{otherUserId}")
+    suspend fun markAllMessagesAsReadFromSingleChat(@Path("otherUserId") otherUserId: String): Response<ResponseBody>
+
     // Friend
 
     @GET("Friends")
@@ -155,4 +162,17 @@ interface ApiService {
 
     @GET("Accounts/users/{userId}")
     suspend fun getOtherUserProfile(@Path("userId") userId: String): Profile
+
+    // Calendar
+    @GET("Calendar/daily")
+    suspend fun getDailySummary(@Query("date") date: String): DailySummary
+
+    @GET("Calendar/weekly")
+    suspend fun getWeeklySummary(@Query("startDate") startDate: String): WeeklySummary
+
+    @GET("Calendar/monthly")
+    suspend fun getMonthlySummary(@Query("year") year: String, @Query("month") month: String): MonthlySummary
+
+    @GET("Calendar/yearly")
+    suspend fun getYearlySummary(@Query("year") year: String): YearlySummary
 }

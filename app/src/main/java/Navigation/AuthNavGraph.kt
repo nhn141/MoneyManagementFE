@@ -1,5 +1,6 @@
 package DI.Navigation
 
+import DI.API.TokenHandler.TokenExpirationHandler
 import DI.Composables.AnalysisSection.AnalysisBody
 import DI.Composables.AnalysisSection.CalendarScreen
 import DI.Composables.AuthSection.LoginScreen
@@ -26,7 +27,6 @@ import DI.ViewModels.OcrViewModel
 import DI.ViewModels.TransactionScreenViewModel
 import DI.ViewModels.WalletViewModel
 import ProfileScreen
-import Screens.AnalysisHeader
 import Screens.MainLayout
 import ViewModels.AuthViewModel
 import android.os.Build
@@ -49,7 +49,6 @@ import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.example.friendsapp.FriendsScreen
 import com.example.friendsapp.FriendsScreenTheme
-import okhttp3.Route
 
 fun NavGraphBuilder.authGraph(navController: NavController) {
     navigation(startDestination = Routes.Login, route = Routes.Auth) {
@@ -70,17 +69,21 @@ fun NavGraphBuilder.authGraph(navController: NavController) {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
+
 fun NavGraphBuilder.mainGraph(navController: NavHostController) {
     composable(Routes.Main) {
         val parentEntry = navController.rememberParentEntry(Routes.Main) ?: it
+        val authViewModel = hiltViewModel<AuthViewModel>(parentEntry)
         CompositionLocalProvider(
             LocalMainNavBackStackEntry provides parentEntry
         ) {
             MainLayout { innerNavController, modifier ->
-                InnerNavHost(navController, innerNavController, modifier, parentEntry)
+                InnerNavHost(navController, innerNavController, modifier, parentEntry, authViewModel)
             }
+            TokenExpirationHandler(navController)
         }
     }
+
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -89,12 +92,12 @@ private fun InnerNavHost(
     appNavController : NavController,
     navController: NavHostController,
     modifier: Modifier,
-    parentEntry: NavBackStackEntry
+    parentEntry: NavBackStackEntry,
+    authViewModel: AuthViewModel
 ) {
     val friendViewModel = hiltViewModel<FriendViewModel>(parentEntry)
     val chatViewModel = hiltViewModel<ChatViewModel>(parentEntry)
     val profileViewModel = hiltViewModel<ProfileViewModel>(parentEntry)
-    val authViewModel = hiltViewModel<AuthViewModel>(parentEntry)
     val analysisViewModel = hiltViewModel<AnalysisViewModel>(parentEntry)
     val categoryViewModel = hiltViewModel<CategoryViewModel>(parentEntry)
     val transactionViewModel = hiltViewModel<TransactionScreenViewModel>(parentEntry)
@@ -103,12 +106,13 @@ private fun InnerNavHost(
 
     NavHost(
         navController    = navController,
-        startDestination = BottomNavItem.Home.route,
+        startDestination = BottomNavItem.Profile.route,
         modifier         = modifier
     ) {
         composable(BottomNavItem.Home.route) {
             FriendsScreenTheme {
                 FriendsScreen(
+                    authViewModel = authViewModel,
                     friendViewModel = friendViewModel,
                     profileViewModel = profileViewModel,
                     navController = navController
@@ -117,6 +121,7 @@ private fun InnerNavHost(
         }
         composable(BottomNavItem.Transaction.route) {
             ChatScreen(
+                authViewModel = authViewModel,
                 chatViewModel = chatViewModel,
                 profileViewModel = profileViewModel,
                 friendViewModel = friendViewModel,
@@ -173,12 +178,10 @@ private fun InnerNavHost(
         }
 
         composable(BottomNavItem.Analysis.route) {
-            GeneralTemplate(
-                contentHeader = { AnalysisHeader() },
-                contentBody = { AnalysisBody(
-                    navController = navController,
-                    analysisViewModel = analysisViewModel)
-                }
+            AnalysisBody(
+                navController = navController,
+                authViewModel = authViewModel,
+                analysisViewModel = analysisViewModel
             )
         }
 
@@ -237,6 +240,7 @@ private fun InnerNavHost(
         }
 
         composable(Routes.OCR) {
+        composable(BottomNavItem.Category.route) {
             OcrScreen()
         }
     }

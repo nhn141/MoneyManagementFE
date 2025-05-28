@@ -34,6 +34,7 @@ class AuthViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _isAuthenticated.value = AuthStorage.getToken(app) != null
+            Log.d("AuthViewModel", "Initial authentication state: ${_isAuthenticated.value}")
         }
     }
 
@@ -68,22 +69,25 @@ class AuthViewModel @Inject constructor(
     fun refreshToken() {
         viewModelScope.launch {
             val currentToken = AuthStorage.getToken(app) ?: run {
-                Log.d("RefreshTokenChecking", AuthStorage.getToken(app).toString())
+                Log.e("AuthViewModel", "No token available in AuthStorage")
                 _isAuthenticated.value = false
                 _refreshTokenState.value = Result.failure(Exception("No token available"))
                 return@launch
             }
+            Log.d("AuthViewModel", "Attempting to refresh token: $currentToken")
             val result = repository.refreshToken(currentToken)
             result.onSuccess { refreshToken ->
-                AuthStorage.clearToken(app)
+                Log.d("AuthViewModel", "Token refresh successful, new token: $refreshToken")
                 AuthStorage.storeToken(app, refreshToken)
                 _isAuthenticated.value = true
-            }.onFailure {
+                _refreshTokenState.value = Result.success(refreshToken)
+            }.onFailure { exception ->
+                Log.e("AuthViewModel", "Token refresh failed: ${exception.message}")
                 AuthStorage.clearToken(app)
                 _isAuthenticated.value = false
+                _refreshTokenState.value = Result.failure(exception)
             }
-            _refreshTokenState.value = result
-            Log.d("Refresh Token", result.toString())
+            Log.d("AuthViewModel", "RefreshToken result: $result, isAuthenticated: ${_isAuthenticated.value}")
         }
     }
 
