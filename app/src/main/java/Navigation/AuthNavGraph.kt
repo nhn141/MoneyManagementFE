@@ -204,8 +204,7 @@ private fun InnerNavHost(
 
             CategoryScreen(
                 navController = navController,
-                categoryViewModel = categoryViewModel,
-                balanceInfo = balanceInfo
+                categoryViewModel = categoryViewModel
             )
         }
 
@@ -237,11 +236,6 @@ private fun InnerNavHost(
                 categoryViewModel = categoryViewModel,
                 walletViewModel = walletViewModel
             )
-        }
-
-        composable(Routes.OCR) {
-        composable(BottomNavItem.Category.route) {
-            OcrScreen()
         }
     }
 }

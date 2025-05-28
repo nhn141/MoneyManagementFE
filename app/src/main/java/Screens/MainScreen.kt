@@ -10,7 +10,6 @@ import DI.Composables.GeneralTemplate
 import DI.Models.BalanceInfo
 import DI.Models.BottomNavItem
 import DI.Composables.NavbarSection.BottomNavigationBar
-import DI.Composables.CategorySection.HeaderSection
 import DI.Composables.HomeSection.HomePageScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
@@ -359,10 +358,4 @@ fun ProfieScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text = "Profie Screen", fontSize = 24.sp)
     }
-}
-
-@Preview
-@Composable
-fun PreviewHeaderSection() {
-    HeaderSection(BalanceInfo("$7,783.00", "-$1,187.00", "$20,000.00"), navController = rememberNavController())
 }
