@@ -9,8 +9,10 @@ import DI.Models.Auth.RefreshTokenRequest
 import DI.Models.Auth.RefreshTokenResponse
 import DI.Models.Auth.SignInRequest
 import DI.Models.Auth.SignUpRequest
+import DI.Models.Category.AddCategoryRequest
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
+import DI.Models.Category.UpdateCategoryRequest
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
 import DI.Models.Chat.LatestChatResponses
@@ -59,16 +61,16 @@ interface ApiService {
     suspend fun getWallets(): List<Wallet>
 
     @POST("Categories")
-    suspend fun addCategory(@Body category: Category): Response<Category>
+    suspend fun addCategory(@Body request: AddCategoryRequest): Response<Category>
 
     @GET("Categories/{id}")
-    suspend fun getCategoryById(@retrofit2.http.Path("id") id: String): Response<Category>
+    suspend fun getCategoryById(@Path("id") id: String): Response<Category>
 
     @PUT("Categories")
-    suspend fun updateCategory(@Body category: Category): Response<Category>
+    suspend fun updateCategory(@Body request: UpdateCategoryRequest): Response<Category>
 
     @DELETE("Categories/{id}")
-    suspend fun deleteCategory(@retrofit2.http.Path("id") id: String): Response<ResponseBody>
+    suspend fun deleteCategory(@Path("id") id: String): Response<ResponseBody>
 
     @POST("Wallets")
     suspend fun createWallet(@Body wallet: Wallet): Response<ResponseBody>

@@ -138,5 +138,11 @@ dependencies {
     // Data Store Across Restart
     implementation (libs.androidx.datastore.preferences)
 
+    // For showing customizable material-style dialogs in Jetpack Compose
+    implementation(libs.core)
+
+    // Adds support for date and time pickers in the dialogs
+    implementation(libs.compose.material.dialogs.datetime)
+
 
 }

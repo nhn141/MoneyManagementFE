@@ -4,6 +4,7 @@ import DI.Models.Friend.AddFriendRequest
 import DI.Models.Friend.AddFriendResponse
 import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
+import DI.Models.UiEvent.UiEvent
 import DI.Repositories.FriendRepository
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -24,9 +25,6 @@ class FriendViewModel @Inject constructor(
     private val _friends = MutableStateFlow<Result<List<Friend>>?>(null)
     val friends: StateFlow<Result<List<Friend>>?> = _friends
 
-    sealed class UiEvent {
-        data class ShowMessage(val message: String) : UiEvent()
-    }
     private val _addFriendEvent = MutableSharedFlow<UiEvent>()
     val addFriendEvent = _addFriendEvent.asSharedFlow()
 

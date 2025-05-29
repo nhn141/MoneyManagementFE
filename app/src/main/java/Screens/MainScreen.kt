@@ -1,29 +1,9 @@
 package Screens
 
 import DI.API.TokenHandler.AuthStorage
-import DI.Composables.AnalysisSection.AnalysisBody
-import DI.Composables.AnalysisSection.CalendarScreen
-import DI.Composables.CategorySection.AddTransactionScreen
-import DI.Composables.CategorySection.Category_SpecificType_Body
-import DI.Composables.CategorySection.Category_SpecificType_Header
-import DI.Composables.GeneralTemplate
-import DI.Models.BalanceInfo
 import DI.Models.BottomNavItem
 import DI.Composables.NavbarSection.BottomNavigationBar
-import DI.Composables.HomeSection.HomePageScreen
-import DI.Composables.TransactionSection.TransactionDetailScreen
-import DI.Composables.TransactionSection.TransactionEditScreen
-import DI.Composables.ChatSection.ChatMessageScreen
-import DI.Composables.ChatSection.ChatScreen
-import DI.Composables.HomeSection.HomePageHeaderSection
-import DI.Composables.ProfileSection.EditProfileScreen
-import DI.Navigation.LocalMainNavBackStackEntry
-import DI.Navigation.Routes
-import DI.Navigation.rememberParentEntry
 import DI.ViewModels.CategoryViewModel
-import DI.ViewModels.ChatViewModel
-import DI.ViewModels.FriendViewModel
-import ProfileScreen
 import ViewModels.AuthViewModel
 import android.os.Build
 import android.app.Activity
@@ -41,7 +21,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember

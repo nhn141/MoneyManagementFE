@@ -4,6 +4,7 @@ import DI.Composables.ProfileSection.FriendAvatar
 import DI.Models.Friend.AddFriendRequest
 import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
+import DI.Models.UiEvent.UiEvent
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
 import ViewModels.AuthViewModel
@@ -80,7 +81,7 @@ fun FriendsScreen(
         launch {
             friendViewModel.addFriendEvent.collect { event ->
                 when (event) {
-                    is FriendViewModel.UiEvent.ShowMessage -> {
+                    is UiEvent.ShowMessage -> {
                         Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                     } else -> {}
                 }
@@ -90,7 +91,7 @@ fun FriendsScreen(
         launch {
             friendViewModel.acceptFriendRequestEvent.collect { event ->
                 when (event) {
-                    is FriendViewModel.UiEvent.ShowMessage -> {
+                    is UiEvent.ShowMessage -> {
                         Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                     } else -> {}
                 }
@@ -457,7 +458,7 @@ fun FriendCard(
         launch {
             friendViewModel.deleteFriendEvent.collect { event ->
                 when (event) {
-                    is FriendViewModel.UiEvent.ShowMessage -> {
+                    is UiEvent.ShowMessage -> {
                         Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                     }
 

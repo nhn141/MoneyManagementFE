@@ -1,7 +1,7 @@
 package DI.Composables.TransactionSection
 
 import DI.ViewModels.CategoryViewModel
-import DI.ViewModels.TransactionScreenViewModel
+import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import android.content.Context
 import android.widget.Toast
@@ -33,7 +33,7 @@ import androidx.navigation.NavController
 fun TransactionDetailScreen(
     navController: NavController,
     transactionId: String,
-    viewModel: TransactionScreenViewModel,
+    viewModel: TransactionViewModel,
     categoryViewModel: CategoryViewModel,
     walletViewModel: WalletViewModel
 ) {
@@ -189,7 +189,7 @@ fun TransactionDetailBody(
     date: String,
     type: String,
     transactionId: String,
-    viewModel: TransactionScreenViewModel,
+    viewModel: TransactionViewModel,
     context: Context
 ) {
     val typeColor = if (type.equals("Income", ignoreCase = true))

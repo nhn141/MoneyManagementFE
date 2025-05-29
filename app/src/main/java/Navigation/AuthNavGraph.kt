@@ -5,18 +5,13 @@ import DI.Composables.AnalysisSection.AnalysisBody
 import DI.Composables.AnalysisSection.CalendarScreen
 import DI.Composables.AuthSection.LoginScreen
 import DI.Composables.AuthSection.RegisterScreen
-import DI.Composables.CategorySection.AddTransactionScreen
-import DI.Composables.CategorySection.CategoryScreen
+import DI.Composables.TransactionSection.AddTransactionScreen
 import DI.Composables.ChatSection.ChatMessageScreen
-import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.FriendSection.FriendProfileScreen
-import DI.Composables.GeneralTemplate
-import DI.Composables.OcrSection.OcrScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
 import DI.Composables.TransactionSection.TransactionScreen
-import DI.Models.BalanceInfo
 import DI.Models.BottomNavItem
 import DI.ViewModels.AnalysisViewModel
 import DI.ViewModels.ChatViewModel
@@ -24,8 +19,9 @@ import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.OcrViewModel
-import DI.ViewModels.TransactionScreenViewModel
+import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
+import ModernCategoriesScreen
 import ProfileScreen
 import Screens.MainLayout
 import ViewModels.AuthViewModel
@@ -100,7 +96,7 @@ private fun InnerNavHost(
     val profileViewModel = hiltViewModel<ProfileViewModel>(parentEntry)
     val analysisViewModel = hiltViewModel<AnalysisViewModel>(parentEntry)
     val categoryViewModel = hiltViewModel<CategoryViewModel>(parentEntry)
-    val transactionViewModel = hiltViewModel<TransactionScreenViewModel>(parentEntry)
+    val transactionViewModel = hiltViewModel<TransactionViewModel>(parentEntry)
     val walletViewModel = hiltViewModel<WalletViewModel>(parentEntry)
     val ocrViewModel = hiltViewModel<OcrViewModel>(parentEntry)
 
@@ -200,9 +196,13 @@ private fun InnerNavHost(
         }
 
         composable(BottomNavItem.Category.route) {
-            CategoryScreen(
-                navController = navController,
-                categoryViewModel = categoryViewModel
+//            CategoryScreen(
+//                navController = navController,
+//                categoryViewModel = categoryViewModel
+//            )
+            ModernCategoriesScreen(
+                categoryViewModel = categoryViewModel,
+                authViewModel = authViewModel,
             )
         }
 

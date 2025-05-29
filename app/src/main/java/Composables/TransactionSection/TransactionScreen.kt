@@ -1,19 +1,17 @@
 package DI.Composables.TransactionSection
 
+import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
 import DI.ViewModels.CategoryViewModel
-import DI.ViewModels.TransactionScreenViewModel
-import android.util.Log
-import androidx.compose.animation.core.animateDpAsState
+import DI.ViewModels.TransactionViewModel
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -66,405 +64,24 @@ import java.util.Locale
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun TransactionScreen(
     navController: NavController,
-    viewModel: TransactionScreenViewModel,
+    viewModel: TransactionViewModel,
     categoryViewModel: CategoryViewModel
 ) {
-    val listState = rememberLazyListState()
-    val scrollOffset = remember { derivedStateOf { listState.firstVisibleItemScrollOffset } }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF00D09E),
-                        Color(0xFFF8FFFE)
-                    )
-                )
-            )
-    ) {
-        TransactionHeaderSection(
-            navController = navController,
-            viewModel = viewModel,
-            scrollOffset = scrollOffset.value
-        )
-
-        TransactionBodySection(
-            navController = navController,
-            viewModel = viewModel,
-            categoryViewModel = categoryViewModel,
-            listState = listState
-        )
-    }
-}
-data class GeneralTransactionItem(
-    val transactionID: String,
-    val categoryID: String,
-    val walletID: String,
-    val title: String,
-    val timestamp: String?,
-    val amount: String,
-    val isIncome: Boolean
-)
-
-
-fun Transaction.toGeneralTransactionItem(): GeneralTransactionItem {
-    val isIncome = type.lowercase() == "income"
-
-    return GeneralTransactionItem(
-        transactionID = transactionID,
-        categoryID = categoryID,
-        walletID = walletID,
-        title = description,
-        timestamp = transactionDate,
-        amount = if (isIncome) "$$amount" else "-$$amount",
-        isIncome = isIncome
-    )
-}
-
-@Composable
-fun TransactionHeaderSection(
-    navController: NavController,
-    viewModel: TransactionScreenViewModel,
-    scrollOffset: Int
-) {
+    val scrollState = rememberLazyListState()
     val selected = viewModel.selectedType.value
-    val baseHeight = 320.dp
-    val collapsedHeight = 100.dp
-    val animatedHeight by animateDpAsState(
-        targetValue = if (scrollOffset > 20) collapsedHeight else baseHeight,
-        label = "HeaderHeightAnimation"
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(animatedHeight)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF00D09E),
-                            Color(0xFF00B888)
-                        )
-                    )
-                )
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Top Bar
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 15.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(
-                            Color.White.copy(alpha = 0.2f),
-                            CircleShape
-                        )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            navController.popBackStack()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_arrow_back),
-                        contentDescription = "Back",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Box {
-                    Text(
-                        text = "Transaction",
-                        color = Color.Black.copy(alpha = 0.1f),
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.offset(x = 2.dp, y = 2.dp)
-                    )
-                    Text(
-                        text = "Transaction",
-                        color = Color.White,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // Notification button
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    Color.White,
-                                    Color(0xFFF8F8F8)
-                                )
-                            ),
-                            CircleShape
-                        )
-                        .clickable { /* Handle Notifications */ },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_notifications),
-                        contentDescription = "Notifications",
-                        tint = Color(0xFF00D09E),
-                        modifier = Modifier.size(22.dp)
-                    )
-
-                    // Notification badge
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .background(Color(0xFFFF6B6B), CircleShape)
-                            .align(Alignment.TopEnd)
-                            .offset(x = (-4).dp, y = 4.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Total Balance Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.White,
-                                    Color(0xFFF8FFFE)
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Total Balance",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF666666),
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "$7,783.00",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0D1F2D)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Income + Expense Cards
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Income Card
-                Card(
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (selected == "Income")
-                            Color(0xFF4CAF50) else Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (selected == "Income") 16.dp else 8.dp
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(120.dp)
-                        .clickable { viewModel.onTypeSelected("Income") }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                if (selected == "Income") {
-                                    Brush.radialGradient(
-                                        colors = listOf(
-                                            Color(0xFF4CAF50),
-                                            Color(0xFF388E3C)
-                                        )
-                                    )
-                                } else {
-                                    Brush.radialGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            Color(0xFFF8FFF8)
-                                        )
-                                    )
-                                }
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(
-                                        if (selected == "Income")
-                                            Color.White.copy(alpha = 0.2f)
-                                        else Color(0xFF4CAF50).copy(alpha = 0.1f),
-                                        CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_income),
-                                    contentDescription = "Income",
-                                    tint = if (selected == "Income") Color.White else Color(0xFF4CAF50),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = "Income",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (selected == "Income") Color.White else Color(0xFF666666),
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "$4,120.00",
-                                fontWeight = FontWeight.Bold,
-                                color = if (selected == "Income") Color.White else Color(0xFF4CAF50),
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-
-                // Expense Card
-                Card(
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (selected == "Expense")
-                            Color(0xFFFF5722) else Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (selected == "Expense") 16.dp else 8.dp
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(120.dp)
-                        .clickable { viewModel.onTypeSelected("Expense") }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                if (selected == "Expense") {
-                                    Brush.radialGradient(
-                                        colors = listOf(
-                                            Color(0xFFFF5722),
-                                            Color(0xFFD84315)
-                                        )
-                                    )
-                                } else {
-                                    Brush.radialGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            Color(0xFFFFF8F8)
-                                        )
-                                    )
-                                }
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(
-                                        if (selected == "Expense")
-                                            Color.White.copy(alpha = 0.2f)
-                                        else Color(0xFFFF5722).copy(alpha = 0.1f),
-                                        CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_expense),
-                                    contentDescription = "Expense",
-                                    tint = if (selected == "Expense") Color.White else Color(0xFFFF5722),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = "Expense",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (selected == "Expense") Color.White else Color(0xFF666666),
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "$1,187.40",
-                                fontWeight = FontWeight.Bold,
-                                color = if (selected == "Expense") Color.White else Color(0xFFFF5722),
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TransactionBodySection(
-    navController: NavController,
-    viewModel: TransactionScreenViewModel,
-    categoryViewModel: CategoryViewModel,
-    listState: LazyListState
-) {
+    val transactions = viewModel.filteredTransactions.value
     val showSearchDialog = remember { mutableStateOf(false) }
     val showDatePickerDialog = remember { mutableStateOf(false) }
     val selectedDate = remember { mutableStateOf<String>("") }
-    val formatterDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val formatterDateOnly = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val transactions = viewModel.filteredTransactions.value
+    val searchParams = viewModel.searchParams.value
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         categoryViewModel.getCategories()
@@ -477,78 +94,353 @@ fun TransactionBodySection(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFFDFF7E2),
-                        Color(0xFFB5F2D0),
-                        Color(0xFF00D09E).copy(alpha = 0.1f)
+                        Color(0xFF00D09E),
+                        Color(0xFFF8FFFE)
                     )
                 )
             )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp)
-                .padding(top = 20.dp)
+        LazyColumn(
+            state = scrollState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            // Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ActionButton(
-                    iconRes = R.drawable.ic_search,
-                    contentDescription = "Search",
-                    onClick = { showSearchDialog.value = true }
-                )
+            // Top Bar
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 24.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(
+                                Color.White.copy(alpha = 0.2f),
+                                CircleShape
+                            )
+                            .clickable { navController.popBackStack() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_arrow_back),
+                            contentDescription = "Back",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                ActionButton(
-                    iconRes = R.drawable.ic_calendar,
-                    contentDescription = "Calendar",
-                    onClick = { showDatePickerDialog.value = true }
-                )
-
-                if (selectedDate.value.isNotEmpty()) {
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = selectedDate.value,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF666666),
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        text = "Transaction",
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(
+                                Color.White,
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_notifications),
+                            contentDescription = "Notifications",
+                            tint = Color(0xFF00D09E),
+                            modifier = Modifier.size(22.dp)
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(Color(0xFFFF6B6B), CircleShape)
+                                .align(Alignment.TopEnd)
+                                .offset(x = (-4).dp, y = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            // Balance Card
+            item {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Total Balance",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF666666),
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "$7,783.00",
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0D1F2D)
+                        )
+                    }
+                }
+            }
+
+            // Income + Expense Cards
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Income Card
+                    Card(
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (selected == "Income")
+                                Color(0xFF4CAF50) else Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = if (selected == "Income") 16.dp else 8.dp
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(120.dp)
+                            .clickable { viewModel.onTypeSelected("Income") }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    if (selected == "Income") {
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0xFF4CAF50),
+                                                Color(0xFF388E3C)
+                                            )
+                                        )
+                                    } else {
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color.White,
+                                                Color(0xFFF8FFF8)
+                                            )
+                                        )
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(
+                                            if (selected == "Income")
+                                                Color.White.copy(alpha = 0.2f)
+                                            else Color(0xFF4CAF50).copy(alpha = 0.1f),
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_income),
+                                        contentDescription = "Income",
+                                        tint = if (selected == "Income") Color.White else Color(0xFF4CAF50),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Income",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (selected == "Income") Color.White else Color(0xFF666666),
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "$4,120.00",
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (selected == "Income") Color.White else Color(0xFF4CAF50),
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
+
+                    // Expense Card
+                    Card(
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (selected == "Expense")
+                                Color(0xFFFF5722) else Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = if (selected == "Expense") 16.dp else 8.dp
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(120.dp)
+                            .clickable { viewModel.onTypeSelected("Expense") }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    if (selected == "Expense") {
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0xFFFF5722),
+                                                Color(0xFFD84315)
+                                            )
+                                        )
+                                    } else {
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color.White,
+                                                Color(0xFFFFF8F8)
+                                            )
+                                        )
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(
+                                            if (selected == "Expense")
+                                                Color.White.copy(alpha = 0.2f)
+                                            else Color(0xFFFF5722).copy(alpha = 0.1f),
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_expense),
+                                        contentDescription = "Expense",
+                                        tint = if (selected == "Expense") Color.White else Color(0xFFFF5722),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Expense",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (selected == "Expense") Color.White else Color(0xFF666666),
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "$1,187.40",
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (selected == "Expense") Color.White else Color(0xFFFF5722),
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Action Buttons
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Reset button (only show if there are active filters)
+                    if (searchParams != null || selectedDate.value.isNotEmpty()) {
+                        ActionButton(
+                            iconRes = R.drawable.ic_refresh,
+                            contentDescription = "Reset Filters",
+                            onClick = {
+                                viewModel.resetSearch()
+                                selectedDate.value = ""
+                                Toast.makeText(context, "Filters reset", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                    }
+
+                    ActionButton(
+                        iconRes = R.drawable.ic_search,
+                        contentDescription = "Search",
+                        onClick = { showSearchDialog.value = true }
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    ActionButton(
+                        iconRes = R.drawable.ic_calendar,
+                        contentDescription = "Calendar",
+                        onClick = { showDatePickerDialog.value = true }
+                    )
+
+                    if (selectedDate.value.isNotEmpty()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = selectedDate.value,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF666666),
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    ActionButton(
+                        iconRes = R.drawable.ic_more,
+                        contentDescription = "Add Transaction",
+                        onClick = { navController.navigate("add_transaction") },
+                        isPrimary = true
                     )
                 }
+            }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                ActionButton(
-                    iconRes = R.drawable.ic_more,
-                    contentDescription = "Add Transaction",
-                    onClick = { navController.navigate("add_transaction") },
-                    isPrimary = true
+            // Transactions List Header
+            item {
+                Text(
+                    text = "Recent Transactions",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF0D1F2D),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (transactions.isNotEmpty()) {
-                    itemsIndexed(transactions) { index, transaction ->
-                        TransactionRow(
-                            navController = navController,
-                            transaction = transaction
-                        )
-                    }
-                } else {
-                    item {
-                        EmptyTransactionState()
-                    }
+            // Transactions List
+            if (transactions.isNotEmpty()) {
+                itemsIndexed(transactions) { index, transaction ->
+                    TransactionRow(
+                        navController = navController,
+                        transaction = transaction,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                        categoryViewModel = categoryViewModel
+                    )
+                }
+            } else {
+                item {
+                    EmptyTransactionState()
                 }
             }
         }
@@ -558,6 +450,7 @@ fun TransactionBodySection(
             SearchDialog(
                 viewModel = categoryViewModel,
                 onDismiss = { showSearchDialog.value = false },
+                initialSearchParams = searchParams,
                 onSearch = { params ->
                     showSearchDialog.value = false
                     val request = TransactionSearchRequest(
@@ -584,10 +477,10 @@ fun TransactionBodySection(
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate()
 
-                        selectedDate.value = localDate.format(formatterDateOnly)
+                        selectedDate.value = localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
-                        val from = localDate.atStartOfDay().format(formatterDateTime)
-                        val to = localDate.atTime(LocalTime.MAX).format(formatterDateTime)
+                        val from = localDate.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        val to = localDate.atTime(LocalTime.MAX).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
                         viewModel.fetchTransactionsByDateRange(from, to)
                     }
@@ -596,6 +489,30 @@ fun TransactionBodySection(
             )
         }
     }
+}
+
+data class GeneralTransactionItem(
+    val transactionID: String,
+    val categoryID: String,
+    val walletID: String,
+    val title: String,
+    val timestamp: String?,
+    val amount: String,
+    val isIncome: Boolean
+)
+
+fun Transaction.toGeneralTransactionItem(): GeneralTransactionItem {
+    val isIncome = type.lowercase() == "income"
+
+    return GeneralTransactionItem(
+        transactionID = transactionID,
+        categoryID = categoryID,
+        walletID = walletID,
+        title = description,
+        timestamp = transactionDate,
+        amount = if (isIncome) "$$amount" else "-$$amount",
+        isIncome = isIncome
+    )
 }
 
 @Composable
@@ -642,12 +559,29 @@ private fun ActionButton(
 private fun TransactionRow(
     navController: NavController,
     transaction: GeneralTransactionItem,
+    modifier: Modifier = Modifier,
+    categoryViewModel: CategoryViewModel
 ) {
+    var category by remember { mutableStateOf<Category?>(null) }
+
+    LaunchedEffect(transaction.categoryID) {
+        categoryViewModel.getCategoryById(transaction.categoryID)
+    }
+
+    val selectedCategoryResult = categoryViewModel.selectedCategory.collectAsState()
+    
+    LaunchedEffect(selectedCategoryResult.value) {
+        selectedCategoryResult.value?.getOrNull()?.let {
+            category = it
+        }
+    }
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier
+            .clickable { navController.navigate("transaction_detail/${transaction.transactionID}") }
     ) {
         Row(
             modifier = Modifier
@@ -668,9 +602,7 @@ private fun TransactionRow(
                 contentAlignment = Alignment.Center
             ) {
                 TransactionIconButton(
-                    navController = navController,
-                    transactionID = transaction.transactionID,
-                    categoryID = transaction.categoryID,
+                    categoryName = category?.name ?: "Unknown Category",
                 )
             }
 
@@ -756,23 +688,28 @@ fun DatePickerModal(
     }
 }
 
-
 @Composable
 fun SearchDialog(
     viewModel: CategoryViewModel,
     onDismiss: () -> Unit,
+    initialSearchParams: TransactionSearchRequest? = null,
     onSearch: (TransactionSearchRequest) -> Unit
 ) {
+    val context = LocalContext.current
+
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     val formatter = remember {
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     }
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
-    var amountRange by remember { mutableStateOf("") }
+    var startDate by remember { mutableStateOf(initialSearchParams?.startDate ?: "") }
+    var endDate by remember { mutableStateOf(initialSearchParams?.endDate ?: "") }
+    var type by remember { mutableStateOf(initialSearchParams?.type ?: "") }
+    var category by remember { mutableStateOf(initialSearchParams?.category ?: "") }
+    var amountRange by remember { mutableStateOf(initialSearchParams?.amountRange ?: "") }
+    var keywords by remember { mutableStateOf(initialSearchParams?.keywords ?: "") }
+    var timeRange by remember { mutableStateOf(initialSearchParams?.timeRange ?: "") }
+    var dayOfWeek by remember { mutableStateOf(initialSearchParams?.dayOfWeek ?: "") }
 
     fun formatAmount(amount: String): String {
         return amount.toIntOrNull()?.let {
@@ -781,40 +718,51 @@ fun SearchDialog(
     }
 
     val rawAmountRanges = listOf("0-50000", "50000-200000", "200000-500000", "500000-1000000", "1000000+")
-    val amountRangeMap = rawAmountRanges.associate { range ->
-        val display = if (range.contains("-")) {
-            val (start, end) = range.split("-")
-            "${formatAmount(start)} - ${formatAmount(end)}"
-        } else {
-            formatAmount(range) + "+"
-        }
-        display to range
+    val amountRangeMap = buildMap {
+        put("All", "")
+        putAll(rawAmountRanges.associate { range ->
+            val display = if (range.contains("-")) {
+                val (start, end) = range.split("-")
+                "${formatAmount(start)} - ${formatAmount(end)}"
+            } else {
+                formatAmount(range) + "+"
+            }
+            display to range
+        })
     }
 
     val reverseAmountRangeMap = amountRangeMap.entries.associate { it.value to it.key }
-    var keywords by remember { mutableStateOf("") }
-    var timeRange by remember { mutableStateOf("") }
-    val timeRangeMap = mapOf(
-        "00:00-08:00" to "00:00:00-08:00:00",
-        "08:00-16:00" to "08:00:00-16:00:00",
-        "16:00-00:00" to "16:00:00-23:59:59"
-    )
+    
+    val timeRangeMap = buildMap {
+        put("All", "")
+        putAll(mapOf(
+            "00:00-08:00" to "00:00:00-08:00:00",
+            "08:00-16:00" to "08:00:00-16:00:00",
+            "16:00-00:00" to "16:00:00-23:59:59"
+        ))
+    }
 
     val reverseTimeRangeMap = timeRangeMap.entries.associate { it.value to it.key }
-    var dayOfWeek by remember { mutableStateOf("") }
-    val dayOfWeekMap = mapOf(
-        "Monday" to "Mon",
-        "Tuesday" to "Tue",
-        "Wednesday" to "Wed",
-        "Thursday" to "Thu",
-        "Friday" to "Fri",
-        "Saturday" to "Sat",
-        "Sunday" to "Sun"
-    )
+    
+    val dayOfWeekMap = buildMap {
+        put("All", "")
+        putAll(mapOf(
+            "Monday" to "Mon",
+            "Tuesday" to "Tue",
+            "Wednesday" to "Wed",
+            "Thursday" to "Thu",
+            "Friday" to "Fri",
+            "Saturday" to "Sat",
+            "Sunday" to "Sun"
+        ))
+    }
 
     val reverseDayOfWeekMap = dayOfWeekMap.entries.associate { it.value to it.key }
     val categoriesResult by viewModel.categories.collectAsState()
-    val categoryNames = categoriesResult?.getOrNull()?.map { it.name } ?: emptyList()
+    val categoryNames = buildList {
+        add("All")
+        addAll(categoriesResult?.getOrNull()?.map { it.name } ?: emptyList())
+    }
 
     LaunchedEffect(Unit) {
         viewModel.getCategories()
@@ -915,17 +863,21 @@ fun SearchDialog(
                                 ) {
                                     SearchDropdownField(
                                         label = "Type",
-                                        options = listOf("Expense", "Income"),
-                                        selectedOption = type,
-                                        onOptionSelected = { type = it },
+                                        options = listOf("All", "Expense", "Income"),
+                                        selectedOption = type.ifEmpty { "All" },
+                                        onOptionSelected = { selected ->
+                                            type = if (selected == "All") "" else selected
+                                        },
                                         modifier = Modifier.weight(1f)
                                     )
 
                                     SearchDropdownField(
                                         label = "Category",
                                         options = categoryNames,
-                                        selectedOption = category,
-                                        onOptionSelected = { category = it },
+                                        selectedOption = if (category.isEmpty()) "All" else category,
+                                        onOptionSelected = { selected ->
+                                            category = if (selected == "All") "" else selected
+                                        },
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
@@ -933,7 +885,7 @@ fun SearchDialog(
                                 SearchDropdownField(
                                     label = "Amount Range (VND)",
                                     options = amountRangeMap.keys.toList(),
-                                    selectedOption = reverseAmountRangeMap[amountRange] ?: "",
+                                    selectedOption = reverseAmountRangeMap[amountRange] ?: "All",
                                     onOptionSelected = { selected ->
                                         amountRange = amountRangeMap[selected] ?: ""
                                     }
@@ -959,7 +911,7 @@ fun SearchDialog(
                                 SearchDropdownField(
                                     label = "Day of Week",
                                     options = dayOfWeekMap.keys.toList(),
-                                    selectedOption = reverseDayOfWeekMap[dayOfWeek] ?: "",
+                                    selectedOption = reverseDayOfWeekMap[dayOfWeek] ?: "All",
                                     onOptionSelected = { selected ->
                                         dayOfWeek = dayOfWeekMap[selected] ?: ""
                                     },
@@ -969,7 +921,7 @@ fun SearchDialog(
                                 SearchDropdownField(
                                     label = "Time Range",
                                     options = timeRangeMap.keys.toList(),
-                                    selectedOption = reverseTimeRangeMap[timeRange] ?: "",
+                                    selectedOption = reverseTimeRangeMap[timeRange] ?: "All",
                                     onOptionSelected = { selected ->
                                         timeRange = timeRangeMap[selected] ?: ""
                                     },
@@ -1019,7 +971,19 @@ fun SearchDialog(
 
                     Button(
                         onClick = {
-                            Log.d("SearchDialog", "Start Date: $startDate, End Date: $endDate, type: $type, category: $category, amountRange: $amountRange, keywords: $keywords")
+                            if (startDate.isEmpty() || endDate.isEmpty()) {
+                                Toast.makeText(context, "Please select both start and end dates", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+
+                            val startDateMillis = formatter.parse(startDate)?.time ?: 0
+                            val endDateMillis = formatter.parse(endDate)?.time ?: 0
+
+                            if (startDateMillis > endDateMillis) {
+                                Toast.makeText(context, "Start date cannot be later than end date", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+
                             onSearch(
                                 TransactionSearchRequest(
                                     startDate, endDate, type, category,
@@ -1226,7 +1190,9 @@ fun SearchDropdownField(
                         text = {
                             Text(
                                 option,
-                                color = if (option == selectedOption) Color(0xFF00D09E) else Color(0xFF1A1A1A)
+                                color = if (option == selectedOption) Color(0xFF00D09E) else Color(0xFF1A1A1A),
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1
                             )
                         },
                         onClick = {

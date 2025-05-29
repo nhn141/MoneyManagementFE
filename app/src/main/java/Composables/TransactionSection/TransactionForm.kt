@@ -1,10 +1,11 @@
-package DI.Composables.CategorySection
+package DI.Composables.TransactionSection
 
 import DI.ViewModels.CategoryViewModel
-import DI.ViewModels.TransactionScreenViewModel
+import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import DI.ViewModels.OcrViewModel
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateFloatAsState
@@ -13,13 +14,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AttachMoney
@@ -30,8 +28,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,22 +68,18 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults
 import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TransactionForm(
-    viewModel: TransactionScreenViewModel,
+    viewModel: TransactionViewModel,
     navController: NavController,
     type: String,
-    onTypeChange: (String) -> Unit,
     categoryViewModel: CategoryViewModel,
     ocrViewModel: OcrViewModel,
     walletViewModel: WalletViewModel
@@ -95,6 +87,12 @@ fun TransactionForm(
     val context = LocalContext.current
     val categoriesResult by categoryViewModel.categories.collectAsState()
     val walletsResult by walletViewModel.wallets.collectAsState()
+
+    // Validation states
+    var walletError by remember { mutableStateOf<String?>(null) }
+    var categoryError by remember { mutableStateOf<String?>(null) }
+    var amountError by remember { mutableStateOf<String?>(null) }
+    var titleError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         categoryViewModel.getCategories()
@@ -155,345 +153,275 @@ fun TransactionForm(
                 walletName = wallet.walletName
                 walletId = wallet.walletID
             }
+
+            // Parse the date from ocrResult and update selectedDateTime
+            val ocrDate = result.date
+            Log.d("TransactionForm", "OCR Date received: $ocrDate")
+            try {
+                // Parse ISO 8601 format
+                val instant = java.time.Instant.parse(ocrDate)
+                val localDateTime = instant.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime()
+                
+                // Create a new Calendar instance and set its time
+                val newCalendar = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, localDateTime.year)
+                    set(Calendar.MONTH, localDateTime.monthValue - 1) // Calendar months are 0-based
+                    set(Calendar.DAY_OF_MONTH, localDateTime.dayOfMonth)
+                    set(Calendar.HOUR_OF_DAY, localDateTime.hour)
+                    set(Calendar.MINUTE, localDateTime.minute)
+                    set(Calendar.SECOND, localDateTime.second)
+                }
+                
+                // Update the state with the new Calendar instance
+                selectedDateTime.value = newCalendar
+                Log.d("TransactionForm", "Updated selectedDateTime: ${selectedDateTime.value.time}")
+            } catch (e: Exception) {
+                Log.e("TransactionForm", "Error parsing date", e)
+            }
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFDFF7E2),
-                        Color(0xFFB5F2D0),
-                        Color(0xFF00D09E).copy(alpha = 0.1f)
-                    )
-                )
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.Transparent)
-                .padding(horizontal = 20.dp, vertical = 24.dp)
-                .zIndex(1f)
-        ) {
-            TransactionFormHeader(type = type)
+    fun validateForm(): Boolean {
+        var isValid = true
+
+        if (walletId.isEmpty()) {
+            walletError = "Please select a wallet"
+            isValid = false
+        } else {
+            walletError = null
         }
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 100.dp, start = 20.dp, end = 20.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
+        if (categoryId.isEmpty()) {
+            categoryError = "Please select a category"
+            isValid = false
+        } else {
+            categoryError = null
+        }
+
+        if (rawAmount.isEmpty()) {
+            amountError = "Please enter an amount"
+            isValid = false
+        } else if (rawAmount.toLongOrNull() == null) {
+            amountError = "Please enter a valid amount"
+            isValid = false
+        } else {
+            amountError = null
+        }
+
+        if (title.trim().isEmpty()) {
+            titleError = "Please enter a title"
+            isValid = false
+        } else {
+            titleError = null
+        }
+
+        return isValid
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Wallet & Category Section
+        FormSection(
+            title = "Account Details",
+            icon = Icons.Default.AccountBalanceWallet
         ) {
-            // Wallet & Category Section
-            item {
-                FormSection(
-                    title = "Account Details",
-                    icon = Icons.Default.AccountBalanceWallet
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DropdownSelector(
-                            label = "Wallet",
-                            selectedName = walletName,
-                            options = walletsResult?.getOrNull()?.map { it.walletName to it.walletID } ?: emptyList(),
-                            onSelect = { name, id ->
-                                walletName = name
-                                walletId = id
-                            },
-                            icon = Icons.Default.AccountBalance
-                        )
-
-                        DropdownSelector(
-                            label = "Category",
-                            selectedName = categoryName,
-                            options = categoriesResult?.getOrNull()?.map { it.name to it.categoryID } ?: emptyList(),
-                            onSelect = { name, id ->
-                                categoryName = name
-                                categoryId = id
-                            },
-                            icon = Icons.Default.Category
-                        )
-                    }
-                }
-            }
-
-            // Amount Section
-            item {
-                FormSection(
-                    title = "Amount",
-                    icon = Icons.Default.Payments
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TransactionTextField(
-                            label = "Amount (VND)",
-                            value = formattedAmount,
-                            onValueChange = {
-                                rawAmount = unformatAmount(it.filter { char -> char.isDigit() })
-                            },
-                            leadingIcon = Icons.Default.AttachMoney,
-                            keyboardType = KeyboardType.Number
-                        )
-
-                        // Quick Amount Buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            QuickAmountButton(
-                                text = "+1K",
-                                onClick = {
-                                    val current = rawAmount.toLongOrNull() ?: 0L
-                                    rawAmount = (current + 1_000).toString()
-                                }
-                            )
-                            QuickAmountButton(
-                                text = "+10K",
-                                onClick = {
-                                    val current = rawAmount.toLongOrNull() ?: 0L
-                                    rawAmount = (current + 10_000).toString()
-                                }
-                            )
-                            QuickAmountButton(
-                                text = "+100K",
-                                onClick = {
-                                    val current = rawAmount.toLongOrNull() ?: 0L
-                                    rawAmount = (current + 100_000).toString()
-                                }
-                            )
-                            QuickAmountButton(
-                                text = "000",
-                                onClick = {
-                                    rawAmount += "000"
-                                },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                    }
-                }
-            }
-
-            // Transaction Details Section
-            item {
-                FormSection(
-                    title = "Transaction Details",
-                    icon = Icons.Default.Receipt
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TransactionTextField(
-                            label = "Title",
-                            value = title,
-                            onValueChange = { title = it },
-                            leadingIcon = Icons.Default.Title,
-                            placeholder = "Enter transaction title"
-                        )
-
-                        TransactionTextField(
-                            label = "Type",
-                            value = type,
-                            onValueChange = onTypeChange,
-                            isDropdown = true,
-                            leadingIcon = if (type == "Income") Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
-                        )
-                    }
-                }
-            }
-
-            // Date & Time Section
-            item {
-                FormSection(
-                    title = "Date & Time",
-                    icon = Icons.Default.Schedule
-                ) {
-                    TransactionTextField(
-                        label = "Date & Time",
-                        value = displayDate,
-                        onValueChange = {},
-                        isDropdown = true,
-                        leadingIcon = Icons.Default.CalendarToday,
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { dateDialogState.show() },
-                                modifier = Modifier
-                                    .background(
-                                        Color(0xFF00D09E).copy(alpha = 0.1f),
-                                        CircleShape
-                                    )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.DateRange,
-                                    contentDescription = "Select Date",
-                                    tint = Color(0xFF00D09E)
-                                )
-                            }
-                        }
-                    )
-                }
-            }
-
-            // Save Button
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        val parsedAmount = unformatAmount(formattedAmount).toDoubleOrNull()
-                        if (parsedAmount != null) {
-                            viewModel.createTransaction(
-                                amount = parsedAmount,
-                                description = title,
-                                categoryId = categoryId,
-                                walletId = walletId,
-                                type = type,
-                                transactionDate = storageDate
-                            ) { success ->
-                                if (success) {
-                                    Toast.makeText(context, "Transaction saved successfully", Toast.LENGTH_SHORT).show()
-                                    navController.popBackStack()
-                                } else {
-                                    Toast.makeText(context, "Failed to save transaction", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        } else {
-                            Toast.makeText(context, "Invalid amount", Toast.LENGTH_SHORT).show()
-                        }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                DropdownSelector(
+                    label = "Wallet",
+                    selectedName = walletName,
+                    options = walletsResult?.getOrNull()?.map { it.walletName to it.walletID } ?: emptyList(),
+                    onSelect = { name, id ->
+                        walletName = name
+                        walletId = id
+                        walletError = null
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF00D09E)
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    icon = Icons.Default.AccountBalance,
+                    error = walletError
+                )
+
+                DropdownSelector(
+                    label = "Category",
+                    selectedName = categoryName,
+                    options = categoriesResult?.getOrNull()?.map { it.name to it.categoryID } ?: emptyList(),
+                    onSelect = { name, id ->
+                        categoryName = name
+                        categoryId = id
+                        categoryError = null
+                    },
+                    icon = Icons.Default.Category,
+                    error = categoryError
+                )
+            }
+        }
+
+        // Amount Section
+        FormSection(
+            title = "Amount",
+            icon = Icons.Default.Payments
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                TransactionTextField(
+                    label = "Amount (VND)",
+                    value = formattedAmount,
+                    onValueChange = {
+                        rawAmount = unformatAmount(it.filter { char -> char.isDigit() })
+                        amountError = null
+                    },
+                    leadingIcon = Icons.Default.AttachMoney,
+                    keyboardType = KeyboardType.Number,
+                    error = amountError
+                )
+
+                // Quick Amount Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        "Save Transaction",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                    listOf("50K", "100K", "200K", "500K").forEach { amount ->
+                        QuickAmountButton(
+                            text = amount,
+                            onClick = {
+                                rawAmount = amount.replace("K", "000")
+                                amountError = null
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
+        }
+
+        // Transaction Details Section
+        FormSection(
+            title = "Transaction Details",
+            icon = Icons.Default.Receipt
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                TransactionTextField(
+                    label = "Title",
+                    value = title,
+                    onValueChange = { 
+                        title = it
+                        titleError = null
+                    },
+                    leadingIcon = Icons.Default.Title,
+                    placeholder = "Enter transaction title",
+                    error = titleError
+                )
+
+                TransactionTextField(
+                    label = "Date & Time",
+                    value = displayDate,
+                    onValueChange = {},
+                    isDropdown = true,
+                    leadingIcon = Icons.Default.CalendarToday,
+                    trailingIcon = {
+                        IconButton(
+                            onClick = { dateDialogState.show() },
+                            modifier = Modifier
+                                .background(
+                                    Color(0xFF00D09E).copy(alpha = 0.1f),
+                                    CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Select Date",
+                                tint = Color(0xFF00D09E)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        // Save Button
+        Button(
+            onClick = {
+                if (validateForm()) {
+                    val parsedAmount = unformatAmount(formattedAmount).toDoubleOrNull()
+                    if (parsedAmount != null) {
+                        viewModel.createTransaction(
+                            amount = parsedAmount,
+                            description = title,
+                            categoryId = categoryId,
+                            walletId = walletId,
+                            type = type,
+                            transactionDate = storageDate
+                        ) { success ->
+                            if (success) {
+                                Toast.makeText(context, "Transaction saved successfully", Toast.LENGTH_SHORT).show()
+                                navController.popBackStack()
+                            } else {
+                                Toast.makeText(context, "Failed to save transaction", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF00D09E)
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+        ) {
+            Text(
+                "Save Transaction",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
         }
     }
 
     // Date & Time Dialogs
     MaterialDialog(
         dialogState = dateDialogState,
-        backgroundColor = Color(0xFFF1FFF3),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFF00D09E)),
-        elevation = 8.dp,
         buttons = {
-            positiveButton(
-                text = "Next",
-                textStyle = TextStyle(color = Color(0xFF00D09E), fontWeight = FontWeight.Bold)
-            ) {
-                timeDialogState.show()
-            }
-            negativeButton(
-                text = "Cancel",
-                textStyle = TextStyle(color = Color(0xFF999999), fontWeight = FontWeight.Medium)
-            )
+            positiveButton("Ok")
+            negativeButton("Cancel")
         }
     ) {
         datepicker(
             initialDate = LocalDate.now(),
-            title = "Select a date",
             colors = DatePickerDefaults.colors(
                 headerBackgroundColor = Color(0xFF00D09E),
-                headerTextColor = Color.White,
-                calendarHeaderTextColor = Color(0xFF00D09E),
-                dateActiveBackgroundColor = Color(0xFF00D09E),
-                dateActiveTextColor = Color.White,
-                dateInactiveTextColor = Color.Gray
+                dateActiveBackgroundColor = Color(0xFF00D09E)
             )
-        ) { localDate ->
-            val newDate = selectedDateTime.value.clone() as Calendar
-            newDate.set(Calendar.YEAR, localDate.year)
-            newDate.set(Calendar.MONTH, localDate.monthValue - 1)
-            newDate.set(Calendar.DAY_OF_MONTH, localDate.dayOfMonth)
-            selectedDateTime.value = newDate
+        ) { date ->
+            selectedDateTime.value.apply {
+                set(Calendar.YEAR, date.year)
+                set(Calendar.MONTH, date.monthValue - 1)
+                set(Calendar.DAY_OF_MONTH, date.dayOfMonth)
+            }
+            timeDialogState.show()
         }
     }
 
     MaterialDialog(
         dialogState = timeDialogState,
-        backgroundColor = Color(0xFFF1FFF3),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFF00D09E)),
-        elevation = 8.dp,
         buttons = {
-            positiveButton(
-                text = "OK",
-                textStyle = TextStyle(color = Color(0xFF00D09E), fontWeight = FontWeight.Bold)
-            )
-            negativeButton(
-                text = "Cancel",
-                textStyle = TextStyle(color = Color(0xFF999999), fontWeight = FontWeight.Medium)
-            )
+            positiveButton("Ok")
+            negativeButton("Cancel")
         }
     ) {
         timepicker(
             initialTime = LocalTime.now(),
-            title = "Select a time",
             colors = TimePickerDefaults.colors(
                 activeBackgroundColor = Color(0xFF00D09E),
-                activeTextColor = Color.White,
-                selectorColor = Color(0xFF00D09E),
-                headerTextColor = Color.Black
+                selectorColor = Color(0xFF00D09E)
             )
         ) { time ->
-            val newTime = selectedDateTime.value.clone() as Calendar
-            newTime.set(Calendar.HOUR_OF_DAY, time.hour)
-            newTime.set(Calendar.MINUTE, time.minute)
-            newTime.set(Calendar.SECOND, 0)
-            selectedDateTime.value = newTime
-        }
-    }
-}
-
-@Composable
-fun TransactionFormHeader(type: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = if (type == "Income") {
-                            listOf(Color(0xFF4CAF50), Color(0xFF66BB6A))
-                        } else {
-                            listOf(Color(0xFFFF5722), Color(0xFFFF7043))
-                        }
-                    ),
-                    shape = RoundedCornerShape(14.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (type == "Income") Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column {
-            Text(
-                text = "New $type",
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                color = Color(0xFF1A1A1A)
-            )
+            selectedDateTime.value.apply {
+                set(Calendar.HOUR_OF_DAY, time.hour)
+                set(Calendar.MINUTE, time.minute)
+            }
         }
     }
 }
@@ -573,7 +501,8 @@ fun TransactionTextField(
     leadingIcon: ImageVector? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     placeholder: String = "",
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    error: String? = null
 ) {
     Column {
         Text(
@@ -596,7 +525,7 @@ fun TransactionTextField(
                     Icon(
                         imageVector = it,
                         contentDescription = null,
-                        tint = Color(0xFF00D09E),
+                        tint = if (error != null) Color.Red else Color(0xFF00D09E),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -605,14 +534,23 @@ fun TransactionTextField(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF00D09E),
-                unfocusedBorderColor = Color(0xFFE0E0E0),
+                focusedBorderColor = if (error != null) Color.Red else Color(0xFF00D09E),
+                unfocusedBorderColor = if (error != null) Color.Red else Color(0xFFE0E0E0),
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
-                cursorColor = Color(0xFF00D09E)
+                cursorColor = if (error != null) Color.Red else Color(0xFF00D09E),
+                errorBorderColor = Color.Red,
+                errorContainerColor = Color.White,
+                errorCursorColor = Color.Red,
+                errorLeadingIconColor = Color.Red,
+                errorTrailingIconColor = Color.Red
             ),
             singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            isError = error != null,
+            supportingText = error?.let {
+                { Text(error, color = Color.Red) }
+            }
         )
     }
 }
@@ -626,7 +564,8 @@ fun DropdownSelector(
     onSelect: (String, String) -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    placeholder: String = "Select an option"
+    placeholder: String = "Select an option",
+    error: String? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
     val animatedRotation by animateFloatAsState(
@@ -663,7 +602,7 @@ fun DropdownSelector(
                         Icon(
                             imageVector = it,
                             contentDescription = null,
-                            tint = Color(0xFF00D09E),
+                            tint = if (error != null) Color.Red else Color(0xFF00D09E),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -672,7 +611,7 @@ fun DropdownSelector(
                     Icon(
                         imageVector = Icons.Default.ExpandMore,
                         contentDescription = if (expanded) "Collapse" else "Expand",
-                        tint = Color(0xFF00D09E),
+                        tint = if (error != null) Color.Red else Color(0xFF00D09E),
                         modifier = Modifier
                             .rotate(animatedRotation)
                             .padding(8.dp)
@@ -686,11 +625,19 @@ fun DropdownSelector(
                         enabled = true
                     ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF00D09E),
-                    unfocusedBorderColor = Color(0xFFE0E0E0),
+                    focusedBorderColor = if (error != null) Color.Red else Color(0xFF00D09E),
+                    unfocusedBorderColor = if (error != null) Color.Red else Color(0xFFE0E0E0),
                     focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                )
+                    unfocusedContainerColor = Color.White,
+                    errorBorderColor = Color.Red,
+                    errorContainerColor = Color.White,
+                    errorLeadingIconColor = Color.Red,
+                    errorTrailingIconColor = Color.Red
+                ),
+                isError = error != null,
+                supportingText = error?.let {
+                    { Text(error, color = Color.Red) }
+                }
             )
 
             ExposedDropdownMenu(

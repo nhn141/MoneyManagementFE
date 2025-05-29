@@ -1,6 +1,6 @@
-package DI.Composables.CategorySection
-
-data class Category(
-    val name: String,
-    val imageRes: Int
-)
+//package DI.Composables.CategorySection
+//
+//data class Category(
+//    val name: String,
+//    val imageRes: Int
+//)

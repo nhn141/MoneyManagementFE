@@ -1,12 +1,18 @@
 package DI.ViewModels
 
+import DI.Models.Category.AddCategoryRequest
 import DI.Models.Category.Category
+import DI.Models.Category.UpdateCategoryRequest
+import DI.Models.UiEvent.UiEvent
 import DI.Repositories.CategoryRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -15,19 +21,23 @@ class CategoryViewModel @Inject constructor(
     private val repository: CategoryRepository
 ) : ViewModel() {
     private val _categories = MutableStateFlow<Result<List<Category>>?>(null)
-    val categories: StateFlow<Result<List<Category>>?> = _categories
+    val categories: StateFlow<Result<List<Category>>?> = _categories.asStateFlow()
 
-    private val _addCategoryResult = MutableStateFlow<Result<Category>?>(null)
-    val addCategoryResult: StateFlow<Result<Category>?> = _addCategoryResult
+    private val _addCategoryEvent = MutableSharedFlow<UiEvent>()
+    val addCategoryEvent = _addCategoryEvent.asSharedFlow()
+
+    private val _updateCategoryEvent = MutableSharedFlow<UiEvent>()
+    val updateCategoryEvent = _updateCategoryEvent.asSharedFlow()
+
+    private val _deleteCategoryEvent = MutableSharedFlow<UiEvent>()
+    val deleteCategoryEvent = _deleteCategoryEvent.asSharedFlow()
 
     private val _selectedCategory = MutableStateFlow<Result<Category>?>(null)
-    val selectedCategory: StateFlow<Result<Category>?> = _selectedCategory
+    val selectedCategory: StateFlow<Result<Category>?> = _selectedCategory.asStateFlow()
 
-    private val _updateCategoryResult = MutableStateFlow<Result<Category>?>(null)
-    val updateCategoryResult: StateFlow<Result<Category>?> = _updateCategoryResult
-
-    private val _deleteCategoryResult = MutableStateFlow<Result<Unit>?>(null)
-    val deleteCategoryResult: StateFlow<Result<Unit>?> = _deleteCategoryResult
+    init {
+        getCategories()
+    }
 
     fun getCategories() {
         viewModelScope.launch {
@@ -36,12 +46,14 @@ class CategoryViewModel @Inject constructor(
         }
     }
 
-    fun addCategory(category: Category) {
+    fun addCategory(newCategoryName: AddCategoryRequest) {
         viewModelScope.launch {
-            val result = repository.addCategory(category)
-            _addCategoryResult.value = result
+            val result = repository.addCategory(newCategoryName)
             if (result.isSuccess) {
                 getCategories()
+                _addCategoryEvent.emit(UiEvent.ShowMessage("Category added!"))
+            } else {
+                _addCategoryEvent.emit(UiEvent.ShowMessage("Error: ${result.exceptionOrNull()?.message ?: "Unknown error"}"))
             }
         }
     }
@@ -53,12 +65,14 @@ class CategoryViewModel @Inject constructor(
         }
     }
 
-    fun updateCategory(category: Category) {
+    fun updateCategory(updatedCategory: UpdateCategoryRequest) {
         viewModelScope.launch {
-            val result = repository.updateCategory(category)
-            _updateCategoryResult.value = result
+            val result = repository.updateCategory(updatedCategory)
             if (result.isSuccess) {
                 getCategories()
+                _updateCategoryEvent.emit(UiEvent.ShowMessage("Category updated!"))
+            } else {
+                _updateCategoryEvent.emit(UiEvent.ShowMessage("Error: ${result.exceptionOrNull()?.message ?: "Unknown error"}"))
             }
         }
     }
@@ -66,22 +80,24 @@ class CategoryViewModel @Inject constructor(
     fun deleteCategory(id: String) {
         viewModelScope.launch {
             val result = repository.deleteCategory(id)
-            _deleteCategoryResult.value = result
             if (result.isSuccess) {
                 getCategories()
+                _deleteCategoryEvent.emit(UiEvent.ShowMessage("Category deleted!"))
+            } else {
+                _deleteCategoryEvent.emit(UiEvent.ShowMessage("Error: ${result.exceptionOrNull()?.message ?: "Unknown error"}"))
             }
         }
     }
 
     fun clearAddCategoryResult() {
-        _addCategoryResult.value = null
+//        _addCategoryResult.value = null
     }
 
     fun clearUpdateCategoryResult() {
-        _updateCategoryResult.value = null
+//        _updateCategoryResult.value = null
     }
 
     fun clearDeleteCategoryResult() {
-        _deleteCategoryResult.value = null
+//        _deleteCategoryResult.value = null
     }
 }

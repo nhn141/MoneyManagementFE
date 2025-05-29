@@ -1,13 +1,10 @@
 package DI.Composables.TransactionSection
 
-import DI.Composables.CategorySection.DropdownSelector
-import DI.Composables.CategorySection.TransactionTextField
-import DI.Composables.GeneralTemplate
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Wallet
 import DI.ViewModels.CategoryViewModel
-import DI.ViewModels.TransactionScreenViewModel
+import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import android.widget.Toast
 import androidx.compose.animation.core.animateDpAsState
@@ -17,9 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -28,8 +23,6 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -73,7 +66,7 @@ import java.util.Locale
 fun TransactionEditScreen(
     navController: NavController,
     transactionId: String,
-    viewModel: TransactionScreenViewModel,
+    viewModel: TransactionViewModel,
     categoryViewModel: CategoryViewModel,
     walletViewModel: WalletViewModel
 ) {
@@ -152,7 +145,6 @@ fun TransactionEditHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 16.dp)
-                .statusBarsPadding()
         ) {
             Box(
                 modifier = Modifier
@@ -191,7 +183,7 @@ fun TransactionEditBody(
     transaction: Transaction,
     categoryList: List<Category>,
     walletList: List<Wallet>,
-    viewModel: TransactionScreenViewModel,
+    viewModel: TransactionViewModel,
     navController: NavController
 ) {
     val dateFormatStorage = remember {
@@ -233,10 +225,13 @@ fun TransactionEditBody(
 
     var amount by remember { mutableStateOf(transaction.amount.toString()) }
     var title by remember { mutableStateOf(transaction.description) }
-    var type by remember { mutableStateOf(transaction.type) }
+    val type by remember { mutableStateOf(transaction.type) }
     val isIncome = type.equals("income", ignoreCase = true)
     val isExpense = type.equals("expense", ignoreCase = true)
     val context = LocalContext.current
+
+    var showError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     LazyColumn(
         modifier = Modifier
@@ -259,7 +254,7 @@ fun TransactionEditBody(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Transaction Type",
+                        text = "Transaction Type (Unchangeable)",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF4A5568),
@@ -274,7 +269,6 @@ fun TransactionEditBody(
                             text = "INCOME",
                             isSelected = isIncome,
                             selectedColor = Color(0xFF48BB78),
-                            onClick = { type = "Income" },
                             modifier = Modifier.weight(1f)
                         )
 
@@ -282,7 +276,6 @@ fun TransactionEditBody(
                             text = "EXPENSE",
                             isSelected = isExpense,
                             selectedColor = Color(0xFFE53E3E),
-                            onClick = { type = "Expense" },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -365,34 +358,79 @@ fun TransactionEditBody(
         }
 
         item {
+            if (showError) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFEBEE)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = errorMessage,
+                        color = Color(0xFFB71C1C),
+                        modifier = Modifier.padding(16.dp),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+
             // Save Button
             Button(
                 onClick = {
-                    val updatedTransaction = transaction.copy(
-                        description = title,
-                        amount = amount.toDoubleOrNull() ?: 0.0,
-                        categoryID = categoryId,
-                        walletID = walletId,
-                        type = type,
-                        transactionDate = selectedDateTime.value?.let {
-                            dateFormatStorage.format(it.time)
-                        } ?: ""
-                    )
+                    // Validate all fields
+                    when {
+                        title.isBlank() -> {
+                            showError = true
+                            errorMessage = "Title cannot be empty"
+                        }
+                        amount.isBlank() || amount.toDoubleOrNull() == null -> {
+                            showError = true
+                            errorMessage = "Please enter a valid amount"
+                        }
+                        categoryId.isBlank() -> {
+                            showError = true
+                            errorMessage = "Please select a category"
+                        }
+                        walletId.isBlank() -> {
+                            showError = true
+                            errorMessage = "Please select a wallet"
+                        }
+                        selectedDateTime.value == null -> {
+                            showError = true
+                            errorMessage = "Please select a date and time"
+                        }
+                        else -> {
+                            showError = false
+                            val updatedTransaction = transaction.copy(
+                                description = title,
+                                amount = amount.toDoubleOrNull() ?: 0.0,
+                                categoryID = categoryId,
+                                walletID = walletId,
+                                type = type,
+                                transactionDate = selectedDateTime.value?.let {
+                                    dateFormatStorage.format(it.time)
+                                } ?: ""
+                            )
 
-                    viewModel.updateTransaction(
-                        transactionID = updatedTransaction.transactionID,
-                        amount = updatedTransaction.amount,
-                        description = updatedTransaction.description,
-                        categoryId = updatedTransaction.categoryID,
-                        walletId = updatedTransaction.walletID,
-                        type = updatedTransaction.type,
-                        transactionDate = updatedTransaction.transactionDate
-                    ) { success ->
-                        if (success) {
-                            Toast.makeText(context, "Transaction updated successfully", Toast.LENGTH_SHORT).show()
-                            navController.popBackStack()
-                        } else {
-                            Toast.makeText(context, "Failed to update transaction", Toast.LENGTH_SHORT).show()
+                            viewModel.updateTransaction(
+                                transactionID = updatedTransaction.transactionID,
+                                amount = updatedTransaction.amount,
+                                description = updatedTransaction.description,
+                                categoryId = updatedTransaction.categoryID,
+                                walletId = updatedTransaction.walletID,
+                                type = updatedTransaction.type,
+                                transactionDate = updatedTransaction.transactionDate
+                            ) { success ->
+                                if (success) {
+                                    Toast.makeText(context, "Transaction updated successfully", Toast.LENGTH_SHORT).show()
+                                    navController.popBackStack()
+                                } else {
+                                    Toast.makeText(context, "Failed to update transaction", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
                     }
                 },
@@ -478,7 +516,6 @@ fun TransactionTypeButton(
     text: String,
     isSelected: Boolean,
     selectedColor: Color,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val animatedElevation by animateDpAsState(
@@ -492,9 +529,7 @@ fun TransactionTypeButton(
     )
 
     Card(
-        modifier = modifier
-            .scale(animatedScale)
-            .clickable { onClick() },
+        modifier = modifier.scale(animatedScale),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = animatedElevation),
         colors = CardDefaults.cardColors(
@@ -517,6 +552,5 @@ fun TransactionTypeButton(
     }
 }
 
-// Using existing TransactionTextField and DropdownSelector components
 
 

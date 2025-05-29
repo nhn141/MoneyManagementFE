@@ -1,9 +1,8 @@
 package DI.Composables.HomeSection
 
-import DI.Composables.CategorySection.CustomProgressBar
 import DI.Composables.GeneralTemplate
 import DI.ViewModels.CategoryViewModel
-import DI.ViewModels.TransactionScreenViewModel
+import DI.ViewModels.TransactionViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -183,7 +182,6 @@ fun HomePageHeaderSection() {
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            CustomProgressBar(0.3f, "$20,000.00")
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -219,7 +217,7 @@ fun HomePageHeaderSection() {
 fun HomePageBody(
     navController: NavController
 ) {
-    val viewModel: TransactionScreenViewModel = hiltViewModel()
+    val viewModel: TransactionViewModel = hiltViewModel()
     val categoryViewModel: CategoryViewModel = hiltViewModel()
     val transactions = viewModel.filteredTransactions.value
 

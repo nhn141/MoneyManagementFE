@@ -6,7 +6,6 @@ import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
 import DI.Models.Chat.LatestChat
 import DI.Repositories.ChatRepository
-import DI.ViewModels.FriendViewModel.UiEvent
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
