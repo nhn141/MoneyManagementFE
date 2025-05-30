@@ -2,7 +2,7 @@ package DI.Composables.TransactionSection
 
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
-import DI.Models.Wallet
+import DI.Models.Wallet.Wallet
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
@@ -77,7 +77,7 @@ fun TransactionEditScreen(
 
     LaunchedEffect(transactionId) {
         categoryViewModel.getCategories()
-        walletViewModel.fetchWallets()
+        walletViewModel.getWallets()
         viewModel.loadTransactionById(transactionId) {
             isLoaded = it
         }

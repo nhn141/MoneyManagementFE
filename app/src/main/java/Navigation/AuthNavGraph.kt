@@ -7,11 +7,13 @@ import DI.Composables.AuthSection.LoginScreen
 import DI.Composables.AuthSection.RegisterScreen
 import DI.Composables.TransactionSection.AddTransactionScreen
 import DI.Composables.ChatSection.ChatMessageScreen
+import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.FriendSection.FriendProfileScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
 import DI.Composables.TransactionSection.TransactionScreen
+import DI.Composables.WalletSection.WalletScreen
 import DI.Models.BottomNavItem
 import DI.ViewModels.AnalysisViewModel
 import DI.ViewModels.ChatViewModel
@@ -106,6 +108,10 @@ private fun InnerNavHost(
         modifier         = modifier
     ) {
         composable(BottomNavItem.Home.route) {
+
+        }
+
+        composable(BottomNavItem.Friend.route) {
             FriendsScreenTheme {
                 FriendsScreen(
                     authViewModel = authViewModel,
@@ -115,18 +121,28 @@ private fun InnerNavHost(
                 )
             }
         }
+
+        composable(BottomNavItem.Chat.route) {
+            ChatScreen(
+                authViewModel = authViewModel,
+                chatViewModel = chatViewModel,
+                profileViewModel = profileViewModel,
+                friendViewModel = friendViewModel,
+                navController = navController
+            )
+        }
+
         composable(BottomNavItem.Transaction.route) {
-//            ChatScreen(
-//                authViewModel = authViewModel,
-//                chatViewModel = chatViewModel,
-//                profileViewModel = profileViewModel,
-//                friendViewModel = friendViewModel,
-//                navController = navController
-//            )
             TransactionScreen(
                 navController = navController,
                 viewModel = transactionViewModel,
                 categoryViewModel = categoryViewModel
+            )
+        }
+
+        composable(BottomNavItem.Wallet.route) {
+            WalletScreen(
+                viewModel = walletViewModel,
             )
         }
 
@@ -196,10 +212,6 @@ private fun InnerNavHost(
         }
 
         composable(BottomNavItem.Category.route) {
-//            CategoryScreen(
-//                navController = navController,
-//                categoryViewModel = categoryViewModel
-//            )
             ModernCategoriesScreen(
                 categoryViewModel = categoryViewModel,
                 authViewModel = authViewModel,

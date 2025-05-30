@@ -96,7 +96,7 @@ fun TransactionForm(
 
     LaunchedEffect(Unit) {
         categoryViewModel.getCategories()
-        walletViewModel.fetchWallets()
+        walletViewModel.getWallets()
     }
 
     val selectedDateTime = remember { mutableStateOf(Calendar.getInstance()) }

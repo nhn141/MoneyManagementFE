@@ -1,8 +1,7 @@
-package DI.Models
+package DI.Models.Wallet
 
 data class Wallet(
     val walletID: String,
-    val userID: String? = null,
     val walletName: String,
     val balance: Double
 )

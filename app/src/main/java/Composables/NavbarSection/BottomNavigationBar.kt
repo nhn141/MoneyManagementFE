@@ -2,6 +2,7 @@ package DI.Composables.NavbarSection
 import DI.Models.BottomNavItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -27,13 +29,9 @@ import androidx.compose.material3.Surface
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
-    val items = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.Analysis,
-        BottomNavItem.Transaction,
-        BottomNavItem.Category,
-        BottomNavItem.Profile
-    )
+    val items = BottomNavItem.allRoutes
+    val scrollState = rememberScrollState()
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
     Surface(
         shape = RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp),
@@ -46,19 +44,19 @@ fun BottomNavigationBar(navController: NavController) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+                .padding(vertical = 8.dp, horizontal = 8.dp)
+                .horizontalScroll(scrollState),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
             items.forEach { item ->
                 Box(
                     modifier = Modifier
                         .size(65.dp)
-                        .padding(10.dp)
+                        .padding(8.dp)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null, // Removes the ripple effect
+                            indication = null,
                             onClick = {
                                 navController.navigate(item.route) {
                                     popUpTo(navController.graph.startDestinationId) { saveState = true }
@@ -86,5 +84,4 @@ fun BottomNavigationBar(navController: NavController) {
             }
         }
     }
-
 }

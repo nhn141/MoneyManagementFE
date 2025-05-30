@@ -27,7 +27,8 @@ import DI.Models.Ocr.OcrData
 import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
 import DI.Models.UserInfo.UpdatedProfile
-import DI.Models.Wallet
+import DI.Models.Wallet.AddWalletRequest
+import DI.Models.Wallet.Wallet
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -54,11 +55,10 @@ interface ApiService {
     @POST("Accounts/RefreshToken")
     suspend fun refreshToken(@Body token: RefreshTokenRequest): RefreshTokenResponse
 
+    // Categories
+
     @GET("Categories")
     suspend fun getCategories(): List<Category>
-
-    @GET("Wallets")
-    suspend fun getWallets(): List<Wallet>
 
     @POST("Categories")
     suspend fun addCategory(@Body request: AddCategoryRequest): Response<Category>
@@ -72,8 +72,25 @@ interface ApiService {
     @DELETE("Categories/{id}")
     suspend fun deleteCategory(@Path("id") id: String): Response<ResponseBody>
 
+
+
+    // Wallets
+    @GET("Wallets")
+    suspend fun getWallets(): List<Wallet>
+
+    @GET("Wallets/{id}")
+    suspend fun getWalletById(@Path("id") id: String): Response<Wallet>
+
     @POST("Wallets")
-    suspend fun createWallet(@Body wallet: Wallet): Response<ResponseBody>
+    suspend fun createWallet(@Body request: AddWalletRequest): Response<Wallet>
+
+    @PUT("Wallets")
+    suspend fun updateWallet(@Body wallet: Wallet): Response<Wallet>
+
+    @DELETE("Wallets/{id}")
+    suspend fun deleteWallet(@Path("id") id: String): Response<ResponseBody>
+
+
 
     @GET("Transactions")
     suspend fun getTransactions(): List<Transaction>

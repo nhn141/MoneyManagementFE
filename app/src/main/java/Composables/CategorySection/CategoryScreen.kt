@@ -470,9 +470,6 @@ fun ModernCategoriesScreen(
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        // Initial data load
-        categoryViewModel.getCategories();
-
         // Collect events for add, update, and delete actions
         launch {
             categoryViewModel.addCategoryEvent.collect { event ->

@@ -45,7 +45,7 @@ fun TransactionDetailScreen(
 
     LaunchedEffect(transactionId) {
         categoryViewModel.getCategories()
-        walletViewModel.fetchWallets()
+        walletViewModel.getWallets()
         viewModel.loadTransactionById(transactionId) {
             isLoaded = it
         }
