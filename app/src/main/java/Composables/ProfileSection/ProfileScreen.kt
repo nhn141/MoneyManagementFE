@@ -7,12 +7,19 @@ import DI.Composables.ProfileSection.TextPrimaryColor
 import DI.Composables.ProfileSection.TextSecondaryColor
 import DI.Models.UserInfo.Profile
 import DI.Navigation.Routes
+import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.ProfileViewModel
 import ViewModels.AuthViewModel
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -25,6 +32,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +48,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 
 @Composable
@@ -47,7 +58,8 @@ fun ProfileScreen(
     appNavController: NavController,
     navController: NavController,
     authViewModel: AuthViewModel,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    currencyViewModel: CurrencyConverterViewModel
 ) {
     // Reload init data when token is refreshed
     val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
@@ -73,7 +85,7 @@ fun ProfileScreen(
                     .verticalScroll(rememberScrollState())
             ) {
                 // Top App Bar
-                TopAppBar()
+                TopAppBar(currencyViewModel)
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -162,8 +174,12 @@ fun ProfileScreen(
     }
 }
 
+
 @Composable
-fun TopAppBar() {
+fun TopAppBar(viewModel: CurrencyConverterViewModel) {
+    val isVND by viewModel.isVND.collectAsState()
+    var showSettingsMenu by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -179,12 +195,91 @@ fun TopAppBar() {
             )
         )
 
-        IconButton(onClick = { /* Handle settings */ }) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Settings",
-                tint = TextPrimaryColor
-            )
+        Box {
+            IconButton(onClick = { showSettingsMenu = true }) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = TextPrimaryColor
+                )
+            }
+
+            DropdownMenu(
+                expanded = showSettingsMenu,
+                onDismissRequest = { showSettingsMenu = false },
+                modifier = Modifier
+                    .width(180.dp)
+                    .background(
+                        Color.White,
+                        RoundedCornerShape(12.dp)
+                    )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Currency:",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black
+                        )
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .width(64.dp)
+                            .height(32.dp)
+                            .background(
+                                color = Color(0xFFE3F2FD),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .clickable { viewModel.toggleCurrency() }
+                            .padding(2.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .offset(
+                                    x = animateFloatAsState(
+                                        targetValue = if (isVND) 0f else 32f,
+                                        animationSpec = tween(200)
+                                    ).value.dp
+                                )
+                                .background(
+                                    color = Color(0xFF2196F3),
+                                    shape = RoundedCornerShape(14.dp)
+                                )
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 3.5.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "VND",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    color = if (isVND) Color.White else Color(0xFF666666),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                            Text(
+                                text = "USD",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    color = if (!isVND) Color.White else Color(0xFF666666),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

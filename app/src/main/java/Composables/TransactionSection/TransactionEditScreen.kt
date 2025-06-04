@@ -4,6 +4,7 @@ import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Wallet.Wallet
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import android.widget.Toast
@@ -46,8 +47,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -56,6 +61,8 @@ import java.util.Calendar
 import com.vanpra.composematerialdialogs.*
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.time.LocalDate
 import java.text.SimpleDateFormat
 import java.time.LocalTime
@@ -68,12 +75,15 @@ fun TransactionEditScreen(
     transactionId: String,
     viewModel: TransactionViewModel,
     categoryViewModel: CategoryViewModel,
-    walletViewModel: WalletViewModel
+    walletViewModel: WalletViewModel,
+    currencyViewModel: CurrencyConverterViewModel
 ) {
     val selectedTransaction by viewModel.selectedTransaction
     val categories by categoryViewModel.categories.collectAsState()
     val wallets by walletViewModel.wallets.collectAsState()
     var isLoaded by remember { mutableStateOf(false) }
+    val isVND by currencyViewModel.isVND.collectAsState() // Lấy trạng thái isVND
+    val exchangeRate by currencyViewModel.exchangeRate.collectAsState() // Lấy tỷ giá
 
     LaunchedEffect(transactionId) {
         categoryViewModel.getCategories()
@@ -109,7 +119,10 @@ fun TransactionEditScreen(
                     categoryList = categoryList,
                     walletList = walletList,
                     viewModel = viewModel,
-                    navController = navController
+                    navController = navController,
+                    currencyViewModel = currencyViewModel, // Truyền CurrencyViewModel
+                    isVND = isVND,
+                    exchangeRate = exchangeRate
                 )
             }
         } else {
@@ -178,13 +191,31 @@ fun TransactionEditHeader(
     }
 }
 
+fun formatAmountForInput(amount: Double, isVND: Boolean, exchangeRate: Double?): String {
+    val displayAmount = if (isVND || exchangeRate == null) {
+        amount
+    } else {
+        amount / exchangeRate
+    }
+    val decimalFormat = DecimalFormat("#,##0.00").apply {
+        decimalFormatSymbols = DecimalFormatSymbols(Locale.getDefault()).apply {
+            groupingSeparator = '.'
+            decimalSeparator = ','
+        }
+    }
+    return decimalFormat.format(displayAmount)
+}
+
 @Composable
 fun TransactionEditBody(
     transaction: Transaction,
     categoryList: List<Category>,
     walletList: List<Wallet>,
     viewModel: TransactionViewModel,
-    navController: NavController
+    navController: NavController,
+    currencyViewModel: CurrencyConverterViewModel,
+    isVND: Boolean, // Thêm isVND
+    exchangeRate: Double? // Thêm exchangeRate
 ) {
     val dateFormatStorage = remember {
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
@@ -223,7 +254,16 @@ fun TransactionEditBody(
         mutableStateOf(walletList.find { it.walletID == transaction.walletID }?.walletName ?: "")
     }
 
-    var amount by remember { mutableStateOf(transaction.amount.toString()) }
+    // Hiển thị số tiền theo đơn vị được chọn
+    var amount by remember {
+        mutableStateOf(
+            formatAmountForInput(
+                amount = transaction.amount,
+                isVND = isVND,
+                exchangeRate = exchangeRate
+            )
+        )
+    }
     var title by remember { mutableStateOf(transaction.description) }
     val type by remember { mutableStateOf(transaction.type) }
     val isIncome = type.equals("income", ignoreCase = true)
@@ -304,12 +344,12 @@ fun TransactionEditBody(
                     )
 
                     TransactionTextField(
-                        label = "Amount",
+                        label = "Amount (${if (isVND) "VND" else "USD"})", // Hiển thị đơn vị tiền tệ
                         value = amount,
                         onValueChange = { amount = it },
                         keyboardType = KeyboardType.Number,
                         leadingIcon = Icons.Default.AttachMoney,
-                        placeholder = "0.00"
+                        placeholder = "0,00"
                     )
 
                     DropdownSelector(
@@ -386,7 +426,7 @@ fun TransactionEditBody(
                             showError = true
                             errorMessage = "Title cannot be empty"
                         }
-                        amount.isBlank() || amount.toDoubleOrNull() == null -> {
+                        amount.isBlank() || amount.replace(".", "").replace(",", ".").toDoubleOrNull() == null -> {
                             showError = true
                             errorMessage = "Please enter a valid amount"
                         }
@@ -404,9 +444,10 @@ fun TransactionEditBody(
                         }
                         else -> {
                             showError = false
+                            val amountInVND = currencyViewModel.toVND(amount.replace(".", "").replace(",", ".").toDoubleOrNull() ?: 0.0) ?: return@Button
                             val updatedTransaction = transaction.copy(
                                 description = title,
-                                amount = amount.toDoubleOrNull() ?: 0.0,
+                                amount = amountInVND, // Lưu số tiền ở VND
                                 categoryID = categoryId,
                                 walletID = walletId,
                                 type = type,
