@@ -8,6 +8,7 @@ import DI.Composables.AuthSection.RegisterScreen
 import DI.Composables.TransactionSection.AddTransactionScreen
 import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
+import DI.Composables.Currency.CurrencyConverterScreen
 import DI.Composables.FriendSection.FriendProfileScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
@@ -23,6 +24,7 @@ import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.OcrViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
+import DI.ViewModels.CurrencyConverterViewModel
 import ModernCategoriesScreen
 import ProfileScreen
 import Screens.MainLayout
@@ -35,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -101,6 +104,7 @@ private fun InnerNavHost(
     val transactionViewModel = hiltViewModel<TransactionViewModel>(parentEntry)
     val walletViewModel = hiltViewModel<WalletViewModel>(parentEntry)
     val ocrViewModel = hiltViewModel<OcrViewModel>(parentEntry)
+    val currencyViewModel = viewModel<CurrencyConverterViewModel>(parentEntry)
 
     NavHost(
         navController    = navController,
@@ -135,8 +139,9 @@ private fun InnerNavHost(
         composable(BottomNavItem.Transaction.route) {
             TransactionScreen(
                 navController = navController,
-                viewModel = transactionViewModel,
-                categoryViewModel = categoryViewModel
+                transactionViewModel = transactionViewModel,
+                categoryViewModel = categoryViewModel,
+                currencyViewModel = currencyViewModel
             )
         }
 
@@ -178,7 +183,8 @@ private fun InnerNavHost(
                 appNavController = appNavController,
                 navController = navController,
                 authViewModel = authViewModel,
-                profileViewModel = profileViewModel
+                profileViewModel = profileViewModel,
+                currencyViewModel = currencyViewModel
             )
         }
 
@@ -207,7 +213,8 @@ private fun InnerNavHost(
                 transactionViewModel = transactionViewModel,
                 categoryViewModel = categoryViewModel,
                 walletViewModel = walletViewModel,
-                ocrViewModel = ocrViewModel
+                ocrViewModel = ocrViewModel,
+                currencyViewModel = currencyViewModel
             )
         }
 
@@ -216,6 +223,7 @@ private fun InnerNavHost(
                 categoryViewModel = categoryViewModel,
                 authViewModel = authViewModel,
             )
+  //          CurrencyConverterScreen(viewModel = currencyViewModel)
         }
 
         composable(
@@ -229,7 +237,8 @@ private fun InnerNavHost(
                 transactionId = transactionId,
                 viewModel = transactionViewModel,
                 categoryViewModel = categoryViewModel,
-                walletViewModel = walletViewModel
+                walletViewModel = walletViewModel,
+                currencyViewModel = currencyViewModel
             )
         }
 
@@ -244,7 +253,8 @@ private fun InnerNavHost(
                 transactionId = transactionId,
                 viewModel = transactionViewModel,
                 categoryViewModel = categoryViewModel,
-                walletViewModel = walletViewModel
+                walletViewModel = walletViewModel,
+                currencyViewModel = currencyViewModel
             )
         }
     }

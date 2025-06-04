@@ -4,7 +4,9 @@ import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.TransactionViewModel
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -68,25 +70,30 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 
 @Composable
 fun TransactionScreen(
     navController: NavController,
-    viewModel: TransactionViewModel,
-    categoryViewModel: CategoryViewModel
+    transactionViewModel: TransactionViewModel,
+    categoryViewModel: CategoryViewModel,
+    currencyViewModel: CurrencyConverterViewModel
 ) {
     val scrollState = rememberLazyListState()
-    val selected = viewModel.selectedType.value
-    val transactions = viewModel.filteredTransactions.value
+    val selected = transactionViewModel.selectedType.value
+    val transactions = transactionViewModel.filteredTransactions.value
     val showSearchDialog = remember { mutableStateOf(false) }
     val showDatePickerDialog = remember { mutableStateOf(false) }
-    val selectedDate = remember { mutableStateOf("") }
-    val searchParams = viewModel.searchParams.value
+    val selectedDate = remember { mutableStateOf<String>("") }
+    val searchParams = transactionViewModel.searchParams.value
     val context = LocalContext.current
+    val isVND by currencyViewModel.isVND.collectAsState() // Lấy trạng thái isVND
+    val exchangeRate by currencyViewModel.exchangeRate.collectAsState() // Lấy tỷ giá
 
     LaunchedEffect(Unit) {
         categoryViewModel.getCategories()
-        viewModel.fetchTransactions()
+        transactionViewModel.fetchTransactions()
     }
 
     Box(
@@ -189,7 +196,7 @@ fun TransactionScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = stringResource(R.string.sample_total_balance),
+                            text = formatAmount(7783.0, isVND, exchangeRate), // Cập nhật số tiền
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0D1F2D)
@@ -219,7 +226,7 @@ fun TransactionScreen(
                         modifier = Modifier
                             .weight(1f)
                             .height(120.dp)
-                            .clickable { viewModel.onTypeSelected("Income") }
+                            .clickable { transactionViewModel.onTypeSelected("Income") }
                     ) {
                         Box(
                             modifier = Modifier
@@ -271,7 +278,7 @@ fun TransactionScreen(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = stringResource(R.string.sample_income_amount),
+                                    text = formatAmount(4120.0, isVND, exchangeRate), // Cập nhật số tiền
                                     fontWeight = FontWeight.Bold,
                                     color = if (selected == "Income") Color.White else Color(0xFF4CAF50),
                                     fontSize = 16.sp
@@ -293,7 +300,7 @@ fun TransactionScreen(
                         modifier = Modifier
                             .weight(1f)
                             .height(120.dp)
-                            .clickable { viewModel.onTypeSelected("Expense") }
+                            .clickable { transactionViewModel.onTypeSelected("Expense") }
                     ) {
                         Box(
                             modifier = Modifier
@@ -345,7 +352,7 @@ fun TransactionScreen(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = stringResource(R.string.sample_expense_amount),
+                                    text = formatAmount(1187.40, isVND, exchangeRate), // Cập nhật số tiền
                                     fontWeight = FontWeight.Bold,
                                     color = if (selected == "Expense") Color.White else Color(0xFFFF5722),
                                     fontSize = 16.sp
@@ -364,13 +371,13 @@ fun TransactionScreen(
                         .padding(horizontal = 20.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
-                ) {                    // Reset button (only show if there are active filters)
+                ) {
                     if (searchParams != null || selectedDate.value.isNotEmpty()) {
                         ActionButton(
                             iconRes = R.drawable.ic_refresh,
                             contentDescription = stringResource(R.string.reset_filters),
                             onClick = {
-                                viewModel.resetSearch()
+                                transactionViewModel.resetSearch()
                                 selectedDate.value = ""
                                 Toast.makeText(context, context.getString(R.string.filters_reset), Toast.LENGTH_SHORT).show()
                             }
@@ -398,6 +405,7 @@ fun TransactionScreen(
                             text = selectedDate.value,
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF666666),
+                            fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
@@ -430,7 +438,8 @@ fun TransactionScreen(
                         navController = navController,
                         transaction = transaction,
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-                        categoryViewModel = categoryViewModel
+                        categoryViewModel = categoryViewModel,
+                        currencyViewModel = currencyViewModel
                     )
                 }
             } else {
@@ -458,8 +467,9 @@ fun TransactionScreen(
                         timeRange = params.timeRange?.ifBlank { null },
                         dayOfWeek = params.dayOfWeek?.ifBlank { null }
                     )
-                    viewModel.searchTransactions(request)
-                }
+                    transactionViewModel.searchTransactions(request)
+                },
+                currencyViewModel = currencyViewModel
             )
         }
 
@@ -477,7 +487,7 @@ fun TransactionScreen(
                         val from = localDate.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         val to = localDate.atTime(LocalTime.MAX).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
-                        viewModel.fetchTransactionsByDateRange(from, to)
+                        transactionViewModel.fetchTransactionsByDateRange(from, to)
                     }
                 },
                 onDismiss = { showDatePickerDialog.value = false }
@@ -505,7 +515,7 @@ fun Transaction.toGeneralTransactionItem(): GeneralTransactionItem {
         walletID = walletID,
         title = description,
         timestamp = transactionDate,
-        amount = if (isIncome) "$$amount" else "-$$amount",
+        amount = if (isIncome) "$amount" else "-$amount",
         isIncome = isIncome
     )
 }
@@ -551,20 +561,23 @@ private fun ActionButton(
 }
 
 @Composable
-private fun TransactionRow(
+fun TransactionRow(
     navController: NavController,
     transaction: GeneralTransactionItem,
     modifier: Modifier = Modifier,
-    categoryViewModel: CategoryViewModel
+    categoryViewModel: CategoryViewModel,
+    currencyViewModel: CurrencyConverterViewModel
 ) {
     var category by remember { mutableStateOf<Category?>(null) }
+    val isVND by currencyViewModel.isVND.collectAsState()
+    val exchangeRate by currencyViewModel.exchangeRate.collectAsState()
 
     LaunchedEffect(transaction.categoryID) {
         categoryViewModel.getCategoryById(transaction.categoryID)
     }
 
     val selectedCategoryResult = categoryViewModel.selectedCategory.collectAsState()
-    
+
     LaunchedEffect(selectedCategoryResult.value) {
         selectedCategoryResult.value?.getOrNull()?.let {
             category = it
@@ -576,66 +589,100 @@ private fun TransactionRow(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = modifier
-            .clickable { navController.navigate("transaction_detail/${transaction.transactionID}") }
+            .clickable { navController.navigate("transaction_detail/${transaction.transactionID}")
+            Log.d("TransactionRow", "ID: ${transaction.transactionID}")}
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
-            Box(
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(
+                            if (transaction.isIncome)
+                                Color(0xFF4CAF50).copy(alpha = 0.15f)
+                            else Color(0xFFFF5722).copy(alpha = 0.15f),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TransactionIconButton(
+                        categoryName = category?.name ?: "Unknown Category",
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp)
+                ) {
+                    Text(
+                        text = transaction.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFF0D1F2D),
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = transaction.timestamp ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF666666)
+                    )
+                }
+            }
+
+            Text(
+                text = formatAmount(
+                    amount = transaction.amount.toDoubleOrNull() ?: 0.0,
+                    isVND = isVND,
+                    exchangeRate = exchangeRate
+                ),
+                color = if (transaction.isIncome) Color(0xFF4CAF50) else Color(0xFFFF5722),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
-                    .size(56.dp)
-                    .background(
-                        if (transaction.isIncome)
-                            Color(0xFF4CAF50).copy(alpha = 0.15f)
-                        else Color(0xFFFF5722).copy(alpha = 0.15f),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {            TransactionIconButton(
-                categoryName = category?.name ?: stringResource(R.string.unknown_category),
+                    .fillMaxWidth()
+                    .wrapContentWidth(Alignment.End)
             )
-            }
-
-            // Transaction details
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp)
-            ) {
-                Text(
-                    text = transaction.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF0D1F2D),
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = transaction.timestamp ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF666666)
-                )
-            }
-
-            Column(
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier.padding(start = 8.dp)
-            ) {
-                Text(
-                    text = transaction.amount,
-                    color = if (transaction.isIncome) Color(0xFF4CAF50) else Color(0xFFFF5722),
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
         }
     }
 }
+
+
+
+@Composable
+fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String {
+    val displayAmount = if (isVND || exchangeRate == null) {
+        amount
+    } else {
+        amount / exchangeRate
+    }
+
+    val symbols = DecimalFormatSymbols(Locale.US).apply {
+        groupingSeparator = '.'
+        decimalSeparator = ','
+    }
+
+    val formatter = if (isVND) {
+        DecimalFormat("#,###", symbols)
+    } else {
+        DecimalFormat("#,##0.00", symbols)
+    }
+
+    val formatted = formatter.format(displayAmount)
+    val currencySymbol = if (isVND) "VND" else "USD"
+
+    return "$formatted $currencySymbol"
+}
+
 
 @Composable
 private fun EmptyTransactionState() {
@@ -686,28 +733,12 @@ fun SearchDialog(
     viewModel: CategoryViewModel,
     onDismiss: () -> Unit,
     initialSearchParams: TransactionSearchRequest? = null,
-    onSearch: (TransactionSearchRequest) -> Unit
+    onSearch: (TransactionSearchRequest) -> Unit,
+    currencyViewModel: CurrencyConverterViewModel
 ) {
     val context = LocalContext.current
-    
-    // Create nonComposableStrings for Toast messages and other non-composable contexts
-    val nonComposableStrings = remember {
-        object {
-            val pleaseSelectDates = context.getString(R.string.please_select_dates)
-            val startDateLaterError = context.getString(R.string.start_date_later_error)
-            val allOption = context.getString(R.string.all)
-            val monday = context.getString(R.string.monday)
-            val tuesday = context.getString(R.string.tuesday)
-            val wednesday = context.getString(R.string.wednesday)
-            val thursday = context.getString(R.string.thursday)
-            val friday = context.getString(R.string.friday)
-            val saturday = context.getString(R.string.saturday)
-            val sunday = context.getString(R.string.sunday)
-            val time0008 = context.getString(R.string.time_00_08)
-            val time0816 = context.getString(R.string.time_08_16)
-            val time1600 = context.getString(R.string.time_16_00)
-        }
-    }
+    val isVND by currencyViewModel.isVND.collectAsState() // Lấy trạng thái isVND
+    val exchangeRate by currencyViewModel.exchangeRate.collectAsState() // Lấy tỷ giá
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
@@ -723,28 +754,47 @@ fun SearchDialog(
     var timeRange by remember { mutableStateOf(initialSearchParams?.timeRange ?: "") }
     var dayOfWeek by remember { mutableStateOf(initialSearchParams?.dayOfWeek ?: "") }
 
-    fun formatAmount(amount: String): String {
+    fun formatAmount(amount: String, isVND: Boolean): String {
         return amount.toIntOrNull()?.let {
-            "%,d".format(it).replace(",", ".")
+            val formatted = "%,d".format(it).replace(",", ".")
+            if (isVND) "$formatted VND" else "$formatted USD"
         } ?: amount
     }
 
-    val rawAmountRanges = listOf("0-50000", "50000-200000", "200000-500000", "500000-1000000", "1000000+")
+    fun unformatAmount(formatted: String): String {
+        return formatted.replace(".", "").replace(",", "").replace(" VND", "").replace(" USD", "")
+    }
+
+    // Tạo danh sách rawAmountRanges dựa trên đơn vị tiền tệ
+    val rawAmountRanges = if (isVND) {
+        listOf("0-50000", "50000-200000", "200000-500000", "500000-1000000", "1000000+")
+    } else {
+        exchangeRate?.let { rate ->
+            listOf(
+                "0-${(50000 / rate).toInt()}",
+                "${(50000 / rate).toInt()}-${(200000 / rate).toInt()}",
+                "${(200000 / rate).toInt()}-${(500000 / rate).toInt()}",
+                "${(500000 / rate).toInt()}-${(1000000 / rate).toInt()}",
+                "${(1000000 / rate).toInt()}+"
+            )
+        } ?: listOf("0-50", "50-200", "200-500", "500-1000", "1000+") // Giá trị mặc định nếu exchangeRate null
+    }
+
     val amountRangeMap = buildMap {
         put(nonComposableStrings.allOption, "")
         putAll(rawAmountRanges.associateBy { range ->
             val display = if (range.contains("-")) {
                 val (start, end) = range.split("-")
-                "${formatAmount(start)} - ${formatAmount(end)}"
+                "${formatAmount(start, isVND)} - ${formatAmount(end, isVND)}"
             } else {
-                formatAmount(range) + "+"
+                formatAmount(range, isVND) + "+"
             }
             display
         })
     }
 
     val reverseAmountRangeMap = amountRangeMap.entries.associate { it.value to it.key }
-    
+
     val timeRangeMap = buildMap {
         put(nonComposableStrings.allOption, "")
         putAll(mapOf(
@@ -755,7 +805,7 @@ fun SearchDialog(
     }
 
     val reverseTimeRangeMap = timeRangeMap.entries.associate { it.value to it.key }
-    
+
     val dayOfWeekMap = buildMap {
         put(nonComposableStrings.allOption, "")
         putAll(mapOf(
@@ -824,7 +874,6 @@ fun SearchDialog(
                             modifier = Modifier.size(18.dp)
                         )
                     }
-
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -891,7 +940,7 @@ fun SearchDialog(
                                 }
 
                                 SearchDropdownField(
-                                    label = stringResource(R.string.amount_range_vnd),
+                                    label = "Amount Range (${if (isVND) "VND" else "USD"})",
                                     options = amountRangeMap.keys.toList(),
                                     selectedOption = reverseAmountRangeMap[amountRange] ?: stringResource(R.string.all),
                                     onOptionSelected = { selected ->
@@ -948,7 +997,6 @@ fun SearchDialog(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            // Reset all fields
                             startDate = ""
                             endDate = ""
                             type = ""
@@ -974,7 +1022,6 @@ fun SearchDialog(
                         )
                     }
 
-
                     Button(
                         onClick = {
                             if (startDate.isEmpty() || endDate.isEmpty()) {
@@ -990,10 +1037,19 @@ fun SearchDialog(
                                 return@Button
                             }
 
+                            val adjustedAmountRange = if (!isVND && exchangeRate != null) {
+                                amountRange.split("-").joinToString("-") { range ->
+                                    val value = range.removeSuffix("+").toDoubleOrNull() ?: 0.0
+                                    ((value * exchangeRate!!).toInt().toString() + (if (range.endsWith("+")) "+" else ""))
+                                }
+                            } else {
+                                amountRange
+                            }
+
                             onSearch(
                                 TransactionSearchRequest(
                                     startDate, endDate, type, category,
-                                    amountRange, keywords, timeRange, dayOfWeek
+                                    adjustedAmountRange, keywords, timeRange, dayOfWeek
                                 )
                             )
                             onDismiss()

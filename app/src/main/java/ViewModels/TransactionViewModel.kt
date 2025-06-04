@@ -93,7 +93,7 @@ class TransactionViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val transaction = Transaction(
-                transactionID = "",
+                transactionID = "hello",
                 amount = amount,
                 description = description,
                 categoryID = categoryId,

@@ -1,6 +1,7 @@
 package DI.Composables.TransactionSection
 
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import android.content.Context
@@ -37,13 +38,16 @@ fun TransactionDetailScreen(
     transactionId: String,
     viewModel: TransactionViewModel,
     categoryViewModel: CategoryViewModel,
-    walletViewModel: WalletViewModel
+    walletViewModel: WalletViewModel,
+    currencyViewModel: CurrencyConverterViewModel
 ) {
     val selectedTransaction by viewModel.selectedTransaction
     val categories by categoryViewModel.categories.collectAsState()
     val wallets by walletViewModel.wallets.collectAsState()
     val context = LocalContext.current
     var isLoaded by remember { mutableStateOf(false) }
+    val isVND by currencyViewModel.isVND.collectAsState() // Lấy trạng thái isVND
+    val exchangeRate by currencyViewModel.exchangeRate.collectAsState() // Lấy tỷ giá
 
     LaunchedEffect(transactionId) {
         categoryViewModel.getCategories()
@@ -93,7 +97,9 @@ fun TransactionDetailScreen(
                 type = if (generalTransaction.isIncome) stringResource(R.string.income) else stringResource(R.string.expense),
                 transactionId = transactionId,
                 viewModel = viewModel,
-                context = context
+                context = context,
+                isVND = isVND, // Truyền isVND
+                exchangeRate = exchangeRate // Truyền exchangeRate
             )
         } else {
             Box(
@@ -190,7 +196,9 @@ fun TransactionDetailBody(
     type: String,
     transactionId: String,
     viewModel: TransactionViewModel,
-    context: Context
+    context: Context,
+    isVND: Boolean,
+    exchangeRate: Double?
 ) {
     val typeColor = if (type.equals("Income", ignoreCase = true))
         Color(0xFF48BB78) else Color(0xFFE53E3E)
@@ -253,7 +261,11 @@ fun TransactionDetailBody(
                         )
 
                         Text(
-                            text = amount,
+                            text = formatAmount(
+                                amount = amount.toDoubleOrNull() ?: 0.0,
+                                isVND = isVND,
+                                exchangeRate = exchangeRate
+                            ),
                             fontSize = 32.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color(0xFF2D3748),

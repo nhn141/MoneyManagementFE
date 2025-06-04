@@ -1,6 +1,7 @@
 package DI.Composables.TransactionSection
 
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.OcrViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
@@ -40,11 +41,12 @@ import com.example.moneymanagement_frontend.R
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AddTransactionScreen(
-        navController: NavController,
-        transactionViewModel: TransactionViewModel,
-        categoryViewModel: CategoryViewModel,
-        walletViewModel: WalletViewModel,
-        ocrViewModel: OcrViewModel
+    navController: NavController,
+    transactionViewModel: TransactionViewModel,
+    categoryViewModel: CategoryViewModel,
+    walletViewModel: WalletViewModel,
+    ocrViewModel: OcrViewModel,
+    currencyViewModel: CurrencyConverterViewModel
 ) {
     var type by remember { mutableStateOf("Expense") }
 
@@ -163,12 +165,13 @@ fun AddTransactionScreen(
             // Form Content
             item {
                 TransactionForm(
-                        viewModel = transactionViewModel,
-                        navController = navController,
-                        type = type,
-                        categoryViewModel = categoryViewModel,
-                        walletViewModel = walletViewModel,
-                        ocrViewModel = ocrViewModel
+                    viewModel = transactionViewModel,
+                    navController = navController,
+                    type = type,
+                    categoryViewModel = categoryViewModel,
+                    walletViewModel = walletViewModel,
+                    ocrViewModel = ocrViewModel,
+                    currencyViewModel = currencyViewModel
                 )
             }
         }

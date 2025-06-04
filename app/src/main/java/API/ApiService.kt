@@ -102,10 +102,10 @@ interface ApiService {
     suspend fun createTransaction(@Body transaction : Transaction): Response<Transaction>
 
     @GET("Transactions/{id}")
-    suspend fun getTransactionById(@retrofit2.http.Path("id") id: String): Response<Transaction>
+    suspend fun getTransactionById(@Path("id") id: String): Response<Transaction>
 
     @DELETE("Transactions/{id}")
-    suspend fun deleteTransaction(@retrofit2.http.Path("id") id: String): Response<ResponseBody>
+    suspend fun deleteTransaction(@Path("id") id: String): Response<ResponseBody>
 
     @GET("Transactions/date-range")
     suspend fun getTransactionsByDateRange(

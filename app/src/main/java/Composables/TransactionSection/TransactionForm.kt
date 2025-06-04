@@ -1,6 +1,7 @@
 package DI.Composables.TransactionSection
 
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import DI.ViewModels.OcrViewModel
@@ -85,11 +86,14 @@ fun TransactionForm(
     type: String,
     categoryViewModel: CategoryViewModel,
     ocrViewModel: OcrViewModel,
-    walletViewModel: WalletViewModel
+    walletViewModel: WalletViewModel,
+    currencyViewModel: CurrencyConverterViewModel
 ) {
     val context = LocalContext.current
     val categoriesResult by categoryViewModel.categories.collectAsState()
     val walletsResult by walletViewModel.wallets.collectAsState()
+    val isVND by currencyViewModel.isVND.collectAsState()
+    val exchangeRate by currencyViewModel.exchangeRate.collectAsState()
 
     // Validation states
     var walletError by remember { mutableStateOf<String?>(null) }
@@ -128,29 +132,35 @@ fun TransactionForm(
     var walletName by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
 
-    fun formatAmount(input: String): String {
-        return input.toLongOrNull()?.let {
-            NumberFormat.getNumberInstance(Locale.US)
-                .format(it)
-                .replace(",", ".")
-        } ?: input
+    fun formatAmount(input: String, isVND: Boolean): String {
+        val number = input.toLongOrNull() ?: return input
+        val formatted = NumberFormat.getNumberInstance(Locale.US)
+            .format(number)
+            .replace(",", ".")
+        return if (isVND) formatted else "$formatted USD"
     }
 
     fun unformatAmount(formatted: String): String {
-        return formatted.replace(".", "").replace(",", "")
+        return formatted.replace(".", "").replace(",", "").replace(" USD", "")
     }
 
     var rawAmount by remember { mutableStateOf("") }
 
-    val formattedAmount by remember(rawAmount) {
-        mutableStateOf(formatAmount(rawAmount))
+    val formattedAmount by remember(rawAmount, isVND) {
+        mutableStateOf(formatAmount(rawAmount, isVND))
     }
 
     val ocrResult by ocrViewModel.ocrResult.collectAsState()
 
     LaunchedEffect(ocrResult) {
         ocrResult?.let { result ->
-            rawAmount = result.amount.toBigDecimal().toPlainString()
+            val amountFromOcr = result.amount.toBigDecimal().toDouble()
+            val displayAmount = if (isVND || exchangeRate == null) {
+                amountFromOcr
+            } else {
+                amountFromOcr / exchangeRate!!
+            }
+            rawAmount = displayAmount.toLong().toString()
 
             walletsResult?.getOrNull()?.find { it.walletName.equals("Bank", ignoreCase = true) }?.let { wallet ->
                 walletName = wallet.walletName
@@ -164,7 +174,7 @@ fun TransactionForm(
                 // Parse ISO 8601 format
                 val instant = java.time.Instant.parse(ocrDate)
                 val localDateTime = instant.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime()
-                
+
                 // Create a new Calendar instance and set its time
                 val newCalendar = Calendar.getInstance().apply {
                     set(Calendar.YEAR, localDateTime.year)
@@ -174,7 +184,7 @@ fun TransactionForm(
                     set(Calendar.MINUTE, localDateTime.minute)
                     set(Calendar.SECOND, localDateTime.second)
                 }
-                
+
                 // Update the state with the new Calendar instance
                 selectedDateTime.value = newCalendar
                 Log.d("TransactionForm", "Updated selectedDateTime: ${selectedDateTime.value.time}")
@@ -264,7 +274,7 @@ fun TransactionForm(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 TransactionTextField(
-                    label = stringResource(R.string.amount_vnd),
+                    label = "Amount (${if (isVND) "VND" else "USD"})",
                     value = formattedAmount,
                     onValueChange = {
                         rawAmount = unformatAmount(it.filter { char -> char.isDigit() })
@@ -280,11 +290,16 @@ fun TransactionForm(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("50K", "100K", "200K", "500K").forEach { amount ->
+                    val amounts = if (isVND) {
+                        listOf("50K", "100K", "200K", "500K")
+                    } else {
+                        listOf("$10", "$20", "$50", "$100")
+                    }
+                    amounts.forEach { amount ->
                         QuickAmountButton(
                             text = amount,
                             onClick = {
-                                rawAmount = amount.replace("K", "000")
+                                rawAmount = unformatAmount(amount.replace("K", "000").replace("$", ""))
                                 amountError = null
                             },
                             modifier = Modifier.weight(1f)
@@ -301,7 +316,7 @@ fun TransactionForm(
                 TransactionTextField(
                     label = stringResource(R.string.title),
                     value = title,
-                    onValueChange = { 
+                    onValueChange = {
                         title = it
                         titleError = null
                     },
@@ -342,8 +357,9 @@ fun TransactionForm(
                 if (validateForm()) {
                     val parsedAmount = unformatAmount(formattedAmount).toDoubleOrNull()
                     if (parsedAmount != null) {
+                        val amountInVND = currencyViewModel.toVND(parsedAmount) ?: return@Button
                         viewModel.createTransaction(
-                            amount = parsedAmount,
+                            amount = amountInVND,
                             description = title,
                             categoryId = categoryId,
                             walletId = walletId,
