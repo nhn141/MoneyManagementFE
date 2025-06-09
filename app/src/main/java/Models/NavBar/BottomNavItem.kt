@@ -26,4 +26,5 @@ sealed class BottomNavItem(val route: String, val icon: Int, val title: String) 
             GroupFund,
             NewsFeed
         )
+    }
 }

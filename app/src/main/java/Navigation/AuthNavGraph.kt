@@ -22,13 +22,12 @@ import DI.ViewModels.ChatViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.GroupFundViewModel
+import DI.ViewModels.NewsFeedViewModel
 import DI.ViewModels.OcrViewModel
 import DI.ViewModels.ProfileViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import GroupFundScreen
-import DI.ViewModels.CurrencyConverterViewModel
-import DI.ViewModels.NewsFeedViewModel
 import ModernCategoriesScreen
 import ProfileScreen
 import Screens.MainLayout
