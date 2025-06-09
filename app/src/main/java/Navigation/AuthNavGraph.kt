@@ -26,7 +26,7 @@ import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.GroupFundViewModel
-import FakeGroupFundViewModel
+//import FakeGroupFundViewModel
 import GroupFundScreen
 import ModernCategoriesScreen
 import ProfileScreen
@@ -156,7 +156,7 @@ private fun InnerNavHost(
 //            GroupFundScreen(
 //                navController = navController,
 //                groupFundViewModel = groupFundViewModel,
-//                groupId = "12")
+//                groupId = "727b116f-140c-4e1c-ad5a-ab35bc0ff089")
         }
 
         composable(

@@ -6,6 +6,7 @@ import DI.Models.GroupFund.UpdateGroupFundDto
 import DI.Models.UiEvent.UiEvent
 import DI.Repositories.GroupFundRepository
 import Utils.StringResourceProvider
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneymanagement_frontend.R
@@ -20,6 +21,17 @@ class GroupFundViewModel @Inject constructor(
     private val stringProvider: StringResourceProvider
 ) : ViewModel() {
 
+//    init {
+//        Log.d("GroupFundViewModel", "ViewModel initialized")
+//        viewModelScope.launch {
+//            val response = repository.getGroupFundsByGroupId("727b116f-140c-4e1c-ad5a-ab35bc0ff089")
+////            val response = repository.createGroupFund(CreateGroupFundDto("727b116f-140c-4e1c-ad5a-ab35bc0ff089", "YEP"))
+////            val response = repository.updateGroupFund("aaef3a4f-f7b4-486b-b0bb-aa37aecf91f4", UpdateGroupFundDto("aaef3a4f-f7b4-486b-b0bb-aa37aecf91f4", "Hello", 100000.0))
+////            val response = repository.deleteGroupFund("aaef3a4f-f7b4-486b-b0bb-aa37aecf91f4")
+//              Log.d("TEST", "Fetch result: $response")
+//        }
+//    }
+
     private val _groupFunds = MutableStateFlow<Result<List<GroupFundDto>>?>(null)
     val groupFunds: StateFlow<Result<List<GroupFundDto>>?> = _groupFunds.asStateFlow()
 
@@ -33,9 +45,15 @@ class GroupFundViewModel @Inject constructor(
     val deleteGroupFundEvent = _deleteGroupFundEvent.asSharedFlow()
 
     fun fetchGroupFunds(groupId: String) {
+        Log.d("GroupFundViewModel", "Calling fetchGroupFunds with id: $groupId")
         viewModelScope.launch {
-            val result = repository.getGroupFundsByGroupId(groupId)
-            _groupFunds.value = result
+            try {
+                val result = repository.getGroupFundsByGroupId(groupId)
+                Log.d("GroupFundViewModel", "Fetch result: ${result.isSuccess}")
+                _groupFunds.value = result
+            } catch (e: Exception) {
+                Log.e("GroupFundViewModel", "Error fetching funds", e)
+            }
         }
     }
 
@@ -43,7 +61,7 @@ class GroupFundViewModel @Inject constructor(
         viewModelScope.launch {
             val result = repository.createGroupFund(dto)
             if (result.isSuccess) {
-                fetchGroupFunds(dto.groupID.toString())
+                fetchGroupFunds(dto.groupID)
                 _addGroupFundEvent.emit(
                     UiEvent.ShowMessage(stringProvider.getString(R.string.group_fund_created_success))
                 )
@@ -64,7 +82,7 @@ class GroupFundViewModel @Inject constructor(
         viewModelScope.launch {
             val result = repository.updateGroupFund(id, dto)
             if (result.isSuccess) {
-                fetchGroupFunds(dto.groupFundID.toString())
+                fetchGroupFunds(dto.groupFundID)
                 _updateGroupFundEvent.emit(
                     UiEvent.ShowMessage(stringProvider.getString(R.string.group_fund_updated_success))
                 )

@@ -1,7 +1,12 @@
+import DI.Composables.CategorySection.ModernColors
+import DI.Composables.GroupFundSection.AddGroupFundDialog
+import DI.Composables.GroupFundSection.EditGroupFundDialog
 import DI.Models.GroupFund.CreateGroupFundDto
 import DI.Models.GroupFund.GroupFundDto
+import DI.Models.GroupFund.UpdateGroupFundDto
 import DI.Models.UiEvent.UiEvent
 import DI.ViewModels.GroupFundViewModel
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,21 +47,20 @@ fun GroupFundCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            ),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .background(ModernColors.cardGradient)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Balance: ${fund.balance}", fontWeight = FontWeight.Bold)
-            Text("Total In: ${fund.totalFundsIn}")
-            Text("Total Out: ${fund.totalFundsOut}")
+            Text("Description: ${fund.description}", fontWeight = FontWeight.Bold, color = ModernColors.OnSurface)
+            Text("Saving Goal: ${fund.savingGoal}", color = ModernColors.OnSurfaceVariant)
+            Text("Balance: ${fund.balance}", color = ModernColors.OnSurfaceVariant)
         }
     }
 }
@@ -67,25 +71,58 @@ fun GroupFundScreen(
     groupFundViewModel: GroupFundViewModel,
     groupId: String
 ) {
+    Log.d("GroupFundScreen", "Composable started")
+
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     val groupFunds by groupFundViewModel.groupFunds.collectAsState()
+    val funds = groupFunds?.getOrNull() ?: emptyList()
+
     val addEvent = groupFundViewModel.addGroupFundEvent.collectAsState(initial = null)
     val updateEvent = groupFundViewModel.updateGroupFundEvent.collectAsState(initial = null)
     val deleteEvent = groupFundViewModel.deleteGroupFundEvent.collectAsState(initial = null)
 
     var selectedFund by remember { mutableStateOf<GroupFundDto?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
 
+    Log.d("GroupID", "Fetching group funds for: $groupId")
+    // Fetch data once when screen opens
     LaunchedEffect(Unit) {
+        Log.d("GroupFundScreen", "Calling fetchGroupFunds")
         groupFundViewModel.fetchGroupFunds(groupId)
+        Log.d("GroupFundScreen", "Fetching funds for: $groupId")
+        Log.d("GroupFundScreen", "Fetched funds: ${funds.size}")
     }
 
-    LaunchedEffect(addEvent.value, updateEvent.value, deleteEvent.value) {
-        val message = listOfNotNull(addEvent.value, updateEvent.value, deleteEvent.value)
-            .firstOrNull()?.let { if (it is UiEvent.ShowMessage) it.message else null }
-        message?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    // Collect and react to add/update/delete events
+    LaunchedEffect(Unit) {
+        scope.launch {
+            groupFundViewModel.addGroupFundEvent.collect { event ->
+                if (event is UiEvent.ShowMessage) {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    groupFundViewModel.fetchGroupFunds(groupId)
+                }
+            }
+        }
+        scope.launch {
+            groupFundViewModel.updateGroupFundEvent.collect { event ->
+                if (event is UiEvent.ShowMessage) {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    groupFundViewModel.fetchGroupFunds(groupId)
+                }
+            }
+        }
+        scope.launch {
+            groupFundViewModel.deleteGroupFundEvent.collect { event ->
+                if (event is UiEvent.ShowMessage) {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    groupFundViewModel.fetchGroupFunds(groupId)
+                }
+            }
+        }
     }
 
-    val funds = groupFunds?.getOrNull() ?: emptyList()
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -138,10 +175,7 @@ fun GroupFundScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    val newDto = CreateGroupFundDto(groupID = groupId, description = "New Fund")
-                    groupFundViewModel.createGroupFund(newDto)
-                },
+                onClick = { showAddDialog = true },
                 containerColor = Color(0xFF00D09E),
                 contentColor = Color.White,
                 shape = CircleShape,
@@ -179,6 +213,46 @@ fun GroupFundScreen(
                     )
                 }
             }
+        }
+
+        selectedFund?.let { fund ->
+            EditGroupFundDialog(
+                fund = fund,
+                onDismiss = { selectedFund = null },
+                onUpdate = { newDescription, newSavingGoal ->
+                    groupFundViewModel.updateGroupFund(
+                        fund.groupFundID, UpdateGroupFundDto(
+                            groupFundID = fund.groupFundID,
+                            description = newDescription,
+                            savingGoal = newSavingGoal
+                        )
+                    )
+                    selectedFund = null
+                },
+                onDelete = {
+                    groupFundViewModel.deleteGroupFund(
+                        fund.groupFundID,
+                        fund.groupID
+                    )
+                    selectedFund = null
+                }
+            )
+        }
+
+        if (showAddDialog) {
+            AddGroupFundDialog(
+                onDismiss = { showAddDialog = false },
+                onSave = { description, savingGoal ->
+                    groupFundViewModel.createGroupFund(
+                        CreateGroupFundDto(
+                            groupID = groupId,
+                            description = description,
+                            //savingGoal = savingGoal
+                        )
+                    )
+                    showAddDialog = false
+                }
+            )
         }
     }
 }
