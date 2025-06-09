@@ -76,6 +76,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.style.TextAlign
 import kotlin.io.encoding.ExperimentalEncodingApi
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -439,6 +440,8 @@ fun PostItem(
     onCommentClick: (Post) -> Unit,
     viewModel: NewsFeedViewModel
 ) {
+    val imageUri = post.authorAvatarUrl?.toUri()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -505,6 +508,41 @@ fun PostItem(
                 Column(
                     modifier = Modifier.padding(20.dp)
                 ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Avatar
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = "Author Avatar",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color.Gray),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        Column {
+                            // Username
+                            Text(
+                                text = post.authorName ?: "Unknown",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            // Created At
+                            Text(
+                                text = post.createdAt ?: "",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Text(
                         text = post.content ?: "",
                         color = Color.White,
