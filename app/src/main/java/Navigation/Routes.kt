@@ -7,11 +7,13 @@ object Routes {
     const val Auth = "auth"
     const val Calendar = "calendar"
     const val ChatMessage = "chat_message/{friendId}"
+    const val GroupChat = "group_chat/{groupId}"
+    const val GroupInfo = "group_info/{groupId}"
     const val EditProfile = "edit_profile"
     const val FriendProfile = "friend_profile/{friendId}"
     const val AddTransaction = "add_transaction"
     const val TransactionDetail = "transaction_detail/{transactionId}"
     const val TransactionEdit = "transaction_edit/{transactionId}"
 
-    val all = setOf(Login, Register, Main, Auth, Calendar, ChatMessage)
+    val all = setOf(Login, Register, Main, Auth, Calendar, ChatMessage, GroupChat, GroupInfo)
 }

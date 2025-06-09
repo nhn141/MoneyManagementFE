@@ -50,7 +50,8 @@ private val SurfaceColor = Color(0xFFE8F5E9)  // Light mint surface
 fun ChatMessageScreen(
     navController: NavController,
     chatViewModel: ChatViewModel,
-    friendId: String,
+    friendId: String? = null,
+    groupId: String? = null,
     profileViewModel: ProfileViewModel,
     friendViewModel: FriendViewModel
 ) {
@@ -58,29 +59,76 @@ fun ChatMessageScreen(
     var messageContent by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
+    // Determine if this is a group chat or direct chat
+    val isGroupChat = groupId != null
+    val chatId = groupId ?: friendId ?: ""
+
     LaunchedEffect(Unit) {
-        chatViewModel.getChatWithOtherUser(friendId)
-        profileViewModel.getFriendAvatar(friendId)
-        chatViewModel.markAllMessagesAsReadFromSingleChat(friendId)
+        if (isGroupChat) {
+            chatViewModel.getGroupMessages(chatId)
+            chatViewModel.markGroupMessagesAsRead(chatId)
+        } else {
+            chatViewModel.getChatWithOtherUser(chatId)
+            profileViewModel.getFriendAvatar(chatId)
+            chatViewModel.markAllMessagesAsReadFromSingleChat(chatId)
+        }
+    }    // Get messages based on chat type
+    val chatMessages = if (isGroupChat) {
+        val groupMessagesResult = chatViewModel.groupMessages.collectAsState()
+        val groupMessages = groupMessagesResult.value?.getOrNull() ?: emptyList()
+        // Convert GroupMessage to a common format for display
+        groupMessages.map { groupMsg ->
+            ChatMessage(
+                messageID = groupMsg.messageId,
+                senderId = groupMsg.senderId,
+                receiverId = "", // Not applicable for group
+                content = groupMsg.content,
+                sentAt = groupMsg.timestamp,
+                senderName = groupMsg.senderName,
+                receiverName = "" // Not applicable for group
+            )
+        }
+    } else {
+        val chatMessagesResult = chatViewModel.chatMessages.collectAsState()
+        chatMessagesResult.value?.getOrNull() ?: emptyList()
     }
 
-    val chatMessagesResult = chatViewModel.chatMessages.collectAsState()
-    val chatMessages = chatMessagesResult.value?.getOrNull() ?: emptyList()
-    val friendAvatar = profileViewModel.friendAvatar.collectAsState().value
-    val isLoadingAvatar = profileViewModel.isLoadingAvatar.collectAsState()
+    // Get chat info
+    val friendAvatar = if (!isGroupChat) profileViewModel.friendAvatar.collectAsState().value else null
+    val isLoadingAvatar = if (!isGroupChat) profileViewModel.isLoadingAvatar.collectAsState() else remember { mutableStateOf(false) }
     val friendsResult = friendViewModel.friends.collectAsState()
     val friends = friendsResult.value?.getOrNull() ?: emptyList()
-    val friendName = chatMessages.firstOrNull { it.senderId == friendId }?.senderName ?: ""
+    
+    // Get chat title and info
+    val (chatTitle, isOnline, avatarUrl) = if (isGroupChat) {
+        // For group chats, get info from unified chats
+        val unifiedChatsResult = chatViewModel.unifiedChats.collectAsState()
+        val unifiedChats = unifiedChatsResult.value?.getOrNull() ?: emptyList()
+        val groupInfo = unifiedChats.find { it.type == "group" && it.id == chatId }
+        Triple(groupInfo?.title ?: "Group Chat", false, "")    } else {
+        // For direct chats
+        val friendName = chatMessages.firstOrNull { it.senderId == chatId }?.senderName ?: ""
+        val friend = friends.firstOrNull { it.userId == chatId }
+        Triple(friendName, friend?.isOnline ?: false, friendAvatar?.avatarUrl ?: "")
+    }
 
     Scaffold(
         topBar = {
             ChatTopBar(
-                userName = friendName,
-                isOnline = friends.firstOrNull { it.userId == friendId}?.isOnline ?: false,
-                friendAvatarUrl = friendAvatar.avatarUrl,
+                userName = chatTitle,
+                isOnline = isOnline,
+                friendAvatarUrl = avatarUrl,
                 isLoadingAvatar = isLoadingAvatar.value,
                 onBackClick = { navController.popBackStack() },
-                onInfoClick = { navController.navigate("friend_profile/$friendId") }
+                onInfoClick = { 
+                    if (isGroupChat) {
+                        // Navigate to group info when implemented
+                        // navController.navigate("group_info/$chatId")
+                    } else {
+                        navController.navigate("friend_profile/$chatId")
+                    }
+                },
+                isGroupChat = isGroupChat
             )
         },
         bottomBar = {
@@ -89,7 +137,11 @@ fun ChatMessageScreen(
                 onMessageChange = { messageContent = it },
                 onSendClick = {
                     if (messageContent.isNotBlank()) {
-                        chatViewModel.sendMessage(friendId, messageContent)
+                        if (isGroupChat) {
+                            chatViewModel.sendGroupMessage(chatId, messageContent)
+                        } else {
+                            chatViewModel.sendMessage(chatId, messageContent)
+                        }
                         messageContent = ""
                     }
                 }
@@ -111,8 +163,9 @@ fun ChatMessageScreen(
                 MessageBubble(
                     message = message,
                     isSentByCurrentUser = message.senderId == currentUserId,
-                    friendAvatarUrl = friendAvatar.avatarUrl,
-                    isLoadingAvatar = isLoadingAvatar.value
+                    friendAvatarUrl = avatarUrl,
+                    isLoadingAvatar = isLoadingAvatar.value,
+                    isGroupChat = isGroupChat
                 )
             }
         }
@@ -125,6 +178,7 @@ fun MessageBubble(
     isSentByCurrentUser: Boolean,
     friendAvatarUrl: String,
     isLoadingAvatar: Boolean,
+    isGroupChat: Boolean = false
 ) {
     val bubbleShape = RoundedCornerShape(
         topStart = 20.dp,
@@ -157,14 +211,32 @@ fun MessageBubble(
                     .shadow(4.dp, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                if(isLoadingAvatar) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = PrimaryColor,
-                        strokeWidth = 2.dp
-                    )
+                if (isGroupChat) {
+                    // For group chats, show first letter of sender name as avatar placeholder
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(PrimaryColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = message.senderName.firstOrNull()?.uppercase() ?: "?",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 } else {
-                    FriendAvatar(friendAvatarUrl)
+                    // For direct chats, show friend avatar
+                    if(isLoadingAvatar) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = PrimaryColor,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        FriendAvatar(friendAvatarUrl)
+                    }
                 }
             }
             Spacer(modifier = Modifier.width(8.dp))
@@ -184,6 +256,15 @@ fun MessageBubble(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    // Show sender name for group messages (except for current user)
+                    if (isGroupChat && !isSentByCurrentUser && message.senderName.isNotBlank()) {
+                        Text(
+                            text = message.senderName,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryColor
+                        )
+                    }
                     Text(
                         text = message.content,
                         color = textColor,
@@ -209,7 +290,8 @@ fun ChatTopBar(
     friendAvatarUrl: String,
     isLoadingAvatar: Boolean,
     onBackClick: () -> Unit,
-    onInfoClick: () -> Unit
+    onInfoClick: () -> Unit,
+    isGroupChat: Boolean = false
 ) {
     Surface(
         modifier = Modifier
@@ -231,38 +313,59 @@ fun ChatTopBar(
                     tint = PrimaryColor
                 )
             }
-
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .padding(4.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if(isLoadingAvatar) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = PrimaryColor,
-                        strokeWidth = 2.dp
-                    )
-                } else {
+                if (isGroupChat) {
+                    // For group chats, show first letter as avatar placeholder
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .shadow(4.dp, CircleShape)
+                            .background(PrimaryColor),
+                        contentAlignment = Alignment.Center
                     ) {
-                        FriendAvatar(friendAvatarUrl)
+                        Text(
+                            text = userName.firstOrNull()?.uppercase() ?: "G",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                } else {
+                    // For direct chats, show friend avatar with loading state
+                    if(isLoadingAvatar) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = PrimaryColor,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .shadow(4.dp, CircleShape)
+                        ) {
+                            FriendAvatar(friendAvatarUrl)
+                        }
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(if (isOnline) OnlineColor else OfflineColor)
-                        .border(2.dp, Color.White, CircleShape)
-                        .align(Alignment.BottomEnd)
-                )
+                // Only show online indicator for direct chats
+                if (!isGroupChat) {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(if (isOnline) OnlineColor else OfflineColor)
+                            .border(2.dp, Color.White, CircleShape)
+                            .align(Alignment.BottomEnd)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -277,11 +380,19 @@ fun ChatTopBar(
                     fontSize = 18.sp,
                     color = Color.Black
                 )
-                Text(
-                    text = if (isOnline) stringResource(R.string.online) else stringResource(R.string.offline),
-                    fontSize = 13.sp,
-                    color = if (isOnline) OnlineColor else OfflineColor
-                )
+                if (isGroupChat) {
+                    Text(
+                        text = stringResource(R.string.group_chat),
+                        fontSize = 13.sp,
+                        color = Color.Gray
+                    )
+                } else {
+                    Text(
+                        text = if (isOnline) stringResource(R.string.online) else stringResource(R.string.offline),
+                        fontSize = 13.sp,
+                        color = if (isOnline) OnlineColor else OfflineColor
+                    )
+                }
             }
 
             IconButton(onClick = onInfoClick) {

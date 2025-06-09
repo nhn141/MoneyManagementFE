@@ -23,15 +23,25 @@ object ChatTimeFormatter {
      * - Yesterday: "Hôm qua"
      * - Same year: "d MMM"
      * - Different year: "d MMM yyyy"
-     */
-    fun formatTimestamp(sentAt: String): String {
+     */    fun formatTimestamp(sentAt: String): String {
+        // Handle empty or null timestamps
+        if (sentAt.isBlank()) {
+            return "Now"
+        }
+        
         // Try ISO parsing first
         val sentDateTime: LocalDateTime = try {
             val sentInstant = Instant.parse(sentAt)
             LocalDateTime.ofInstant(sentInstant, ZoneId.systemDefault())
         } catch (e: DateTimeParseException) {
             // Fallback to space-separated format
-            LocalDateTime.parse(sentAt, spaceInputFormatter)
+            try {
+                if (sentAt.isBlank()) return "Now" // Additional safety check
+                LocalDateTime.parse(sentAt, spaceInputFormatter)
+            } catch (e2: DateTimeParseException) {
+                // If all parsing fails, return "Now"
+                return "Now"
+            }
         }
 
         val now = LocalDateTime.now(ZoneId.systemDefault())

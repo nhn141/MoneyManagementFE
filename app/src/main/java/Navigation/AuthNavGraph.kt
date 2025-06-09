@@ -95,8 +95,7 @@ private fun InnerNavHost(
     modifier: Modifier,
     parentEntry: NavBackStackEntry,
     authViewModel: AuthViewModel
-) {
-    val friendViewModel = hiltViewModel<FriendViewModel>(parentEntry)
+) {    val friendViewModel = hiltViewModel<FriendViewModel>(parentEntry)
     val chatViewModel = hiltViewModel<ChatViewModel>(parentEntry)
     val profileViewModel = hiltViewModel<ProfileViewModel>(parentEntry)
     val analysisViewModel = hiltViewModel<AnalysisViewModel>(parentEntry)
@@ -150,7 +149,6 @@ private fun InnerNavHost(
                 viewModel = walletViewModel,
             )
         }
-
         composable(
             route = Routes.ChatMessage,
             arguments = listOf(navArgument("friendId") { type = NavType.StringType })
@@ -159,6 +157,19 @@ private fun InnerNavHost(
             ChatMessageScreen(
                 navController = navController ,
                 friendId = friendId,
+                chatViewModel = chatViewModel,
+                profileViewModel = profileViewModel,
+                friendViewModel = friendViewModel
+            )
+        }
+        composable(
+            route = Routes.GroupChat,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            ChatMessageScreen(
+                navController = navController,
+                groupId = groupId,
                 chatViewModel = chatViewModel,
                 profileViewModel = profileViewModel,
                 friendViewModel = friendViewModel

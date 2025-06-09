@@ -397,11 +397,10 @@
     <string name="pending">Đang chờ</string>
     <string name="last_active_unknown">Không rõ lần hoạt động cuối</string>
     <string name="delete_friend">Xóa</string>
-    <string name="unfriend">Hủy kết bạn</string>
-
-    <!-- ================== MESSAGING & CHAT ================== -->
+    <string name="unfriend">Hủy kết bạn</string>    <!-- ================== MESSAGING & CHAT ================== -->
     <string name="message">Nhắn tin</string>
     <string name="messages">Tin nhắn</string>
+    <string name="group_chat">Nhóm Chat</string>
     <string name="no_conversations_found">Không tìm thấy cuộc trò chuyện nào.</string>
     <string name="no_conversations_found_search">Không tìm thấy cuộc trò chuyện</string>
     <string name="no_conversations">Không tìm thấy cuộc trò chuyện nào</string>

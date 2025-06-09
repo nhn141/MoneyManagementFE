@@ -401,10 +401,10 @@
     <string name="last_active_unknown">Last active unknown</string>
     <string name="delete_friend">Delete</string>
     <string name="unfriend">Unfriend</string>
-    
-    <!-- ================== MESSAGING & CHAT ================== -->
+      <!-- ================== MESSAGING & CHAT ================== -->
     <string name="message">Message</string>
     <string name="messages">Messages</string>
+    <string name="group_chat">Group Chat</string>
     <string name="no_conversations_found">No conversations found.</string>
     <string name="no_conversations_found_search">No conversations found</string>
     <string name="no_conversations">No conversations found.</string>

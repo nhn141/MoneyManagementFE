@@ -64,6 +64,7 @@ fun ChatScreen(
         if (refreshTokenState?.isSuccess == true) {
             chatViewModel.connectToSignalR()
             chatViewModel.getLatestChats()
+            chatViewModel.getAllGroups()
         }
     }
 
@@ -72,52 +73,50 @@ fun ChatScreen(
 
     LaunchedEffect(Unit) {
         chatViewModel.getLatestChats()
+        chatViewModel.getAllGroups()
     }
 
-    val latestChatsResult = chatViewModel.latestChats.collectAsState()
-    val latestChats = latestChatsResult.value?.getOrNull() ?: emptyList()
+    // Use unified chats from chatViewModel
+    val unifiedChatsResult = chatViewModel.unifiedChats.collectAsState()
+    val unifiedChats = unifiedChatsResult.value?.getOrNull() ?: emptyList()
     val friendAvatars = profileViewModel.friendAvatars.collectAsState().value
     val isLoadingAvatar = profileViewModel.isLoadingAvatar.collectAsState()
-    val profile = profileViewModel.profile.collectAsState().value?.getOrNull()
-
-    LaunchedEffect(latestChats.toList()) { // Convert to list to trigger on changes
-        if(latestChats.isNotEmpty()) {
-            val friendIds = latestChats.map { chat ->
-                if(chat.latestMessage.senderName == profile?.displayName)
-                    chat.latestMessage.receiverId
-                else
-                    chat.latestMessage.senderId
+    val profile = profileViewModel.profile.collectAsState().value?.getOrNull()    // Get friend IDs from unified chats for avatar loading
+    LaunchedEffect(unifiedChats.toList()) {
+        if(unifiedChats.isNotEmpty()) {
+            val friendIds = unifiedChats.mapNotNull { chat ->
+                when(chat.type) {
+                    "direct" -> chat.id
+                    "group" -> null // For groups, we'll use group avatars
+                    else -> null
+                }
             }
-            profileViewModel.getFriendAvatars(friendIds)
+            if(friendIds.isNotEmpty()) {
+                profileViewModel.getFriendAvatars(friendIds)
+            }
         }
     }
 
-    // When both chats and avatars are ready, update chats with avatarUrls
-    val chatsWithAvatars = remember(latestChats, friendAvatars) {
-        latestChats.map { chat ->
-            val friendId =
-                if(chat.latestMessage.senderName == profile?.displayName)
-                    chat.latestMessage.receiverId
-                else
-                    chat.latestMessage.senderId
-            val avatarUrl = friendAvatars.find { it.userId == friendId }?.avatarUrl ?: ""
-            chat.copy(avatarUrl = avatarUrl)
+    // Update unified chats with avatars
+    val chatsWithAvatars = remember(unifiedChats, friendAvatars) {
+        unifiedChats.map { chat ->
+            when(chat.type) {
+                "direct" -> {
+                    val avatarUrl = friendAvatars.find { it.userId == chat.id }?.avatarUrl ?: ""
+                    chat.copy(avatarUrl = avatarUrl)
+                }
+                "group" -> chat // Group avatars are already handled in the unified data
+                else -> chat
+            }
         }
-    }
-
-    // Filter chats based on search query
+    }    // Filter chats based on search query
     val filteredChats = remember(chatsWithAvatars, searchQuery) {
         if(searchQuery.isEmpty()) {
             chatsWithAvatars
         } else {
             chatsWithAvatars.filter { chat ->
-                val friendName =
-                    if(chat.latestMessage.senderName == profile?.displayName)
-                        chat.latestMessage.receiverName
-                    else
-                        chat.latestMessage.senderName
-                friendName.contains(searchQuery, ignoreCase = true) ||
-                chat.latestMessage.content.contains(searchQuery, ignoreCase = true)
+                chat.title.contains(searchQuery, ignoreCase = true) ||
+                chat.lastMessage.contains(searchQuery, ignoreCase = true)
             }
         }
     }
@@ -166,32 +165,25 @@ fun ChatScreen(
                     )
                 }
             }
-        } else {
-            LazyColumn(
+        } else {            LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(filteredChats.size) { index ->
+                    val chat = filteredChats[index]
+                    
                     MessageItem(
                         navController = navController,
-                        title =
-                            if(filteredChats[index].latestMessage.senderName == profile?.displayName)
-                                filteredChats[index].latestMessage.receiverName
-                            else filteredChats[index].latestMessage.senderName,
-                        message =
-                            if(filteredChats[index].latestMessage.senderName == profile?.displayName)
-                                stringResource(R.string.you_prefix, filteredChats[index].latestMessage.content)
-                            else filteredChats[index].latestMessage.content,
-                        time = filteredChats[index].latestMessage.sentAt,
-                        count = filteredChats[index].unreadCount,
-                        friendId =
-                            if(filteredChats[index].latestMessage.senderName == profile?.displayName)
-                                filteredChats[index].latestMessage.receiverId
-                            else filteredChats[index].latestMessage.senderId,
-                        friendAvatarUrl = filteredChats[index].avatarUrl ?: "",
+                        title = chat.title,
+                        message = chat.lastMessage,
+                        time = chat.timestamp,
+                        count = if(chat.unreadCount > 0) chat.unreadCount else null,
+                        friendId = if(chat.type == "direct") chat.id else null,
+                        groupId = if(chat.type == "group") chat.id else null,
+                        friendAvatarUrl = chat.avatarUrl,
                         isLoadingAvatar = isLoadingAvatar.value,
-                        isOnline = friends.firstOrNull {
-                            it.userId == filteredChats[index].latestMessage.receiverId
-                        }?.isOnline ?: false,
+                        isOnline = if(chat.type == "direct") {
+                            friends.firstOrNull { it.userId == chat.id }?.isOnline ?: false
+                        } else false,
                         color = Color(0xFF5C6BC0)
                     )
                 }
@@ -277,7 +269,8 @@ fun MessageItem(
     time: String,
     count: Int?,
     color: Color,
-    friendId: String,
+    friendId: String?=null,
+    groupId: String? =null,
     friendAvatarUrl: String,
     isLoadingAvatar: Boolean,
     isOnline: Boolean,
@@ -289,9 +282,12 @@ fun MessageItem(
             .padding(vertical = 6.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
-            .padding(12.dp)
-            .clickable {
-                navController.navigate("chat_message/$friendId")
+            .padding(12.dp)            .clickable {
+                if (friendId != null) {
+                    navController.navigate("chat_message/$friendId")
+                } else if (groupId != null) {
+                    navController.navigate("group_chat/$groupId")
+                }
             },
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -299,8 +295,7 @@ fun MessageItem(
         Box(
             modifier = Modifier.size(40.dp),
             contentAlignment = Alignment.BottomEnd
-        ) {
-            if(isLoadingAvatar) {
+        ) {            if(isLoadingAvatar) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MainColor,
@@ -310,13 +305,16 @@ fun MessageItem(
                 FriendAvatar(friendAvatarUrl)
             }
 
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .clip(CircleShape)
-                    .background(if (isOnline) Color(0xFF4CAF50) else Color.Gray)
-                    .border(1.dp, Color.White, CircleShape)
-            )
+            // Only show online indicator for direct messages (when friendId is not null)
+            if (friendId != null) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(if (isOnline) Color(0xFF4CAF50) else Color.Gray)
+                        .border(1.dp, Color.White, CircleShape)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -329,7 +327,7 @@ fun MessageItem(
         }
         Spacer(modifier = Modifier.width(4.dp))
         Column(horizontalAlignment = Alignment.End) {
-            Text(ChatTimeFormatter.formatTimestamp(time), fontSize = 12.sp)
+            Text(ChatTimeFormatter.formatTimestamp(if (time.isBlank()) java.time.Instant.now().toString() else time), fontSize = 12.sp)
             if (count != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Box(

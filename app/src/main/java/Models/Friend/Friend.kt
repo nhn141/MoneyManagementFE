@@ -6,5 +6,6 @@ data class Friend(
     val displayName: String,
     val isOnline: Boolean,
     val lastActive: String,
-    val isPendingRequest: Boolean
+    val isPendingRequest: Boolean,
+    val avatarUrl: String? = null // Added for DTO compatibility
 )

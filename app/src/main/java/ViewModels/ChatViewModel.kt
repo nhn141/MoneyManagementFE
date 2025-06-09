@@ -5,7 +5,10 @@ import DI.Models.Category.Category
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
 import DI.Models.Chat.LatestChat
+import DI.Models.Group.Group
+import DI.Models.Group.GroupMessage
 import DI.Repositories.ChatRepository
+import DI.Repositories.GroupRepository
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
@@ -29,6 +32,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
+    private val groupRepository: GroupRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -49,9 +53,34 @@ class ChatViewModel @Inject constructor(
     private val _latestChats = MutableStateFlow<Result<List<LatestChat>>?>(null)
     val latestChats: StateFlow<Result<List<LatestChat>>?> = _latestChats.asStateFlow()
 
+    // Group-related state flows
+    private val _groups = MutableStateFlow<Result<List<Group>>?>(null)
+    val groups: StateFlow<Result<List<Group>>?> = _groups.asStateFlow()
+
+    private val _groupMessages = MutableStateFlow<Result<List<GroupMessage>>?>(null)
+    val groupMessages: StateFlow<Result<List<GroupMessage>>?> = _groupMessages.asStateFlow()
+
+    private val _groupMessagesList = mutableStateListOf<GroupMessage>()
+    val groupMessagesList: List<GroupMessage> = _groupMessagesList
+
+    // Unified chat data combining direct chats and groups
+    data class UnifiedChatItem(
+        val type: String, // "direct" or "group"
+        val id: String, // friendId or groupId
+        val title: String, // friend name or group name
+        val lastMessage: String,
+        val timestamp: String,
+        val unreadCount: Int,
+        val avatarUrl: String = "",
+        val isOnline: Boolean = false // only for direct chats
+    )
+
+    private val _unifiedChats = MutableStateFlow<Result<List<UnifiedChatItem>>?>(null)
+    val unifiedChats: StateFlow<Result<List<UnifiedChatItem>>?> = _unifiedChats.asStateFlow()
     init {
         connectToSignalR()
         getLatestChats()
+        getAllGroups()
     }
 
     fun connectToSignalR() {
@@ -71,8 +100,23 @@ class ChatViewModel @Inject constructor(
             updatedMessages.add(message)
 
             _chatMessages.value = Result.success(updatedMessages)
+            
+            // Update unified chats when new direct message arrives
+            getLatestChats()
 
-        }, ChatMessage::class.java)
+        }, ChatMessage::class.java)// Listen for group messages
+        hubConnection?.on("ReceiveGroupMessage", { message: GroupMessage ->
+            Log.d("SignalR", "New group message received: $message")
+            
+            val updatedMessages = _groupMessages.value?.getOrNull()?.toMutableList() ?: mutableListOf()
+            updatedMessages.add(message)
+            _groupMessages.value = Result.success(updatedMessages)
+            
+            _groupMessagesList.add(message)
+            
+            // Update unified chats when new group message arrives
+            updateUnifiedChats()
+        }, GroupMessage::class.java)
 
 
         hubConnection?.on("UserOnline", { onlineUserId: String ->
@@ -138,9 +182,143 @@ class ChatViewModel @Inject constructor(
                 val latestMessages = chatMap.values.toList()
                 Log.d("ChatViewModel", "Latest Chats: $latestMessages")
                 _latestChats.value = Result.success(latestMessages)
+                updateUnifiedChats()
             }.onFailure {
                 _latestChats.value = Result.failure(it)
             }
+        }
+    }    // Group-related methods
+    fun getAllGroups() {
+        viewModelScope.launch {
+            Log.d("ChatViewModel", "getAllGroups() called")
+            val result = groupRepository.getAllGroups()
+            _groups.value = result
+            result.onSuccess { groups ->
+                Log.d("ChatViewModel", "getAllGroups() success, groups count: ${groups.size}")
+                groups.forEach { group ->
+                    Log.d("ChatViewModel", "Group: id=${group.groupId}, name=${group.name}")
+                }
+                updateUnifiedChats()
+            }.onFailure { error ->
+                Log.e("ChatViewModel", "getAllGroups() failed", error)
+            }
+        }
+    }
+
+    fun getGroupMessages(groupId: String) {
+        viewModelScope.launch {
+            val result = groupRepository.getGroupMessages(groupId)
+            _groupMessages.value = result
+        }
+    }    fun sendGroupMessage(groupId: String, content: String) {
+        if (hubConnection?.connectionState != HubConnectionState.CONNECTED) {
+            Log.e("SignalR", "Reconnecting before sending group message...")
+            connectToSignalR()
+            return
+        }
+
+        try {
+            hubConnection?.invoke("SendMessageToGroup", groupId, content)
+        } catch (e: Exception) {
+            Log.e("SignalR", "Failed to send group message", e)
+        }
+    }
+
+    fun markGroupMessagesAsRead(groupId: String) {
+        viewModelScope.launch {
+            val result = groupRepository.markGroupMessagesAsRead(groupId)
+            if (result.isSuccess) {
+                getAllGroups()
+                updateUnifiedChats()
+            }
+        }
+    }    // Update unified chats combining both direct messages and groups
+    private fun updateUnifiedChats() {
+        try {
+            Log.d("ChatViewModel", "updateUnifiedChats() called")
+            val latestChats = _latestChats.value?.getOrNull() ?: emptyList()
+            val groups = _groups.value?.getOrNull() ?: emptyList()
+            val currentUserId = AuthStorage.getUserIdFromToken(context)
+            
+            Log.d("ChatViewModel", "LatestChats count: ${latestChats.size}, Groups count: ${groups.size}")
+            
+            val unifiedList = mutableListOf<UnifiedChatItem>()// Add direct chats
+        latestChats.forEach { chat ->
+            val isCurrentUserSender = chat.latestMessage.senderId == currentUserId
+            val chatId = if (isCurrentUserSender) 
+                chat.latestMessage.receiverId 
+            else 
+                chat.latestMessage.senderId
+            val chatTitle = if (isCurrentUserSender) 
+                chat.latestMessage.receiverName ?: "Unknown User"
+            else 
+                chat.latestMessage.senderName ?: "Unknown User"
+            
+            // Only add chats with valid data
+            if (!chatId.isNullOrEmpty() && chatTitle.isNotEmpty()) {
+                unifiedList.add(
+                    UnifiedChatItem(
+                        type = "direct",
+                        id = chatId,
+                        title = chatTitle,
+                        lastMessage = if (isCurrentUserSender) 
+                            "You: ${chat.latestMessage.content ?: ""}" 
+                        else 
+                            chat.latestMessage.content ?: "",
+                        timestamp = chat.latestMessage.sentAt ?: java.time.Instant.now().toString(),
+                        unreadCount = chat.unreadCount,
+                        avatarUrl = chat.avatarUrl ?: "",
+                        isOnline = false // Will be updated with friend online status
+                    )
+                )
+            }
+        }        // Add groups
+        groups.forEach { group ->
+            try {
+                Log.d("ChatViewModel", "Processing group: id=${group.groupId}, name=${group.name}")
+                // Only add groups that have valid essential data
+                if (!group.groupId.isNullOrEmpty() && !group.name.isNullOrEmpty()) {                    // Use current timestamp if no timestamp available or if it's empty
+                    val groupTimestamp = if (group.createdAt.isNullOrBlank()) {
+                        java.time.Instant.now().toString()
+                    } else {
+                        group.createdAt
+                    }
+                    
+                    unifiedList.add(
+                        UnifiedChatItem(
+                            type = "group",
+                            id = group.groupId,
+                            title = group.name,
+                            lastMessage = group.description ?: "Group chat",
+                            timestamp = groupTimestamp,
+                            unreadCount = 0,
+                            avatarUrl = "",
+                            isOnline = false
+                        )
+                    )
+                    Log.d("ChatViewModel", "Successfully added group to unified list")
+                } else {
+                    Log.w("ChatViewModel", "Skipping group with invalid data: id=${group.groupId}, name=${group.name}")
+                }
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Error processing group: ${group}", e)
+            }
+        }
+          // Sort by timestamp (most recent first)
+        val sortedList = unifiedList.sortedByDescending { it.timestamp }
+        _unifiedChats.value = Result.success(sortedList)
+        Log.d("ChatViewModel", "updateUnifiedChats() completed successfully with ${sortedList.size} items")
+        } catch (e: Exception) {
+            Log.e("ChatViewModel", "Error in updateUnifiedChats()", e)
+            // Set empty list to prevent crashes
+            _unifiedChats.value = Result.success(emptyList())
+        }
+    }private fun getProfileDisplayName(): String {
+        // Get current user's display name from AuthStorage
+        return try {
+            AuthStorage.getUserIdFromToken(context) ?: ""
+        } catch (e: Exception) {
+            ""
         }
     }
 
@@ -149,6 +327,7 @@ class ChatViewModel @Inject constructor(
             val result = chatRepository.markAllMessagesAsReadFromSingleChat(friendId)
             if (result.isSuccess) {
                 getLatestChats()
+                updateUnifiedChats()
             }
         }
     }

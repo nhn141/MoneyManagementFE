@@ -23,6 +23,12 @@ import DI.Models.Friend.DeleteFriendResponse
 import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.Models.Friend.RejectFriendRequestResponse
+import DI.Models.Group.CreateGroupRequest
+import DI.Models.Group.Group
+import DI.Models.Group.GroupMember
+import DI.Models.Group.GroupMessage
+import DI.Models.Group.SendGroupMessageRequest
+import DI.Models.Group.UpdateGroupRequest
 import DI.Models.Ocr.OcrData
 import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
@@ -194,4 +200,44 @@ interface ApiService {
 
     @GET("Calendar/yearly")
     suspend fun getYearlySummary(@Query("year") year: String): YearlySummary
+
+    // Groups
+    @POST("Groups")
+    suspend fun createGroup(@Body request: CreateGroupRequest): Response<Group>
+
+    @GET("Groups")
+    suspend fun getAllGroups(): List<Group>
+
+    @GET("Groups/{groupId}/messages")
+    suspend fun getGroupMessages(@Path("groupId") groupId: String): List<GroupMessage>
+
+    @POST("Groups/messages")
+    suspend fun sendGroupMessage(@Body request: SendGroupMessageRequest): Response<GroupMessage>
+
+    @POST("Groups/{groupId}/read")
+    suspend fun markGroupMessagesAsRead(@Path("groupId") groupId: String): Response<ResponseBody>
+
+    @GET("Groups/{groupId}/members")
+    suspend fun getGroupMembers(@Path("groupId") groupId: String): List<GroupMember>
+
+    @GET("Groups/{groupId}/members/{memberId}/profile")
+    suspend fun getGroupMemberProfile(@Path("groupId") groupId: String, @Path("memberId") memberId: String): Profile
+
+    @POST("Groups/{groupId}/members/{userId}")
+    suspend fun addUserToGroup(@Path("groupId") groupId: String, @Path("userId") userId: String): Response<ResponseBody>
+
+    @DELETE("Groups/{groupId}/members/{userId}")
+    suspend fun removeUserFromGroup(@Path("groupId") groupId: String, @Path("userId") userId: String): Response<ResponseBody>
+
+    @PUT("Groups/{groupId}")
+    suspend fun updateGroup(@Path("groupId") groupId: String, @Body request: UpdateGroupRequest): Response<Group>
+
+    @POST("Groups/{groupId}/leave")
+    suspend fun leaveGroup(@Path("groupId") groupId: String): Response<ResponseBody>
+
+    @POST("Groups/{groupId}/admin-leave")
+    suspend fun adminLeaveGroup(@Path("groupId") groupId: String): Response<ResponseBody>
+
+    @POST("Groups/{groupId}/members/{userId}/collaborator")
+    suspend fun assignCollaboratorRole(@Path("groupId") groupId: String, @Path("userId") userId: String): Response<ResponseBody>
 }

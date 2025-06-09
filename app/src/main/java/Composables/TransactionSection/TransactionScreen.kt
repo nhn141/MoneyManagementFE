@@ -779,7 +779,22 @@ fun SearchDialog(
             )
         } ?: listOf("0-50", "50-200", "200-500", "500-1000", "1000+") // Giá trị mặc định nếu exchangeRate null
     }
-
+// Define a local object to hold non-composable string constants
+    val nonComposableStrings = object {
+        val allOption = "All"
+        val time0008 = "00:00 - 08:00"
+        val time0816 = "08:00 - 16:00"
+        val time1600 = "16:00 - 24:00"
+        val monday = "Monday"
+        val tuesday = "Tuesday"
+        val wednesday = "Wednesday"
+        val thursday = "Thursday"
+        val friday = "Friday"
+        val saturday = "Saturday"
+        val sunday = "Sunday"
+        val pleaseSelectDates = "Please select both start and end dates"
+        val startDateLaterError = "Start date cannot be after end date"
+    }
     val amountRangeMap = buildMap {
         put(nonComposableStrings.allOption, "")
         putAll(rawAmountRanges.associateBy { range ->
