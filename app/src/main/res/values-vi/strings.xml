@@ -418,4 +418,8 @@
     <!-- ================== MISCELLANEOUS ================== -->
     <string name="language">Ngôn ngữ</string>
 
+    <!-- ================== GROUP FUND ================== -->
+    <string name="group_fund_created_success">Tạo quỹ nhóm thành công</string>
+    <string name="group_fund_updated_success">Cập nhật quỹ nhóm thành công</string>
+    <string name="group_fund_deleted_success">Xoóa quỹ nhóm thành công</string>
 </resources>

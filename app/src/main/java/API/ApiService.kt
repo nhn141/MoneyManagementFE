@@ -23,6 +23,10 @@ import DI.Models.Friend.DeleteFriendResponse
 import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.Models.Friend.RejectFriendRequestResponse
+import DI.Models.GroupFund.CreateGroupFundDto
+import DI.Models.GroupFund.DeleteResponse
+import DI.Models.GroupFund.GroupFundDto
+import DI.Models.GroupFund.UpdateGroupFundDto
 import DI.Models.Ocr.OcrData
 import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
@@ -194,4 +198,16 @@ interface ApiService {
 
     @GET("Calendar/yearly")
     suspend fun getYearlySummary(@Query("year") year: String): YearlySummary
+
+    // Group Fund
+    @GET("GroupFunds/{groupId}")
+    suspend fun getGroupFundsByGroupId(@Path("groupId") groupId: String): Response<List<GroupFundDto>>
+
+    @POST("GroupFunds")
+    suspend fun createGroupFund(@Body request: CreateGroupFundDto): Response<GroupFundDto>
+
+    @PUT("GroupFunds/{id}")
+    suspend fun updateGroupFund(@Path("id") id: String, @Body request: UpdateGroupFundDto): Response<GroupFundDto>
+
+    @DELETE("GroupFunds/{id}") suspend fun deleteGroupFund(@Path("id") id: String): Response<DeleteResponse>
 }

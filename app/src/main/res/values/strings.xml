@@ -420,5 +420,9 @@
     
     <!-- ================== MISCELLANEOUS ================== -->
     <string name="language">Language</string>
-    
+
+    <!-- ================== GROUP FUND ================== -->
+    <string name="group_fund_created_success">Group fund created successfully</string>
+    <string name="group_fund_updated_success">Group fund updated successfully</string>
+    <string name="group_fund_deleted_success">Group fund deleted successfully</string>
 </resources>

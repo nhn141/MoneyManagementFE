@@ -25,6 +25,9 @@ import DI.ViewModels.OcrViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import DI.ViewModels.CurrencyConverterViewModel
+import DI.ViewModels.GroupFundViewModel
+import FakeGroupFundViewModel
+import GroupFundScreen
 import ModernCategoriesScreen
 import ProfileScreen
 import Screens.MainLayout
@@ -105,6 +108,7 @@ private fun InnerNavHost(
     val walletViewModel = hiltViewModel<WalletViewModel>(parentEntry)
     val ocrViewModel = hiltViewModel<OcrViewModel>(parentEntry)
     val currencyViewModel = viewModel<CurrencyConverterViewModel>(parentEntry)
+    val groupFundViewModel = hiltViewModel<GroupFundViewModel>(parentEntry)
 
     NavHost(
         navController    = navController,
@@ -149,6 +153,10 @@ private fun InnerNavHost(
             WalletScreen(
                 viewModel = walletViewModel,
             )
+//            GroupFundScreen(
+//                navController = navController,
+//                groupFundViewModel = groupFundViewModel,
+//                groupId = "12")
         }
 
         composable(
