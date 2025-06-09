@@ -8,8 +8,8 @@ import DI.Composables.AuthSection.RegisterScreen
 import DI.Composables.TransactionSection.AddTransactionScreen
 import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
-import DI.Composables.Currency.CurrencyConverterScreen
 import DI.Composables.FriendSection.FriendProfileScreen
+import DI.Composables.NewsFeedSection.NewsFeedScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
@@ -25,6 +25,7 @@ import DI.ViewModels.OcrViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import DI.ViewModels.CurrencyConverterViewModel
+import DI.ViewModels.NewsFeedViewModel
 import ModernCategoriesScreen
 import ProfileScreen
 import Screens.MainLayout
@@ -105,6 +106,7 @@ private fun InnerNavHost(
     val walletViewModel = hiltViewModel<WalletViewModel>(parentEntry)
     val ocrViewModel = hiltViewModel<OcrViewModel>(parentEntry)
     val currencyViewModel = viewModel<CurrencyConverterViewModel>(parentEntry)
+    val newsFeedViewModel = hiltViewModel<NewsFeedViewModel>(parentEntry)
 
     NavHost(
         navController    = navController,
@@ -149,6 +151,10 @@ private fun InnerNavHost(
             WalletScreen(
                 viewModel = walletViewModel,
             )
+        }
+
+        composable(BottomNavItem.NewsFeed.route) {
+            NewsFeedScreen(viewModel = newsFeedViewModel)
         }
 
         composable(

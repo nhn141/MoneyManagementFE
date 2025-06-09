@@ -23,6 +23,12 @@ import DI.Models.Friend.DeleteFriendResponse
 import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.Models.Friend.RejectFriendRequestResponse
+import DI.Models.NewsFeed.Comment
+import DI.Models.NewsFeed.CreateCommentRequest
+import DI.Models.NewsFeed.CreatePostRequest
+import DI.Models.NewsFeed.NewsFeedResponse
+import DI.Models.NewsFeed.Post
+import DI.Models.NewsFeed.PostDetail
 import DI.Models.Ocr.OcrData
 import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
@@ -30,6 +36,7 @@ import DI.Models.UserInfo.UpdatedProfile
 import DI.Models.Wallet.AddWalletRequest
 import DI.Models.Wallet.Wallet
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -194,4 +201,41 @@ interface ApiService {
 
     @GET("Calendar/yearly")
     suspend fun getYearlySummary(@Query("year") year: String): YearlySummary
+
+    //NewsFeed
+    @GET("NewsFeed")
+    suspend fun getNewsFeed(
+        @Query("page") page: Int,
+        @Query("pageSize") pageSize: Int
+    ): Response<NewsFeedResponse>
+
+    @POST("NewsFeed")
+    suspend fun createPost(
+        @Body request: CreatePostRequest
+    ): Response<Post>
+
+    @GET("NewsFeed/{postId}")
+    suspend fun getPostDetail(
+        @Path("postId") postId: String
+    ): Response<PostDetail>
+
+    @POST("NewsFeed/{postId}/like")
+    suspend fun likePost(
+        @Path("postId") postId: String
+    ): Response<Unit>
+
+    @DELETE("NewsFeed/{postId}/like")
+    suspend fun unlikePost(
+        @Path("postId") postId: String
+    ): Response<Unit>
+
+    @POST("NewsFeed/comment")
+    suspend fun createComment(
+        @Body request: CreateCommentRequest
+    ): Response<Comment>
+
+    @DELETE("NewsFeed/comment/{commentId}")
+    suspend fun deleteComment(
+        @Path("commentId") commentId: String
+    ): Response<Unit>
 }
