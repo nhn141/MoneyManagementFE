@@ -154,4 +154,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
+    //Newsfeed
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
 }
