@@ -5,28 +5,26 @@ import DI.Composables.AnalysisSection.AnalysisBody
 import DI.Composables.AnalysisSection.CalendarScreen
 import DI.Composables.AuthSection.LoginScreen
 import DI.Composables.AuthSection.RegisterScreen
-import DI.Composables.TransactionSection.AddTransactionScreen
 import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
-import DI.Composables.Currency.CurrencyConverterScreen
 import DI.Composables.FriendSection.FriendProfileScreen
 import DI.Composables.ProfileSection.EditProfileScreen
+import DI.Composables.TransactionSection.AddTransactionScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
 import DI.Composables.TransactionSection.TransactionScreen
 import DI.Composables.WalletSection.WalletScreen
 import DI.Models.NavBar.BottomNavItem
 import DI.ViewModels.AnalysisViewModel
-import DI.ViewModels.ChatViewModel
-import DI.ViewModels.FriendViewModel
-import DI.ViewModels.ProfileViewModel
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.ChatViewModel
+import DI.ViewModels.CurrencyConverterViewModel
+import DI.ViewModels.FriendViewModel
+import DI.ViewModels.GroupFundViewModel
 import DI.ViewModels.OcrViewModel
+import DI.ViewModels.ProfileViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
-import DI.ViewModels.CurrencyConverterViewModel
-import DI.ViewModels.GroupFundViewModel
-import FakeGroupFundViewModel
 import GroupFundScreen
 import ModernCategoriesScreen
 import ProfileScreen
@@ -82,7 +80,13 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
             LocalMainNavBackStackEntry provides parentEntry
         ) {
             MainLayout { innerNavController, modifier ->
-                InnerNavHost(navController, innerNavController, modifier, parentEntry, authViewModel)
+                InnerNavHost(
+                    navController,
+                    innerNavController,
+                    modifier,
+                    parentEntry,
+                    authViewModel
+                )
             }
             TokenExpirationHandler(navController)
         }
@@ -93,7 +97,7 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun InnerNavHost(
-    appNavController : NavController,
+    appNavController: NavController,
     navController: NavHostController,
     modifier: Modifier,
     parentEntry: NavBackStackEntry,
@@ -111,9 +115,9 @@ private fun InnerNavHost(
     val groupFundViewModel = hiltViewModel<GroupFundViewModel>(parentEntry)
 
     NavHost(
-        navController    = navController,
+        navController = navController,
         startDestination = BottomNavItem.Profile.route,
-        modifier         = modifier
+        modifier = modifier
     ) {
         composable(BottomNavItem.Home.route) {
 
@@ -153,10 +157,18 @@ private fun InnerNavHost(
             WalletScreen(
                 viewModel = walletViewModel,
             )
-//            GroupFundScreen(
-//                navController = navController,
-//                groupFundViewModel = groupFundViewModel,
-//                groupId = "12")
+        }
+
+        composable(BottomNavItem.GroupFund.route) {
+            GroupFundScreen(
+                navController = navController,
+                groupFundViewModel = groupFundViewModel,
+                groupId = "12"
+            )
+        }
+
+        composable(BottomNavItem.NewFeed.route) {
+
         }
 
         composable(
@@ -165,7 +177,7 @@ private fun InnerNavHost(
         ) { backStackEntry ->
             val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
             ChatMessageScreen(
-                navController = navController ,
+                navController = navController,
                 friendId = friendId,
                 chatViewModel = chatViewModel,
                 profileViewModel = profileViewModel,
@@ -231,7 +243,7 @@ private fun InnerNavHost(
                 categoryViewModel = categoryViewModel,
                 authViewModel = authViewModel,
             )
-  //          CurrencyConverterScreen(viewModel = currencyViewModel)
+            //          CurrencyConverterScreen(viewModel = currencyViewModel)
         }
 
         composable(

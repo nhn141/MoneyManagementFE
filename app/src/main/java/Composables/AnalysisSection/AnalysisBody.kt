@@ -90,6 +90,15 @@ fun AnalysisBody(
             analysisViewModel.getYearlySummary(today.year.toString())
         }
     }
+
+    LaunchedEffect(Unit) {
+        val today = LocalDate.now()
+        analysisViewModel.getDailySummary(today.toString())
+        analysisViewModel.getWeeklySummary(today.toString())
+        analysisViewModel.getMonthlySummary(today.year.toString(), today.monthValue.toString())
+        analysisViewModel.getYearlySummary(today.year.toString())
+    }
+
     val periodGraphResult = analysisViewModel.periodGraph.collectAsState()
 
     // Keep English strings for API calls
@@ -133,16 +142,16 @@ fun AnalysisBody(
     // Clean background matching profile screen
     Box(
         modifier =
-        Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F7FA)) // Light grayish background
+            Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F7FA)) // Light grayish background
     ) {
         Column(
             modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 10.dp, vertical = 16.dp)
-                .verticalScroll(rememberScrollState()),
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 10.dp, vertical = 16.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -225,11 +234,11 @@ fun AnalysisBody(
                     // Chart container
                     Box(
                         modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(280.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF8F9FA)) // Very light gray
+                            Modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFF8F9FA)) // Very light gray
                     ) {
                         IncomeExpensesBarChart(
                             incomeValues = incomeList,
@@ -293,44 +302,44 @@ fun ModernPeriodSelector(
                 animateFloatAsState(
                     targetValue = if (isSelected) 1.05f else 1f,
                     animationSpec =
-                    spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
-                    )
+                        spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
                 )
 
                 Box(
                     modifier =
-                    Modifier
-                        .weight(1f)
-                        .scale(scale)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            if (isSelected) {
-                                Brush.horizontalGradient(
-                                    colors =
-                                    listOf(
-                                        Color(
-                                            0xFF667EEA
-                                        ), // Main theme color
-                                        Color(
-                                            0xFF764BA2
-                                        ) // Complementary
-                                        // purple
+                        Modifier
+                            .weight(1f)
+                            .scale(scale)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                if (isSelected) {
+                                    Brush.horizontalGradient(
+                                        colors =
+                                            listOf(
+                                                Color(
+                                                    0xFF667EEA
+                                                ), // Main theme color
+                                                Color(
+                                                    0xFF764BA2
+                                                ) // Complementary
+                                                // purple
+                                            )
                                     )
-                                )
-                            } else {
-                                Brush.horizontalGradient(
-                                    colors =
-                                    listOf(
-                                        Color.Transparent,
-                                        Color.Transparent
+                                } else {
+                                    Brush.horizontalGradient(
+                                        colors =
+                                            listOf(
+                                                Color.Transparent,
+                                                Color.Transparent
+                                            )
                                     )
-                                )
-                            }
-                        )
-                        .clickable { onPeriodSelected(index) }
-                        .padding(vertical = 14.dp, horizontal = 8.dp),
+                                }
+                            )
+                            .clickable { onPeriodSelected(index) }
+                            .padding(vertical = 14.dp, horizontal = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -359,25 +368,25 @@ fun ModernCalendarButton(onClick: () -> Unit) {
 
     Box(
         modifier =
-        Modifier
-            .size(48.dp)
-            .scale(scale)
-            .clip(CircleShape)
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+            Modifier
+                .size(48.dp)
+                .scale(scale)
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+                    )
                 )
-            )
-            .clickable {
-                isPressed = true
-                onClick()
-                isPressed = false
-            }
-            .border(
-                width = 1.dp,
-                color = Color.White.copy(alpha = 0.4f),
-                shape = CircleShape
-            ),
+                .clickable {
+                    isPressed = true
+                    onClick()
+                    isPressed = false
+                }
+                .border(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = 0.4f),
+                    shape = CircleShape
+                ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -444,23 +453,23 @@ fun ModernTotalCard(
             // Icon with gradient background
             Box(
                 modifier =
-                Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            colors =
-                            listOf(
-                                tintColor.copy(alpha = 0.3f),
-                                tintColor.copy(alpha = 0.1f)
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors =
+                                    listOf(
+                                        tintColor.copy(alpha = 0.3f),
+                                        tintColor.copy(alpha = 0.1f)
+                                    )
                             )
                         )
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = tintColor.copy(alpha = 0.4f),
-                        shape = CircleShape
-                    ),
+                        .border(
+                            width = 1.dp,
+                            color = tintColor.copy(alpha = 0.4f),
+                            shape = CircleShape
+                        ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -525,46 +534,46 @@ fun IncomeExpensesBarChart(
                 Bars(
                     label = labels[index],
                     values =
-                    listOf(
-                        Bars.Data(
-                            label = incomeLabel,
-                            value = incomeValues[index],
-                            color =
-                            Brush.verticalGradient(
-                                colors =
-                                listOf(
-                                    Color(
-                                        0xFF4CAF50
-                                    ),
-                                    Color(
-                                        0xFF81C784
-                                    ),
-                                    Color(
-                                        0xFFA5D6A7
+                        listOf(
+                            Bars.Data(
+                                label = incomeLabel,
+                                value = incomeValues[index],
+                                color =
+                                    Brush.verticalGradient(
+                                        colors =
+                                            listOf(
+                                                Color(
+                                                    0xFF4CAF50
+                                                ),
+                                                Color(
+                                                    0xFF81C784
+                                                ),
+                                                Color(
+                                                    0xFFA5D6A7
+                                                )
+                                            )
                                     )
-                                )
-                            )
-                        ),
-                        Bars.Data(
-                            label = expenseLabel,
-                            value = expenseValues[index],
-                            color =
-                            Brush.verticalGradient(
-                                colors =
-                                listOf(
-                                    Color(
-                                        0xFF2196F3
-                                    ),
-                                    Color(
-                                        0xFF64B5F6
-                                    ),
-                                    Color(
-                                        0xFF90CAF9
+                            ),
+                            Bars.Data(
+                                label = expenseLabel,
+                                value = expenseValues[index],
+                                color =
+                                    Brush.verticalGradient(
+                                        colors =
+                                            listOf(
+                                                Color(
+                                                    0xFF2196F3
+                                                ),
+                                                Color(
+                                                    0xFF64B5F6
+                                                ),
+                                                Color(
+                                                    0xFF90CAF9
+                                                )
+                                            )
                                     )
-                                )
                             )
                         )
-                    )
                 )
             }
         }
@@ -588,50 +597,50 @@ fun IncomeExpensesBarChart(
         ), // Reduced horizontal padding to give more space for indicators
         data = chartData,
         barProperties =
-        BarProperties(
-            cornerRadius =
-            Bars.Data.Radius.Rectangle(
-                topLeft = 8.dp,
-                topRight = 8.dp,
-                bottomLeft = 2.dp,
-                bottomRight = 2.dp
+            BarProperties(
+                cornerRadius =
+                    Bars.Data.Radius.Rectangle(
+                        topLeft = 8.dp,
+                        topRight = 8.dp,
+                        bottomLeft = 2.dp,
+                        bottomRight = 2.dp
+                    ),
+                spacing = if (isMonthly) 1.dp else 3.dp,
+                thickness = if (isMonthly) 6.dp else 8.dp,
             ),
-            spacing = if (isMonthly) 1.dp else 3.dp,
-            thickness = if (isMonthly) 6.dp else 8.dp,
-        ),
 
         animationSpec =
-        spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            ),
 
         labelProperties =
-        LabelProperties(
-            enabled = true,
-            rotation = LabelProperties.Rotation(degree = 0f),
-            textStyle =
-            TextStyle(
-                color = Color(0xFF8F9BB3),
-                fontSize = if (isMonthly) 8.sp else 12.sp,
-                fontWeight = FontWeight.Medium
+            LabelProperties(
+                enabled = true,
+                rotation = LabelProperties.Rotation(degree = 0f),
+                textStyle =
+                    TextStyle(
+                        color = Color(0xFF8F9BB3),
+                        fontSize = if (isMonthly) 8.sp else 12.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                padding = if (isMonthly) 8.dp else 4.dp
             ),
-            padding = if (isMonthly) 8.dp else 4.dp
-        ),
         indicatorProperties =
-        HorizontalIndicatorProperties(
-            enabled = true,
-            textStyle =
-            TextStyle(
-                color = Color(0xFF8F9BB3),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Normal
-            ),
-            count = IndicatorCount.CountBased(count = 5),
-            position = IndicatorPosition.Horizontal.Start,
-            padding = 36.dp, // Increased from 12dp to 24dp for better spacing
-            contentBuilder = { value -> formatLargeNumber(value) },
-            indicators = indicatorValues
-        )
+            HorizontalIndicatorProperties(
+                enabled = true,
+                textStyle =
+                    TextStyle(
+                        color = Color(0xFF8F9BB3),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Normal
+                    ),
+                count = IndicatorCount.CountBased(count = 5),
+                position = IndicatorPosition.Horizontal.Start,
+                padding = 36.dp, // Increased from 12dp to 24dp for better spacing
+                contentBuilder = { value -> formatLargeNumber(value) },
+                indicators = indicatorValues
+            )
     )
 }

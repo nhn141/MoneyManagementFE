@@ -561,7 +561,7 @@ fun ModernCategoryAggregateSection(
             categoryBreakdown.forEach { item ->
                 val category = item?.category ?: ""
                 val totalIncome = item?.totalIncome.toString()
-                val totalExpense = item?.totalExpenses.toString()
+                val totalExpense = item?.totalExpense.toString()
                 ModernAggregateItem(category, selectionDateRange, totalIncome, totalExpense)
             }
         }
