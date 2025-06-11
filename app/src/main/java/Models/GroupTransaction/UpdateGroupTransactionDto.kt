@@ -1,12 +1,11 @@
-package DI.Models.GroupFund
+package DI.Models.GroupTransaction
 
-data class GroupTransactionDto(
+data class UpdateGroupTransactionDto(
     val groupTransactionID: String,
-    val groupFundID: String,
     val userWalletID: String,
     val userCategoryID: String,
     val amount: Double,
     val description: String?,
     val transactionDate: String,
-    val type: String
+    val type: String = "expense"
 )

@@ -1,124 +1,107 @@
-import DI.Composables.CategorySection.ModernColors
-import DI.Composables.GroupFundSection.AddGroupFundDialog
-import DI.Composables.GroupFundSection.EditGroupFundDialog
-import DI.Models.GroupFund.CreateGroupFundDto
-import DI.Models.GroupFund.GroupFundDto
-import DI.Models.GroupFund.UpdateGroupFundDto
+package DI.Composables.GroupTransactionScreen
+
+import DI.Models.GroupTransaction.CreateGroupTransactionDto
+import DI.Models.GroupTransaction.GroupTransactionDto
+import DI.Models.GroupTransaction.UpdateGroupTransactionDto
 import DI.Models.UiEvent.UiEvent
-import DI.ViewModels.GroupFundViewModel
-import android.util.Log
+import DI.ViewModels.GroupTransactionViewModel
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Money
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.moneymanagement_frontend.R
 import kotlinx.coroutines.launch
+import java.time.LocalTime
 
 @Composable
-fun GroupFundCard(
-    fund: GroupFundDto,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(6.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .background(ModernColors.cardGradient)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Description: ${fund.description}", fontWeight = FontWeight.Bold, color = ModernColors.OnSurface)
-            Text("Saving Goal: ${fund.savingGoal}", color = ModernColors.OnSurfaceVariant)
-            Text("Balance: ${fund.balance}", color = ModernColors.OnSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-fun GroupFundScreen(
+fun GroupTransactionScreen(
     navController: NavController,
-    groupFundViewModel: GroupFundViewModel,
-    groupId: String
+    viewModel: GroupTransactionViewModel,
+    groupFundId: String
 ) {
-    Log.d("GroupFundScreen", "Composable started")
-
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val groupFunds by groupFundViewModel.groupFunds.collectAsState()
-    val funds = groupFunds?.getOrNull() ?: emptyList()
+    val groupTransactions by viewModel.groupTransactions.collectAsState()
+    val transactions = groupTransactions?.getOrNull() ?: emptyList()
 
-    var selectedFund by remember { mutableStateOf<GroupFundDto?>(null) }
+    var selectedTransaction by remember { mutableStateOf<GroupTransactionDto?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    Log.d("GroupID", "Fetching group funds for: $groupId")
-    // Fetch data once when screen opens
+    // Fetch when screen opens
     LaunchedEffect(Unit) {
-        Log.d("GroupFundScreen", "Calling fetchGroupFunds")
-        groupFundViewModel.fetchGroupFunds(groupId)
-        Log.d("GroupFundScreen", "Fetching funds for: $groupId")
-        Log.d("GroupFundScreen", "Fetched funds: ${funds.size}")
+        viewModel.fetchGroupTransactions(groupFundId)
     }
 
-    // Collect and react to add/update/delete events
+    // UI feedback handlers
     LaunchedEffect(Unit) {
         scope.launch {
-            groupFundViewModel.addGroupFundEvent.collect { event ->
+            viewModel.addGroupTransactionEvent.collect { event ->
                 if (event is UiEvent.ShowMessage) {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                    groupFundViewModel.fetchGroupFunds(groupId)
+                    viewModel.fetchGroupTransactions(groupFundId)
                 }
             }
         }
         scope.launch {
-            groupFundViewModel.updateGroupFundEvent.collect { event ->
+            viewModel.updateGroupTransactionEvent.collect { event ->
                 if (event is UiEvent.ShowMessage) {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                    groupFundViewModel.fetchGroupFunds(groupId)
+                    viewModel.fetchGroupTransactions(groupFundId)
                 }
             }
         }
         scope.launch {
-            groupFundViewModel.deleteGroupFundEvent.collect { event ->
+            viewModel.deleteGroupTransactionEvent.collect { event ->
                 if (event is UiEvent.ShowMessage) {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                    groupFundViewModel.fetchGroupFunds(groupId)
+                    viewModel.fetchGroupTransactions(groupFundId)
                 }
             }
         }
     }
-
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -158,7 +141,7 @@ fun GroupFundScreen(
                                     color = Color.White
                                 )
                                 Text(
-                                    text = "Total: ${funds.size}",
+                                    text = "Total: ${transactions.size}",
                                     fontSize = 16.sp,
                                     color = Color.White.copy(alpha = 0.9f),
                                     fontWeight = FontWeight.Medium
@@ -173,15 +156,9 @@ fun GroupFundScreen(
             FloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = Color(0xFF00D09E),
-                contentColor = Color.White,
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(12.dp)
+                contentColor = Color.White
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Fund",
-                    modifier = Modifier.size(28.dp)
-                )
+                Icon(Icons.Default.Add, contentDescription = "Add Transaction")
             }
         }
     ) { paddingValues ->
@@ -202,53 +179,57 @@ fun GroupFundScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(funds) { fund ->
-                    GroupFundCard(
-                        fund = fund,
-                        onClick = { selectedFund = fund }
-                    )
+                items(transactions) { transaction ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedTransaction = transaction },
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Wallet: ${transaction.userWalletID}")
+                            Text("Category: ${transaction.userCategoryID}")
+                            Text("Amount: ${transaction.amount}")
+                            Text("Description: ${transaction.description}")
+                            Text("Created: ${transaction.transactionDate}")
+                            Text("Type: ${transaction.type}")
+                        }
+                    }
                 }
             }
         }
+    }
 
-        selectedFund?.let { fund ->
-            EditGroupFundDialog(
-                fund = fund,
-                onDismiss = { selectedFund = null },
-                onUpdate = { newDescription, newSavingGoal ->
-                    groupFundViewModel.updateGroupFund(
-                        fund.groupFundID, UpdateGroupFundDto(
-                            groupFundID = fund.groupFundID,
-                            description = newDescription,
-                            savingGoal = newSavingGoal
-                        ), groupId
-                    )
-                    selectedFund = null
-                },
-                onDelete = {
-                    groupFundViewModel.deleteGroupFund(
-                        fund.groupFundID,
-                        fund.groupID
-                    )
-                    selectedFund = null
-                }
-            )
-        }
+    // Add Dialog
+    if (showAddDialog) {
+        AddGroupTransactionDialog(
+            onDismiss = { showAddDialog = false },
+            onSave = { wallet, category, amount, desc, type ->
+                viewModel.createGroupTransaction(
+                    CreateGroupTransactionDto(groupFundId, wallet, category, amount, desc, LocalTime.now().toString(), type)
+                )
+                showAddDialog = false
+            }
+        )
+    }
 
-        if (showAddDialog) {
-            AddGroupFundDialog(
-                onDismiss = { showAddDialog = false },
-                onSave = { description, savingGoal ->
-                    groupFundViewModel.createGroupFund(
-                        CreateGroupFundDto(
-                            groupID = groupId,
-                            description = description,
-                            //savingGoal = savingGoal
-                        )
-                    )
-                    showAddDialog = false
-                }
-            )
-        }
+    // Edit Dialog
+    selectedTransaction?.let { transaction ->
+        EditGroupTransactionDialog(
+            transaction = transaction,
+            onDismiss = { selectedTransaction = null },
+            onUpdate = { wallet, category, amount, desc, type ->
+                viewModel.updateGroupTransaction(
+                    transaction.groupTransactionID,
+                    UpdateGroupTransactionDto(transaction.groupTransactionID, wallet, category, amount, desc, transaction.transactionDate, type),
+                    groupFundId
+                )
+                selectedTransaction = null
+            },
+            onDelete = {
+                viewModel.deleteGroupTransaction(transaction.groupTransactionID, transaction.groupFundID)
+                selectedTransaction = null
+            }
+        )
     }
 }

@@ -10,6 +10,7 @@ import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.Currency.CurrencyConverterScreen
 import DI.Composables.FriendSection.FriendProfileScreen
+import DI.Composables.GroupTransactionScreen.GroupTransactionScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
@@ -26,6 +27,7 @@ import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.GroupFundViewModel
+import DI.ViewModels.GroupTransactionViewModel
 //import FakeGroupFundViewModel
 import GroupFundScreen
 import ModernCategoriesScreen
@@ -109,6 +111,7 @@ private fun InnerNavHost(
     val ocrViewModel = hiltViewModel<OcrViewModel>(parentEntry)
     val currencyViewModel = viewModel<CurrencyConverterViewModel>(parentEntry)
     val groupFundViewModel = hiltViewModel<GroupFundViewModel>(parentEntry)
+    val groupTransactionViewModel = hiltViewModel<GroupTransactionViewModel>(parentEntry)
 
     NavHost(
         navController    = navController,
@@ -157,6 +160,11 @@ private fun InnerNavHost(
 //                navController = navController,
 //                groupFundViewModel = groupFundViewModel,
 //                groupId = "727b116f-140c-4e1c-ad5a-ab35bc0ff089")
+//            GroupTransactionScreen(
+//                navController = navController,
+//                viewModel = groupTransactionViewModel,
+//                groupFundId = "7a4258a0-e192-4886-8c3d-1dbe48041606"
+//                )
         }
 
         composable(

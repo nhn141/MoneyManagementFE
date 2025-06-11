@@ -27,6 +27,9 @@ import DI.Models.GroupFund.CreateGroupFundDto
 import DI.Models.GroupFund.DeleteResponse
 import DI.Models.GroupFund.GroupFundDto
 import DI.Models.GroupFund.UpdateGroupFundDto
+import DI.Models.GroupTransaction.CreateGroupTransactionDto
+import DI.Models.GroupTransaction.GroupTransactionDto
+import DI.Models.GroupTransaction.UpdateGroupTransactionDto
 import DI.Models.Ocr.OcrData
 import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
@@ -210,4 +213,17 @@ interface ApiService {
     suspend fun updateGroupFund(@Path("id") id: String, @Body request: UpdateGroupFundDto): Response<GroupFundDto>
 
     @DELETE("GroupFunds/{id}") suspend fun deleteGroupFund(@Path("id") id: String): Response<DeleteResponse>
+
+    // Group Transaction
+    @GET("GroupTransactions/{groupFundId}")
+    suspend fun getGroupTransactionsByGroupFundId(@Path("groupFundId") groupFundId: String): Response<List<GroupTransactionDto>>
+
+    @POST("GroupTransactions")
+    suspend fun createGroupTransaction(@Body dto: CreateGroupTransactionDto): Response<GroupTransactionDto>
+
+    @PUT("GroupTransactions")
+    suspend fun updateGroupTransaction(@Body dto: UpdateGroupTransactionDto): Response<GroupTransactionDto>
+
+    @DELETE("GroupTransactions/{id}")
+    suspend fun deleteGroupTransaction(@Path("id") id: String): Response<Unit>
 }

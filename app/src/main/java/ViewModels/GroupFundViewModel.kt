@@ -78,11 +78,11 @@ class GroupFundViewModel @Inject constructor(
         }
     }
 
-    fun updateGroupFund(id: String, dto: UpdateGroupFundDto) {
+    fun updateGroupFund(id: String, dto: UpdateGroupFundDto, groupId: String) {
         viewModelScope.launch {
             val result = repository.updateGroupFund(id, dto)
             if (result.isSuccess) {
-                fetchGroupFunds(dto.groupFundID)
+                fetchGroupFunds(groupId)
                 _updateGroupFundEvent.emit(
                     UiEvent.ShowMessage(stringProvider.getString(R.string.group_fund_updated_success))
                 )
