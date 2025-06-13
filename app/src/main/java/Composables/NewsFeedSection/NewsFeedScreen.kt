@@ -56,6 +56,8 @@ import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.collections.isNotEmpty
 import android.util.Base64
+import android.util.Log
+import android.widget.ImageView
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
@@ -75,8 +77,10 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.viewinterop.AndroidView
 import kotlin.io.encoding.ExperimentalEncodingApi
 import androidx.core.net.toUri
+import com.bumptech.glide.Glide
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -440,6 +444,17 @@ fun PostItem(
     onCommentClick: (Post) -> Unit,
     viewModel: NewsFeedViewModel
 ) {
+    val postDetailState by viewModel.postDetail.collectAsState()
+
+    LaunchedEffect(post.postId) {
+        viewModel.loadPostDetail(post.postId)
+    }
+
+    val mediaUrl = when (postDetailState) {
+        is ResultState.Success -> (postDetailState as ResultState.Success).data.mediaUrl
+        else -> null
+    }
+
     val imageUri = post.authorAvatarUrl?.toUri()
 
     Box(
@@ -447,13 +462,14 @@ fun PostItem(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        if (post.mediaUrl != null) {
+        if (!mediaUrl.isNullOrEmpty()) {
             AsyncImage(
-                model = post.mediaUrl,
+                model = mediaUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
+            Log.d("PostItem", "Media URL: $mediaUrl")
         } else {
             Box(
                 modifier = Modifier
@@ -641,6 +657,22 @@ fun PostItem(
         }
     }
 }
+
+@Composable
+fun PostImage(url: String?, modifier: Modifier = Modifier) {
+    if (!url.isNullOrEmpty()) {
+        AndroidView(
+            factory = { context ->
+                ImageView(context).apply {
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    Glide.with(context).load(url).into(this)
+                }
+            },
+            modifier = modifier
+        )
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -836,23 +868,6 @@ fun CommentSection(
         }
     }
 }
-
-
-@OptIn(ExperimentalEncodingApi::class)
-fun encodeImageToBase64(context: Context, uri: Uri): String? {
-    return try {
-        val inputStream = context.contentResolver.openInputStream(uri)
-        val bytes = inputStream?.readBytes()
-        inputStream?.close()
-        bytes?.let {
-            Base64.encodeToString(it, Base64.DEFAULT)
-        }
-    } catch (e: Exception) {
-        null
-    }
-}
-
-
 @Composable
 fun CreatePostDialog(
     onDismiss: () -> Unit,
@@ -1123,10 +1138,8 @@ fun CreatePostDialog(
                     Button(
                         onClick = {
                             if (content.isNotBlank()) {
-                                val base64Image = selectedImageUri?.let {
-                                    encodeImageToBase64(context, it)
-                                }
-                                viewModel.createPost(content = content, mediaFile = base64Image)
+                                Log.d("CreatePost", "Content length: ${content.length}, content: '$content'")
+                                viewModel.createPost(content = content, category = "general", fileUri = selectedImageUri)
                             }
                         },
                         enabled = content.isNotBlank() && !isPosting,
@@ -1195,3 +1208,4 @@ fun CreatePostDialog(
         }
     }
 }
+
