@@ -1,13 +1,14 @@
 package DI.Repositories
 
 import API.ApiService
+import DI.Composables.NewsFeedSection.NewsFeedHelper
 import DI.Models.NewsFeed.Comment
 import DI.Models.NewsFeed.CreateCommentRequest
-import DI.Models.NewsFeed.CreatePostRequest
 import DI.Models.NewsFeed.NewsFeedResponse
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
 import DI.Models.NewsFeed.ResultState
+import android.net.Uri
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -18,8 +19,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class NewsFeedRepository @Inject constructor(private val apiService: ApiService) {
-
+class NewsFeedRepository @Inject constructor(
+    private val apiService: ApiService,
+    private val newsFeedHelper: NewsFeedHelper)
+{
     suspend fun getNewsFeed(page: Int, pageSize: Int): ResultState<NewsFeedResponse> {
         return try {
             val response = apiService.getNewsFeed(page, pageSize)
@@ -38,10 +41,20 @@ class NewsFeedRepository @Inject constructor(private val apiService: ApiService)
         }
     }
 
-    suspend fun createPost(request: CreatePostRequest): ResultState<Post> {
+    suspend fun createPost(content: String, category: String = "general", fileUri: Uri?): ResultState<Post> {
         return try {
-            val response = apiService.createPost(request)
+            val contentPart = newsFeedHelper.createTextRequestBody(content)
+            val categoryPart = newsFeedHelper.createTextRequestBody(category)
+            val filePart = fileUri?.let { uri ->
+                newsFeedHelper.createMultipartFromUri(uri)
+            }
+
+            val response = apiService.createPost(content, category, filePart)
+
             if (response.isSuccessful) {
+                // Cleanup temp files sau khi upload thành công
+                newsFeedHelper.cleanupTempFiles()
+
                 response.body()?.let {
                     ResultState.Success(it)
                 } ?: ResultState.Error("Empty response body")

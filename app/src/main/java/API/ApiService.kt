@@ -25,7 +25,6 @@ import DI.Models.Friend.FriendRequest
 import DI.Models.Friend.RejectFriendRequestResponse
 import DI.Models.NewsFeed.Comment
 import DI.Models.NewsFeed.CreateCommentRequest
-import DI.Models.NewsFeed.CreatePostRequest
 import DI.Models.NewsFeed.NewsFeedResponse
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
@@ -209,9 +208,12 @@ interface ApiService {
         @Query("pageSize") pageSize: Int
     ): Response<NewsFeedResponse>
 
+    @Multipart
     @POST("NewsFeed")
     suspend fun createPost(
-        @Body request: CreatePostRequest
+        @Query("content") content: String,
+        @Query("category") category: String,
+        @Part file: MultipartBody.Part? = null
     ): Response<Post>
 
     @GET("NewsFeed/{postId}")
