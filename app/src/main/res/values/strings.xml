@@ -430,5 +430,6 @@
     <string name="group_transaction_created_success">Group transaction created successfully</string>
     <string name="group_transaction_updated_success">Group transaction updated successfully</string>
     <string name="group_transaction_deleted_success">Group transaction deleted successfully</string>
+    <string name="group_transaction">Group Transaction\n</string>
 
 </resources>

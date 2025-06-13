@@ -153,18 +153,21 @@ private fun InnerNavHost(
         }
 
         composable(BottomNavItem.Wallet.route) {
-            WalletScreen(
-                viewModel = walletViewModel,
-            )
+//            WalletScreen(
+//                viewModel = walletViewModel,
+//            )
 //            GroupFundScreen(
 //                navController = navController,
 //                groupFundViewModel = groupFundViewModel,
 //                groupId = "727b116f-140c-4e1c-ad5a-ab35bc0ff089")
-//            GroupTransactionScreen(
-//                navController = navController,
-//                viewModel = groupTransactionViewModel,
-//                groupFundId = "7a4258a0-e192-4886-8c3d-1dbe48041606"
-//                )
+            GroupTransactionScreen(
+                navController = navController,
+                viewModel = groupTransactionViewModel,
+                walletViewModel = walletViewModel,
+                categoryViewModel = categoryViewModel,
+                currencyViewModel = currencyViewModel,
+                groupFundId = "7a4258a0-e192-4886-8c3d-1dbe48041606"
+                )
         }
 
         composable(

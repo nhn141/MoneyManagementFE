@@ -427,4 +427,6 @@
     <string name="group_transaction_created_success">Tạo giao dịch nhóm thành công</string>
     <string name="group_transaction_updated_success">Cập nhật giao dịch nhóm thành công</string>
     <string name="group_transaction_deleted_success">Xóa giao dịch nhóm thành công</string>
+    <string name="group_transaction">Giao dịch nhóm\n</string>
+
 </resources>
