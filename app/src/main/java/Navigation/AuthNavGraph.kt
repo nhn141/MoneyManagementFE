@@ -156,18 +156,18 @@ private fun InnerNavHost(
 //            WalletScreen(
 //                viewModel = walletViewModel,
 //            )
-//            GroupFundScreen(
-//                navController = navController,
-//                groupFundViewModel = groupFundViewModel,
-//                groupId = "727b116f-140c-4e1c-ad5a-ab35bc0ff089")
-            GroupTransactionScreen(
+            GroupFundScreen(
                 navController = navController,
-                viewModel = groupTransactionViewModel,
-                walletViewModel = walletViewModel,
-                categoryViewModel = categoryViewModel,
-                currencyViewModel = currencyViewModel,
-                groupFundId = "7a4258a0-e192-4886-8c3d-1dbe48041606"
-                )
+                groupFundViewModel = groupFundViewModel,
+                groupId = "727b116f-140c-4e1c-ad5a-ab35bc0ff089")
+//            GroupTransactionScreen(
+//                navController = navController,
+//                viewModel = groupTransactionViewModel,
+//                walletViewModel = walletViewModel,
+//                categoryViewModel = categoryViewModel,
+//                currencyViewModel = currencyViewModel,
+//                groupFundId = "7a4258a0-e192-4886-8c3d-1dbe48041606"
+//                )
         }
 
         composable(
@@ -275,6 +275,21 @@ private fun InnerNavHost(
                 walletViewModel = walletViewModel,
                 currencyViewModel = currencyViewModel
             )
+        }
+
+        composable("group_transaction/{groupFundId}") { backStackEntry ->
+            val groupFundId = backStackEntry.arguments?.getString("groupFundId")
+            if (groupFundId != null)
+            {
+                GroupTransactionScreen(
+                    navController,
+                    groupTransactionViewModel,
+                    walletViewModel,
+                    categoryViewModel,
+                    currencyViewModel,
+                    groupFundId = groupFundId
+                )
+            }
         }
     }
 }

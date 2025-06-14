@@ -74,9 +74,9 @@ fun EditGroupFundDialog(
         },
         dismissButton = {
             Row {
-                TextButton(onClick = onDelete) {
-                    Text("Delete", color = Color.Red)
-                }
+//                TextButton(onClick = onDelete) {
+//                    Text("Delete", color = Color.Red)
+//                }
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(onClick = onDismiss) {
                     Text("Cancel")

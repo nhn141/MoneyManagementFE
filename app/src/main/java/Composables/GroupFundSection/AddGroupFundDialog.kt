@@ -33,12 +33,12 @@ fun AddGroupFundDialog(
                     onValueChange = { description = it },
                     label = { Text("Description") }
                 )
-//                OutlinedTextField(
-//                    value = savingGoalText,
-//                    onValueChange = { savingGoalText = it },
-//                    label = { Text("Saving Goal") },
-//                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-//                )
+                OutlinedTextField(
+                    value = savingGoalText,
+                    onValueChange = { savingGoalText = it },
+                    label = { Text("Saving Goal") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
             }
         },
         confirmButton = {
