@@ -32,8 +32,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import DI.ViewModels.NewsFeedViewModel
+import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
@@ -58,8 +61,19 @@ import kotlin.collections.isNotEmpty
 import android.util.Base64
 import android.util.Log
 import android.widget.ImageView
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -74,13 +88,20 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.viewinterop.AndroidView
-import kotlin.io.encoding.ExperimentalEncodingApi
 import androidx.core.net.toUri
-import com.bumptech.glide.Glide
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.FileOutputStream
+import java.io.IOException
+import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +114,6 @@ fun NewsFeedScreen(viewModel: NewsFeedViewModel) {
     var showDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState()
     var showCommentSheet by remember { mutableStateOf(false) }
     var selectedPostForComment by remember { mutableStateOf<Post?>(null) }
@@ -342,13 +362,13 @@ fun NewsFeedScreen(viewModel: NewsFeedViewModel) {
             )
         }
 
-        // Modern FAB with gradient and glow effect
+        // button add post
         FloatingActionButton(
             onClick = { showDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(24.dp)
-                .size(72.dp)
+                .size(60.dp)
                 .shadow(
                     elevation = 20.dp,
                     shape = CircleShape,
@@ -377,7 +397,7 @@ fun NewsFeedScreen(viewModel: NewsFeedViewModel) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add Post",
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(26.dp),
                     tint = Color.White
                 )
             }
@@ -457,222 +477,587 @@ fun PostItem(
 
     val imageUri = post.authorAvatarUrl?.toUri()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        if (!mediaUrl.isNullOrEmpty()) {
-            AsyncImage(
-                model = mediaUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            Log.d("PostItem", "Media URL: $mediaUrl")
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color(0xFF001A17),
-                                Color(0xFF002B24),
-                                Color(0xFF000000)
-                            )
-                        )
-                    )
-            )
-        }
-
-        // Enhanced gradient overlay
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.3f),
-                            Color.Black.copy(alpha = 0.8f)
-                        ),
-                        startY = 0f,
-                        endY = Float.POSITIVE_INFINITY
-                    )
-                )
+    // Kiểm tra xem có ảnh hay không để chọn layout
+    if (!mediaUrl.isNullOrEmpty()) {
+        // Layout cho bài viết có ảnh
+        PostItemWithImage(
+            post = post,
+            mediaUrl = mediaUrl,
+            imageUri = imageUri,
+            onCommentClick = onCommentClick,
+            viewModel = viewModel
         )
+    } else {
+        // Layout cho bài viết chỉ có text
+        PostItemTextOnly(
+            post = post,
+            imageUri = imageUri,
+            onCommentClick = onCommentClick,
+            viewModel = viewModel
+        )
+    }
+}
 
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(24.dp)
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+fun PostItemWithImage(
+    post: Post,
+    mediaUrl: String,
+    imageUri: Uri?,
+    onCommentClick: (Post) -> Unit,
+    viewModel: NewsFeedViewModel
+) {
+    var isImagePreviewOpen by remember { mutableStateOf(false) }
+    var showSaveDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = !isImagePreviewOpen,
+            enter = fadeIn(),
+            exit = fadeOut()
         ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(
-                        elevation = 16.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        ambientColor = Color(0xFF00D09E).copy(alpha = 0.2f)
-                    ),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1A1A1A).copy(alpha = 0.9f)
-                ),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        // Avatar
-                        AsyncImage(
-                            model = imageUri,
-                            contentDescription = "Author Avatar",
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color.Gray),
-                            contentScale = ContentScale.Crop
+            Box(modifier = Modifier.fillMaxSize()) {
+                AsyncImage(
+                    model = mediaUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { isImagePreviewOpen = true }
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.3f),
+                                    Color.Black.copy(alpha = 0.8f)
+                                )
+                            )
                         )
+                )
 
-                        Column {
-                            // Username
-                            Text(
-                                text = post.authorName ?: "Unknown",
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            // Created At
-                            Text(
-                                text = post.createdAt ?: "",
-                                color = Color.Gray,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = post.content ?: "",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        lineHeight = 24.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(24.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF1A1A1A).copy(alpha = 0.9f)
+                        ),
+                        elevation = CardDefaults.cardElevation(16.dp)
                     ) {
-                        // Enhanced Like button
-                        Card(
-                            modifier = Modifier
-                                .shadow(
-                                    elevation = if (post.isLikedByCurrentUser) 8.dp else 4.dp,
-                                    shape = RoundedCornerShape(24.dp),
-                                    ambientColor = if (post.isLikedByCurrentUser)
-                                        Color.Red.copy(alpha = 0.3f) else Color.Transparent
-                                ),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (post.isLikedByCurrentUser)
-                                    Color(0xFF2D1B1B) else Color(0xFF2A2A2A)
-                            ),
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clickable {
-                                        if (post.isLikedByCurrentUser) {
-                                            viewModel.unlikePost(post.postId)
-                                        } else {
-                                            viewModel.likePost(post.postId)
-                                        }
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(
-                                    imageVector = if (post.isLikedByCurrentUser)
-                                        Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                    contentDescription = "Like",
-                                    tint = if (post.isLikedByCurrentUser)
-                                        Color(0xFFFF6B6B) else Color.White.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(20.dp)
+                                AsyncImage(
+                                    model = imageUri,
+                                    contentDescription = "Author Avatar",
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Gray),
+                                    contentScale = ContentScale.Crop
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "${post.likesCount}",
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
 
-                        // Enhanced Comment button
-                        Card(
-                            modifier = Modifier
-                                .shadow(
-                                    elevation = 4.dp,
-                                    shape = RoundedCornerShape(24.dp)
-                                ),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF2A2A2A)
-                            ),
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clickable { onCommentClick(post) }
-                                    .padding(horizontal = 16.dp, vertical = 10.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ChatBubbleOutline,
-                                    contentDescription = "Comments",
-                                    tint = Color(0xFF00D09E),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "${post.commentsCount}",
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Column {
+                                    Text(
+                                        text = post.authorName ?: "Unknown",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = post.createdAt ?: "",
+                                        color = Color.Gray,
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = post.content ?: "",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                lineHeight = 24.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            ActionButtons(
+                                post = post,
+                                viewModel = viewModel,
+                                onCommentClick = onCommentClick
+                            )
                         }
                     }
                 }
             }
         }
+
+        AnimatedVisibility(
+            visible = isImagePreviewOpen,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut()
+        ) {
+            var scale by remember { mutableFloatStateOf(1f) }
+            var offset by remember { mutableStateOf(Offset.Zero) }
+            val transformState = rememberTransformableState { zoomChange, panChange, _ ->
+                scale = (scale * zoomChange).coerceIn(1f, 5f)
+                offset += panChange
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            if (dragAmount.y > 100f || dragAmount.y < -100f) {
+                                isImagePreviewOpen = false
+                                scale = 1f
+                                offset = Offset.Zero
+                            }
+                        }
+                    }
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onLongPress = { showSaveDialog = true },
+                            onDoubleTap = {
+                                scale = 1f
+                                offset = Offset.Zero
+                            }
+                        )
+                    }
+            ) {
+                AsyncImage(
+                    model = mediaUrl,
+                    contentDescription = "Image",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offset.x,
+                            translationY = offset.y
+                        )
+                        .transformable(transformState)
+                )
+
+                IconButton(
+                    onClick = {
+                        isImagePreviewOpen = false
+                        scale = 1f
+                        offset = Offset.Zero
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .size(40.dp)
+                        .background(Color.Black.copy(alpha = 0.6f), shape = CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+
+        if (showSaveDialog) {
+            AlertDialog(
+                onDismissRequest = { showSaveDialog = false },
+                title = { Text("Lưu ảnh") },
+                text = { Text("Bạn có muốn lưu ảnh này vào thư viện không?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        coroutineScope.launch {
+                            saveImageToGallery(context, mediaUrl)
+                            showSaveDialog = false
+                        }
+                    }) {
+                        Text("Lưu")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showSaveDialog = false }) {
+                        Text("Hủy")
+                    }
+                }
+            )
+        }
     }
 }
 
+suspend fun saveImageToGallery(context: Context, imageUrl: String) {
+    withContext(Dispatchers.IO) {
+        try {
+            // Tải ảnh từ URL bằng OkHttp
+            val client = OkHttpClient()
+            val request = Request.Builder().url(imageUrl).build()
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                throw IOException("Không thể tải ảnh: ${response.code}")
+            }
+
+            val inputStream = response.body?.byteStream() ?: throw IOException("Dữ liệu ảnh rỗng")
+
+            // Lưu vào MediaStore
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, "saved_image_${System.currentTimeMillis()}.jpg")
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+
+            val resolver = context.contentResolver
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                ?: throw IOException("Không thể tạo URI cho ảnh")
+
+            resolver.openOutputStream(uri)?.use { outputStream ->
+                inputStream.use { it.copyTo(outputStream) }
+            }
+
+            contentValues.clear()
+            contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+            resolver.update(uri, contentValues, null, null)
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Đã lưu ảnh!", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Lưu ảnh thất bại: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
+
+
 @Composable
-fun PostImage(url: String?, modifier: Modifier = Modifier) {
-    if (!url.isNullOrEmpty()) {
-        AndroidView(
-            factory = { context ->
-                ImageView(context).apply {
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-                    Glide.with(context).load(url).into(this)
+fun PostItemTextOnly(
+    post: Post,
+    imageUri: Uri?,
+    onCommentClick: (Post) -> Unit,
+    viewModel: NewsFeedViewModel
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF001A17),
+                        Color(0xFF002B24),
+                        Color(0xFF000808),
+                        Color(0xFF000000)
+                    ),
+                    radius = 1500f,
+                    center = Offset(0.5f, 0.3f)
+                )
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(32.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(
+                        elevation = 24.dp,
+                        shape = RoundedCornerShape(32.dp),
+                        ambientColor = Color(0xFF00D09E).copy(alpha = 0.3f),
+                        spotColor = Color(0xFF00D09E).copy(alpha = 0.5f)
+                    ),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF1A1A1A).copy(alpha = 0.95f)
+                ),
+                shape = RoundedCornerShape(32.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(
+                                            Color(0xFF00D09E).copy(alpha = 0.3f),
+                                            Color.Transparent
+                                        ),
+                                        radius = 80f
+                                    ),
+                                    shape = CircleShape
+                                )
+                                .padding(2.dp)
+                        ) {
+                            AsyncImage(
+                                model = imageUri,
+                                contentDescription = "Author Avatar",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .background(
+                                        Brush.radialGradient(
+                                            colors = listOf(
+                                                Color(0xFF404040),
+                                                Color(0xFF2A2A2A)
+                                            )
+                                        )
+                                    ),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+
+                        Column {
+                            Text(
+                                text = post.authorName ?: "Unknown",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = post.createdAt ?: "",
+                                color = Color(0xFF00D09E).copy(alpha = 0.8f),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFF00D09E).copy(alpha = 0.05f),
+                                        Color.Transparent,
+                                        Color(0xFF00D09E).copy(alpha = 0.05f)
+                                    )
+                                ),
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                            .padding(24.dp)
+                    ) {
+                        Text(
+                            text = post.content ?: "",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            lineHeight = 32.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    ActionButtons(post = post, viewModel = viewModel, onCommentClick = onCommentClick)
                 }
-            },
-            modifier = modifier
+            }
+        }
+
+        // Decorative elements
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFF00D09E).copy(alpha = 0.1f),
+                            Color.Transparent
+                        )
+                    ),
+                    shape = CircleShape
+                )
+                .align(Alignment.TopStart)
+                .offset((-50).dp, (-50).dp)
+        )
+
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFF00B4D8).copy(alpha = 0.08f),
+                            Color.Transparent
+                        )
+                    ),
+                    shape = CircleShape
+                )
+                .align(Alignment.BottomEnd)
+                .offset(40.dp, 40.dp)
         )
     }
 }
 
+@Composable
+fun ActionButtons(
+    post: Post,
+    viewModel: NewsFeedViewModel,
+    onCommentClick: (Post) -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Enhanced Like button
+        Card(
+            modifier = Modifier
+                .shadow(
+                    elevation = if (post.isLikedByCurrentUser) 12.dp else 6.dp,
+                    shape = RoundedCornerShape(28.dp),
+                    ambientColor = if (post.isLikedByCurrentUser)
+                        Color.Red.copy(alpha = 0.4f) else Color.Transparent,
+                    spotColor = if (post.isLikedByCurrentUser)
+                        Color.Red.copy(alpha = 0.6f) else Color.Transparent
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = if (post.isLikedByCurrentUser)
+                    Color(0xFF2D1B1B) else Color(0xFF2A2A2A)
+            ),
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clickable {
+                        if (post.isLikedByCurrentUser) {
+                            viewModel.unlikePost(post.postId)
+                        } else {
+                            viewModel.likePost(post.postId)
+                        }
+                    }
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(
+                            if (post.isLikedByCurrentUser) {
+                                Brush.radialGradient(
+                                    colors = listOf(
+                                        Color(0xFFFF6B6B).copy(alpha = 0.2f),
+                                        Color.Transparent
+                                    )
+                                )
+                            } else {
+                                Brush.radialGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = 0.1f),
+                                        Color.Transparent
+                                    )
+                                )
+                            },
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (post.isLikedByCurrentUser)
+                            Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Like",
+                        tint = if (post.isLikedByCurrentUser)
+                            Color(0xFFFF6B6B) else Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "${post.likesCount}",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        // Enhanced Comment button
+        Card(
+            modifier = Modifier
+                .shadow(
+                    elevation = 6.dp,
+                    shape = RoundedCornerShape(28.dp),
+                    ambientColor = Color(0xFF00D09E).copy(alpha = 0.2f)
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF2A2A2A)
+            ),
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clickable { onCommentClick(post) }
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFF00D09E).copy(alpha = 0.2f),
+                                    Color.Transparent
+                                )
+                            ),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ChatBubbleOutline,
+                        contentDescription = "Comments",
+                        tint = Color(0xFF00D09E),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "${post.commentsCount}",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -875,8 +1260,6 @@ fun CreatePostDialog(
 ) {
     var content by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    val context = LocalContext.current
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->

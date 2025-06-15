@@ -2,13 +2,17 @@ package DI.Composables.NewsFeedSection
 
 import android.content.Context
 import android.net.Uri
+import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.widget.Toast
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
+import java.io.FileOutputStream
+import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,10 +20,6 @@ import javax.inject.Singleton
 class NewsFeedHelper @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-
-    /**
-     * Tạo MultipartBody.Part từ URI
-     */
     fun createMultipartFromUri(uri: Uri): MultipartBody.Part? {
         return try {
             val tempFile = createTempFileFromUri(uri)
@@ -32,9 +32,6 @@ class NewsFeedHelper @Inject constructor(
         }
     }
 
-    /**
-     * Tạo file tạm thời từ URI
-     */
     private fun createTempFileFromUri(uri: Uri): File? {
         return try {
             val inputStream = context.contentResolver.openInputStream(uri)
@@ -53,9 +50,6 @@ class NewsFeedHelper @Inject constructor(
         }
     }
 
-    /**
-     * Lấy tên file từ URI
-     */
     private fun getFileName(uri: Uri): String? {
         var result: String? = null
 
@@ -82,16 +76,10 @@ class NewsFeedHelper @Inject constructor(
         return result
     }
 
-    /**
-     * Tạo RequestBody từ String
-     */
     fun createTextRequestBody(text: String): okhttp3.RequestBody {
         return text.toRequestBody("text/plain".toMediaTypeOrNull())
     }
 
-    /**
-     * Xóa file tạm thời sau khi upload
-     */
     fun cleanupTempFiles() {
         try {
             context.cacheDir.listFiles()?.forEach { file ->
