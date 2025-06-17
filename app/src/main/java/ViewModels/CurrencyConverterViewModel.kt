@@ -1,6 +1,7 @@
 package DI.ViewModels
 
 import DI.CurrencyApi
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,7 @@ class CurrencyConverterViewModel : ViewModel() {
         viewModelScope.launch {
             val rate = CurrencyApi.getUsdToVndRate()
             _exchangeRate.value = rate
+            Log.d("CurrencyConverterViewModel", "Exchange rate: ${exchangeRate.value}")
         }
     }
 

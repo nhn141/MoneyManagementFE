@@ -580,7 +580,7 @@ fun PostItemWithImage(
                                     )
                                     Text(
                                         text = post.createdAt ?: "",
-                                        color = Color.Gray,
+                                        color = Color(0xFF00D09E).copy(alpha = 0.8f),
                                         fontSize = 12.sp
                                     )
                                 }
