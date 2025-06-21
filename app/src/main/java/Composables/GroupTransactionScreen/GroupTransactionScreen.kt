@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import kotlinx.coroutines.launch
-import java.time.LocalTime
 
 @Composable
 fun GroupTransactionScreen(
@@ -318,9 +317,9 @@ fun GroupTransactionScreen(
             walletList = walletViewModel.wallets.value?.getOrNull() ?: emptyList(),
             categoryList = categoryViewModel.categories.value?.getOrNull() ?: emptyList(),
             onDismiss = { showAddDialog = false },
-            onSave = { wallet, userCategory, amount, desc, type ->
+            onSave = { wallet, userCategory, amount, desc, date, type ->
                 viewModel.createGroupTransaction(
-                    CreateGroupTransactionDto(groupFundId, wallet, userCategory, amount, desc, LocalTime.now().toString(), type)
+                    CreateGroupTransactionDto(groupFundId, wallet, userCategory, amount, desc, date, type)
                 )
                 showAddDialog = false
             }
@@ -334,10 +333,10 @@ fun GroupTransactionScreen(
             categoryList = categoryViewModel.categories.value?.getOrNull() ?: emptyList(),
             transaction = transaction,
             onDismiss = { selectedTransaction = null },
-            onUpdate = { wallet, category, amount, desc, type ->
+            onUpdate = { wallet, category, amount, desc, date, type ->
                 viewModel.updateGroupTransaction(
                     transaction.groupTransactionID,
-                    UpdateGroupTransactionDto(transaction.groupTransactionID, wallet, category, amount, desc, transaction.transactionDate, type),
+                    UpdateGroupTransactionDto(transaction.groupTransactionID, wallet, category, amount, desc, date, type),
                     groupFundId
                 )
                 selectedTransaction = null

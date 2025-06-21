@@ -433,4 +433,13 @@
     <string name="group_transaction_deleted_success">Xóa giao dịch nhóm thành công</string>
     <string name="group_transaction">Giao dịch nhóm</string>
 
+    <!-- ================== GROUP CHAT ================== -->
+    <string name="members">Thành viên</string>
+    <string name="Member">Thành viên</string>
+    <string name="Collaborator">Cộng tác viên</string>
+    <string name="Admin">Quản trị viên</string>
+    <string name="group_member">Thành viên nhóm</string>
+    <string name="joined_at">Tham gia vào</string>
+    <string name="role">Vai trò\n</string>
+
 </resources>

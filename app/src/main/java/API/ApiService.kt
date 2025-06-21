@@ -23,6 +23,15 @@ import DI.Models.Friend.DeleteFriendResponse
 import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.Models.Friend.RejectFriendRequestResponse
+import DI.Models.Group.AdminLeaveResult
+import DI.Models.Group.CreateGroupRequest
+import DI.Models.Group.Group
+import DI.Models.Group.GroupChatHistoryDto
+import DI.Models.Group.GroupMember
+import DI.Models.Group.GroupMemberProfile
+import DI.Models.Group.GroupMessage
+import DI.Models.Group.SendGroupMessageRequest
+import DI.Models.Group.UpdateGroupRequest
 import DI.Models.GroupFund.CreateGroupFundDto
 import DI.Models.GroupFund.DeleteResponse
 import DI.Models.GroupFund.GroupFundDto
@@ -226,4 +235,58 @@ interface ApiService {
 
     @DELETE("GroupTransactions/{id}")
     suspend fun deleteGroupTransaction(@Path("id") id: String): Response<Unit>
+
+    // Group
+    @GET("/api/groups")//
+    suspend fun getUserGroups(): Response<List<Group>>
+
+    @POST("/api/groups")//
+    suspend fun createGroup(@Body request: CreateGroupRequest): Response<Group>
+
+    @PUT("/api/groups/{groupId}")//
+    suspend fun updateGroup(
+        @Path("groupId") groupId: String,
+        @Body request: UpdateGroupRequest): Response<Group>
+
+    // Group Member
+    @GET("/api/groups/{groupId}/members")
+    suspend fun getGroupMembers(@Path("groupId") groupId: String): Response<List<GroupMember>>
+
+    @POST("/api/groups/{groupId}/members/{userId}")
+    suspend fun addUserToGroup(
+        @Path("groupId") groupId: String,
+        @Path("userId") userId: String): Response<Unit>
+
+    @DELETE("/api/groups/{groupId}/members/{userId}")
+    suspend fun removeUserFromGroup(
+        @Path("groupId") groupId: String,
+        @Path("userId") userId: String): Response<Unit>
+
+    @POST("/api/groups/{groupId}/admin-leave")
+    suspend fun adminLeaveGroup(@Path("groupId") groupId: String): Response<AdminLeaveResult>
+
+    @POST("/api/groups/{groupId}/leave")
+    suspend fun leaveGroup(@Path("groupId") groupId: String): Response<Unit>
+
+    @POST("/api/groups/{groupId}/members/{userId}/collaborator")
+    suspend fun assignCollaboratorRole(
+        @Path("groupId") groupId: String,
+        @Path("userId") userId: String): Response<Unit>
+
+    @GET("/api/groups/{groupId}/members/{memberId}/profile")
+    suspend fun getGroupMemberProfile(
+        @Path("groupId") groupId: String,
+        @Path("memberId") memberId: String
+    ): Response<GroupMemberProfile>
+
+    //Group Message
+    @GET("/api/groups/{groupId}/messages")
+    suspend fun getGroupMessages(@Path("groupId") groupId: String): Response<GroupChatHistoryDto>
+
+    @POST("/api/groups/messages")
+    suspend fun sendGroupMessage(@Body request: SendGroupMessageRequest): Response<Unit>
+
+    @POST("/api/groups/{groupId}/read")
+    suspend fun markGroupMessagesRead(@Path("groupId") groupId: String): Response<Unit>
+
 }

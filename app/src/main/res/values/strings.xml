@@ -436,4 +436,13 @@
     <string name="group_transaction_deleted_success">Group transaction deleted successfully</string>
     <string name="group_transaction">Group Transaction</string>
 
+    <!-- ================== GROUP CHAT ================== -->
+    <string name="members">members</string>
+    <string name="Member">Member</string>
+    <string name="Collaborator">Collaborator</string>
+    <string name="Admin">Admin</string>
+    <string name="group_member">Group Member</string>
+    <string name="joined_at">Joined At: %1$s</string>
+    <string name="role">Role: %1$s</string>
+
 </resources>

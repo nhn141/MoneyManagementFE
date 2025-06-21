@@ -10,6 +10,10 @@ import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.Currency.CurrencyConverterScreen
 import DI.Composables.FriendSection.FriendProfileScreen
+import DI.Composables.GroupChat.GroupChatMessageScreen
+import DI.Composables.GroupChat.GroupChatScreen
+import DI.Composables.GroupChat.GroupProfileScreen
+import DI.Composables.GroupChat.GroupScreenTest
 import DI.Composables.GroupTransactionScreen.GroupTransactionScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
@@ -26,6 +30,7 @@ import DI.ViewModels.OcrViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import DI.ViewModels.CurrencyConverterViewModel
+import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.GroupFundViewModel
 import DI.ViewModels.GroupTransactionViewModel
 //import FakeGroupFundViewModel
@@ -112,6 +117,7 @@ private fun InnerNavHost(
     val currencyViewModel = viewModel<CurrencyConverterViewModel>(parentEntry)
     val groupFundViewModel = hiltViewModel<GroupFundViewModel>(parentEntry)
     val groupTransactionViewModel = hiltViewModel<GroupTransactionViewModel>(parentEntry)
+    val groupChatViewModel = hiltViewModel<GroupChatViewModel>(parentEntry)
 
     NavHost(
         navController    = navController,
@@ -156,10 +162,10 @@ private fun InnerNavHost(
 //            WalletScreen(
 //                viewModel = walletViewModel,
 //            )
-            GroupFundScreen(
-                navController = navController,
-                groupFundViewModel = groupFundViewModel,
-                groupId = "727b116f-140c-4e1c-ad5a-ab35bc0ff089")
+//            GroupFundScreen(
+//                navController = navController,
+//                groupFundViewModel = groupFundViewModel,
+//                groupId = "727b116f-140c-4e1c-ad5a-ab35bc0ff089")
 //            GroupTransactionScreen(
 //                navController = navController,
 //                viewModel = groupTransactionViewModel,
@@ -168,6 +174,7 @@ private fun InnerNavHost(
 //                currencyViewModel = currencyViewModel,
 //                groupFundId = "7a4258a0-e192-4886-8c3d-1dbe48041606"
 //                )
+              GroupChatScreen(navController, groupChatViewModel, profileViewModel)
         }
 
         composable(
@@ -290,6 +297,47 @@ private fun InnerNavHost(
                     groupFundId = groupFundId
                 )
             }
+        }
+
+        composable(
+            route = Routes.GroupChatMessage,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            GroupChatMessageScreen(
+                navController = navController,
+                groupId = groupId,
+                groupChatViewModel = groupChatViewModel,
+                profileViewModel = profileViewModel
+            )
+        }
+
+        composable("group_chat_message_screen/{groupId}") { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            GroupChatMessageScreen(
+                groupId = groupId,
+                navController = navController,
+                groupChatViewModel = hiltViewModel(),
+                profileViewModel = hiltViewModel()
+            )
+        }
+
+        composable("group_profile_screen/{groupId}") { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            GroupProfileScreen(
+                groupId = groupId,
+                navController = navController,
+                groupChatViewModel = groupChatViewModel
+            )
+        }
+
+        composable("group_fund_screen/{groupId}") { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            GroupFundScreen(
+                navController = navController,
+                groupFundViewModel = hiltViewModel(),
+                groupId = groupId
+            )
         }
     }
 }
