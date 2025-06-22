@@ -222,7 +222,8 @@ private fun InnerNavHost(
             AnalysisBody(
                 navController = navController,
                 authViewModel = authViewModel,
-                analysisViewModel = analysisViewModel
+                analysisViewModel = analysisViewModel,
+                currencyConverterViewModel = currencyViewModel
             )
         }
 
