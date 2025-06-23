@@ -2,10 +2,11 @@ package DI.ViewModels
 
 import DI.Models.NewsFeed.Comment
 import DI.Models.NewsFeed.CreateCommentRequest
-import DI.Models.NewsFeed.CreatePostRequest
 import DI.Models.NewsFeed.ResultState
 import DI.Models.NewsFeed.Post
+import DI.Models.NewsFeed.PostDetail
 import DI.Repositories.NewsFeedRepository
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,6 +42,14 @@ class NewsFeedViewModel @Inject constructor(
 
     private val _commentState = MutableStateFlow<ResultState<List<Comment>>>(ResultState.Loading)
     val commentState: StateFlow<ResultState<List<Comment>>> = _commentState
+
+    private val _postDetail = MutableStateFlow<ResultState<PostDetail>>(ResultState.Loading)
+    val postDetail: StateFlow<ResultState<PostDetail>> = _postDetail
+
+    private val _updateTargetState = MutableStateFlow<ResultState<Unit>?>(null)
+    val updateTargetState: StateFlow<ResultState<Unit>?> = _updateTargetState.asStateFlow()
+
+
 
     private var currentPage = 1
     private val pageSize = 1
@@ -86,25 +95,31 @@ class NewsFeedViewModel @Inject constructor(
         _postCreationState.value = null
     }
 
-    fun createPost(content: String, mediaFile: String? = null) {
+    fun createPost(
+        content: String,
+        category: String = "general",
+        fileUri: Uri?,
+        targetType: Int? = null,
+        targetGroupIds: String? = null
+    ) {
         viewModelScope.launch {
             _postCreationState.value = ResultState.Loading
+            val result = repository.createPost(content, category, fileUri, targetType, targetGroupIds)
+            _postCreationState.value = result
 
-            val request = CreatePostRequest(content = content, mediaFile = mediaFile)
-
-            when (val result = repository.createPost(request)) {
-                is ResultState.Success -> {
-                    // Chèn post mới vào đầu danh sách
-                    _posts.update { listOf(result.data) + it }
-                    _postCreationState.value = result
-                }
-                is ResultState.Error -> {
-                    _postCreationState.value = result
-                }
-                ResultState.Loading -> {
-                    // Không cần xử lý
-                }
+            if (result is ResultState.Success) {
+                _posts.update { listOf(result.data) + it }
             }
+        }
+    }
+
+
+
+    fun loadPostDetail(postId: String) {
+        viewModelScope.launch {
+            _postDetail.value = ResultState.Loading
+            val result = repository.getPostDetail(postId)
+            _postDetail.value = result
         }
     }
 
@@ -228,5 +243,16 @@ class NewsFeedViewModel @Inject constructor(
                 else -> Unit
             }
         }
+    }
+
+    fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: List<String>) {
+        viewModelScope.launch {
+            _updateTargetState.value = ResultState.Loading
+            val result = repository.updatePostTarget(postId, targetType, targetGroupIds)
+            _updateTargetState.value = result
+        }
+    }
+    fun clearUpdateTargetState() {
+        _updateTargetState.value = null
     }
 }

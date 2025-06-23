@@ -11,5 +11,7 @@ data class Post(
     val isLikedByCurrentUser: Boolean,
     val commentsCount: Int,
     val mediaUrl: String?,
-    val mediaType: String?
+    val mediaType: String?,
+    val targetType: Int,
+    val targetGroupIds: String?,
 )

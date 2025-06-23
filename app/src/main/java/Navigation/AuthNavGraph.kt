@@ -7,6 +7,7 @@ import DI.Composables.AuthSection.LoginScreen
 import DI.Composables.AuthSection.RegisterScreen
 import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
+import DI.Composables.ExportReports.ReportScreen
 import DI.Composables.FriendSection.FriendProfileScreen
 import DI.Composables.NewsFeedSection.NewsFeedScreen
 import DI.Composables.ProfileSection.EditProfileScreen
@@ -28,6 +29,9 @@ import DI.ViewModels.ProfileViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import GroupFundScreen
+import DI.ViewModels.CurrencyConverterViewModel
+import DI.ViewModels.NewsFeedViewModel
+import DI.ViewModels.ReportViewModel
 import ModernCategoriesScreen
 import ProfileScreen
 import Screens.MainLayout
@@ -116,6 +120,7 @@ private fun InnerNavHost(
     val currencyViewModel = viewModel<CurrencyConverterViewModel>(parentEntry)
     val groupFundViewModel = hiltViewModel<GroupFundViewModel>(parentEntry)
     val newsFeedViewModel = hiltViewModel<NewsFeedViewModel>(parentEntry)
+    val reportViewModel = hiltViewModel<ReportViewModel>(parentEntry)
 
     NavHost(
         navController = navController,
@@ -171,7 +176,16 @@ private fun InnerNavHost(
         }
 
         composable(BottomNavItem.NewsFeed.route) {
-            NewsFeedScreen(viewModel = newsFeedViewModel)
+            NewsFeedScreen(
+                viewModel = newsFeedViewModel,
+                profileViewModel = profileViewModel
+            )
+        }
+
+        composable(BottomNavItem.Report.route) {
+            ReportScreen(
+                viewModel = reportViewModel
+            )
         }
 
         composable(

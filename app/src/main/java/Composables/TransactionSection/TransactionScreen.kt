@@ -202,6 +202,7 @@ fun TransactionScreen(
                             color = Color(0xFF0D1F2D)
                         )
                     }
+                    Log.d("TransactionScreen", "isVND: $isVND, exchangeRate: $exchangeRate")
                 }
             }
 
@@ -666,13 +667,20 @@ fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String 
         amount / exchangeRate
     }
 
-    val symbols = DecimalFormatSymbols(Locale.US).apply {
-        groupingSeparator = '.'
-        decimalSeparator = ','
+    val symbols = if (isVND) {
+        DecimalFormatSymbols().apply {
+            groupingSeparator = '.'
+            decimalSeparator = ','
+        }
+    } else {
+        DecimalFormatSymbols().apply {
+            groupingSeparator = ','
+            decimalSeparator = '.'
+        }
     }
 
     val formatter = if (isVND) {
-        DecimalFormat("#,###", symbols)
+        DecimalFormat("#,##0.##", symbols)
     } else {
         DecimalFormat("#,##0.00", symbols)
     }
@@ -680,8 +688,10 @@ fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String 
     val formatted = formatter.format(displayAmount)
     val currencySymbol = if (isVND) "VND" else "USD"
 
+    Log.d("formatAmount", "Exchange Rate: $exchangeRate")
     return "$formatted $currencySymbol"
 }
+
 
 
 @Composable

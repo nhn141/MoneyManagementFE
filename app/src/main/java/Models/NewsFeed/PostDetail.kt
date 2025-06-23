@@ -11,6 +11,8 @@ data class PostDetail(
     val commentsCount: Int,
     val mediaUrl: String?,
     val mediaType: String?,
+    val targetType: Int,
+    val targetGroupIds: String?,
     val comments: List<Comment>,
     val likes: List<Like>
 )
