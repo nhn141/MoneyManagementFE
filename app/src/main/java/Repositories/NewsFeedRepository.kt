@@ -8,6 +8,7 @@ import DI.Models.NewsFeed.NewsFeedResponse
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
 import DI.Models.NewsFeed.ResultState
+import DI.Models.NewsFeed.UpdatePostTargetRequest
 import android.net.Uri
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -41,20 +42,28 @@ class NewsFeedRepository @Inject constructor(
         }
     }
 
-    suspend fun createPost(content: String, category: String = "general", fileUri: Uri?): ResultState<Post> {
+    suspend fun createPost(
+        content: String,
+        category: String = "general",
+        fileUri: Uri?,
+        targetType: Int? = null,
+        targetGroupIds: String? = null
+    ): ResultState<Post> {
         return try {
-            val contentPart = newsFeedHelper.createTextRequestBody(content)
-            val categoryPart = newsFeedHelper.createTextRequestBody(category)
             val filePart = fileUri?.let { uri ->
                 newsFeedHelper.createMultipartFromUri(uri)
             }
 
-            val response = apiService.createPost(content, category, filePart)
+            val response = apiService.createPost(
+                content = content,
+                category = category,
+                targetType = targetType,
+                targetGroupIds = targetGroupIds,
+                file = filePart
+            )
 
             if (response.isSuccessful) {
-                // Cleanup temp files sau khi upload thành công
                 newsFeedHelper.cleanupTempFiles()
-
                 response.body()?.let {
                     ResultState.Success(it)
                 } ?: ResultState.Error("Empty response body")
@@ -148,4 +157,23 @@ class NewsFeedRepository @Inject constructor(
         }
     }
 
+    suspend fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: List<String>): ResultState<Unit> {
+        return try {
+            val request = UpdatePostTargetRequest(
+                targetType = targetType,
+                targetGroupIds = targetGroupIds
+            )
+            val response = apiService.updatePostTarget(postId, request)
+            if (response.isSuccessful) {
+                ResultState.Success(Unit)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                ResultState.Error("Update target failed: ${response.code()} - $errorMsg")
+            }
+        } catch (e: IOException) {
+            ResultState.Error("Network error: ${e.message}")
+        } catch (e: Exception) {
+            ResultState.Error("Unexpected error: ${e.message}")
+        }
+    }
 }

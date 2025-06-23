@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import DI.ViewModels.NewsFeedViewModel
+import DI.ViewModels.ProfileViewModel
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
@@ -64,10 +65,21 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -76,23 +88,35 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
@@ -105,7 +129,10 @@ import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewsFeedScreen(viewModel: NewsFeedViewModel) {
+fun NewsFeedScreen(
+    viewModel: NewsFeedViewModel,
+    profileViewModel: ProfileViewModel
+) {
     val posts by viewModel.posts.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -122,6 +149,49 @@ fun NewsFeedScreen(viewModel: NewsFeedViewModel) {
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount = { posts.size }
+    )
+
+    // Thêm state để theo dõi việc hiển thị hướng dẫn
+    var showPullGuide by remember { mutableStateOf(true) }
+
+// Theo dõi việc kéo sheet một cách an toàn
+    LaunchedEffect(sheetState.targetValue) {
+        // Ẩn hướng dẫn khi sheet được expand hoặc khi user tương tác
+        if (sheetState.targetValue == SheetValue.Expanded && showPullGuide) {
+            showPullGuide = false
+        }
+    }
+    // Animation states
+    val infiniteTransition = rememberInfiniteTransition()
+
+// Animation cho việc di chuyển mũi tên lên xuống
+    val arrowOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+// Animation cho độ mờ đục của mũi tên (nhấp nháy)
+    val arrowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+// Animation cho scale của mũi tên
+    val arrowScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        )
     )
 
     // Xử lý trạng thái tạo bài đăng
@@ -275,7 +345,8 @@ fun NewsFeedScreen(viewModel: NewsFeedViewModel) {
                         selectedPostForComment = clickedPost
                         viewModel.fetchComments(clickedPost.postId)
                         showCommentSheet = true
-                    }
+                    },
+                    profileViewModel = profileViewModel
                 )
             }
         }
@@ -433,25 +504,79 @@ fun NewsFeedScreen(viewModel: NewsFeedViewModel) {
 
     if (showCommentSheet && selectedPostForComment != null) {
         ModalBottomSheet(
-            onDismissRequest = { showCommentSheet = false },
+            onDismissRequest = {
+                showCommentSheet = false
+                showPullGuide = true // Reset lại hướng dẫn khi đóng sheet
+            },
             sheetState = sheetState,
             containerColor = Color(0xFF1A1A1A),
             dragHandle = {
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 12.dp)
-                        .width(48.dp)
-                        .height(4.dp)
-                        .background(
-                            Color(0xFF00D09E).copy(alpha = 0.6f),
-                            RoundedCornerShape(2.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(vertical = 12.dp)
+                ) {
+                    // Hướng dẫn kéo lên với mũi tên có animation
+                    AnimatedVisibility(
+                        visible = showPullGuide,
+                        enter = fadeIn(animationSpec = tween(600)) + slideInVertically(
+                            animationSpec = tween(600),
+                            initialOffsetY = { it / 2 }
+                        ),
+                        exit = fadeOut(animationSpec = tween(400)) + slideOutVertically(
+                            animationSpec = tween(400),
+                            targetOffsetY = { -it / 2 }
                         )
-                )
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        ) {
+                            // Mũi tên chỉ lên với animation
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowUp,
+                                contentDescription = null,
+                                tint = Color(0xFF00D09E).copy(alpha = arrowAlpha),
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .offset(y = arrowOffset.dp)
+                                    .scale(arrowScale)
+                                    .graphicsLayer {
+                                        // Thêm hiệu ứng glow nhẹ
+                                        shadowElevation = 4.dp.toPx()
+                                    }
+                            )
+
+                            // Text hướng dẫn với animation fade
+                            Text(
+                                text = "Kéo lên để nhập bình luận",
+                                color = Color(0xFF00D09E).copy(alpha = 0.8f * arrowAlpha),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .padding(top = 4.dp)
+                                    .alpha(arrowAlpha)
+                            )
+                        }
+                    }
+
+                    // Drag handle gốc với animation nhẹ
+                    Box(
+                        modifier = Modifier
+                            .width(48.dp)
+                            .height(4.dp)
+                            .background(
+                                Color(0xFF00D09E).copy(alpha = 0.6f),
+                                RoundedCornerShape(2.dp)
+                            )
+                            .animateContentSize() // Smooth transition khi thay đổi
+                    )
+                }
             }
         ) {
             CommentSection(
                 post = selectedPostForComment!!,
                 viewModel = viewModel,
+                profileViewModel = profileViewModel,
                 commentState = commentState
             )
         }
@@ -462,12 +587,30 @@ fun NewsFeedScreen(viewModel: NewsFeedViewModel) {
 fun PostItem(
     post: Post,
     onCommentClick: (Post) -> Unit,
-    viewModel: NewsFeedViewModel
+    viewModel: NewsFeedViewModel,
+    profileViewModel: ProfileViewModel
 ) {
     val postDetailState by viewModel.postDetail.collectAsState()
+    val updateTargetState by viewModel.updateTargetState.collectAsState()
 
     LaunchedEffect(post.postId) {
         viewModel.loadPostDetail(post.postId)
+    }
+
+    // Handle update target state
+    val context = LocalContext.current
+    LaunchedEffect(updateTargetState) {
+        when (updateTargetState) {
+            is ResultState.Success -> {
+                Toast.makeText(context, "Cập nhật quyền riêng tư thành công", Toast.LENGTH_SHORT).show()
+                viewModel.clearUpdateTargetState()
+            }
+            is ResultState.Error -> {
+                Toast.makeText(context, "Lỗi: ${(updateTargetState as ResultState.Error).message}", Toast.LENGTH_SHORT).show()
+                viewModel.clearUpdateTargetState()
+            }
+            else -> Unit
+        }
     }
 
     val mediaUrl = when (postDetailState) {
@@ -477,40 +620,188 @@ fun PostItem(
 
     val imageUri = post.authorAvatarUrl?.toUri()
 
-    // Kiểm tra xem có ảnh hay không để chọn layout
     if (!mediaUrl.isNullOrEmpty()) {
-        // Layout cho bài viết có ảnh
         PostItemWithImage(
             post = post,
             mediaUrl = mediaUrl,
             imageUri = imageUri,
             onCommentClick = onCommentClick,
-            viewModel = viewModel
+            viewModel = viewModel,
+            profileViewModel = profileViewModel
         )
     } else {
-        // Layout cho bài viết chỉ có text
         PostItemTextOnly(
             post = post,
             imageUri = imageUri,
             onCommentClick = onCommentClick,
-            viewModel = viewModel
+            viewModel = viewModel,
+            profileViewModel = profileViewModel
         )
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
+@Composable
+fun PrivacyDropdown(
+    selectedPrivacy: Int,
+    onPrivacyChanged: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val privacyOptions = mapOf(
+        "Bạn bè" to 0,
+        "Riêng tư" to 1,
+        "Công khai" to 2,
+        "Nhóm" to 3
+    )
+
+    val privacyIcons = mapOf(
+        0 to Icons.Default.People,
+        1 to Icons.Default.Lock,
+        2 to Icons.Default.Public,
+        3 to Icons.Default.Group
+    )
+
+    Box(modifier = modifier) {
+        Card(
+            modifier = Modifier
+                .clickable { expanded = true }
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(8.dp),
+                    ambientColor = Color(0xFF00D09E).copy(alpha = 0.1f)
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF2A2A2A)
+            ),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = privacyIcons[selectedPrivacy] ?: Icons.Default.People,
+                    contentDescription = null,
+                    tint = Color(0xFF00D09E),
+                    modifier = Modifier.size(12.dp)
+                )
+
+                Text(
+                    text = privacyOptions.entries.find { it.value == selectedPrivacy }?.key ?: "Bạn bè",
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Icon(
+                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = "Mở rộng",
+                    tint = Color(0xFF00D09E),
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Card(
+                modifier = Modifier
+                    .width(120.dp)
+                    .offset(y = 2.dp)
+                    .shadow(
+                        elevation = 12.dp,
+                        shape = RoundedCornerShape(8.dp),
+                        ambientColor = Color(0xFF00D09E).copy(alpha = 0.2f)
+                    ),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF2A2A2A)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    privacyOptions.forEach { (label, value) ->
+                        val isSelected = value == selectedPrivacy
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 1.dp)
+                                .clickable {
+                                    onPrivacyChanged(value)
+                                    expanded = false
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected)
+                                    Color(0xFF00D09E).copy(alpha = 0.15f)
+                                else
+                                    Color.Transparent
+                            ),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = privacyIcons[value] ?: Icons.Default.People,
+                                    contentDescription = null,
+                                    tint = if (isSelected) Color(0xFF00D09E) else Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(12.dp)
+                                )
+
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) Color(0xFF00D09E) else Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                                )
+
+                                Spacer(modifier = Modifier.weight(1f))
+
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Đã chọn",
+                                        tint = Color(0xFF00D09E),
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun PostItemWithImage(
     post: Post,
     mediaUrl: String,
     imageUri: Uri?,
     onCommentClick: (Post) -> Unit,
-    viewModel: NewsFeedViewModel
+    viewModel: NewsFeedViewModel,
+    profileViewModel: ProfileViewModel
 ) {
     var isImagePreviewOpen by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(false) } // Trạng thái mở rộng/rút gọn
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    var selectedPrivacy by remember { mutableStateOf(post.targetType) }
+
+    val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
+    val isAuthor = post.authorId == currentUserId
 
     Box(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(
@@ -558,7 +849,6 @@ fun PostItemWithImage(
                         Column(modifier = Modifier.padding(20.dp)) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 AsyncImage(
@@ -571,7 +861,11 @@ fun PostItemWithImage(
                                     contentScale = ContentScale.Crop
                                 )
 
-                                Column {
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
                                     Text(
                                         text = post.authorName ?: "Unknown",
                                         color = Color.White,
@@ -584,17 +878,55 @@ fun PostItemWithImage(
                                         fontSize = 12.sp
                                     )
                                 }
+
+                                if (isAuthor) {
+                                    PrivacyDropdown(
+                                        selectedPrivacy = selectedPrivacy,
+                                        onPrivacyChanged = { newPrivacy ->
+                                            selectedPrivacy = newPrivacy
+                                            val groupIds = if (newPrivacy == 3 && !post.targetGroupIds.isNullOrEmpty()) {
+                                                post.targetGroupIds.split(",").map { it.trim() }
+                                            } else {
+                                                emptyList()
+                                            }
+                                            viewModel.updatePostTarget(
+                                                postId = post.postId,
+                                                targetType = newPrivacy,
+                                                targetGroupIds = groupIds
+                                            )
+                                        }
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            Text(
-                                text = post.content ?: "",
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                lineHeight = 24.sp
-                            )
+                            val content = post.content ?: ""
+                            val shouldShowExpand = content.length > 100
+                            Column {
+                                Text(
+                                    text = content,
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    lineHeight = 24.sp,
+                                    maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                if (shouldShowExpand) {
+                                    Text(
+                                        text = if (isExpanded) "Rút gọn" else "...Xem thêm",
+                                        color = Color(0xFF00D09E),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier
+                                            .padding(top = 8.dp)
+                                            .clickable { isExpanded = !isExpanded }
+                                    )
+                                }
+                            }
 
                             Spacer(modifier = Modifier.height(20.dp))
 
@@ -616,7 +948,7 @@ fun PostItemWithImage(
         ) {
             var scale by remember { mutableFloatStateOf(1f) }
             var offset by remember { mutableStateOf(Offset.Zero) }
-            val transformState = rememberTransformableState { zoomChange, panChange, _ ->
+            val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
                 scale = (scale * zoomChange).coerceIn(1f, 5f)
                 offset += panChange
             }
@@ -657,7 +989,7 @@ fun PostItemWithImage(
                             translationX = offset.x,
                             translationY = offset.y
                         )
-                        .transformable(transformState)
+                        .transformable(transformableState)
                 )
 
                 IconButton(
@@ -706,59 +1038,20 @@ fun PostItemWithImage(
     }
 }
 
-suspend fun saveImageToGallery(context: Context, imageUrl: String) {
-    withContext(Dispatchers.IO) {
-        try {
-            // Tải ảnh từ URL bằng OkHttp
-            val client = OkHttpClient()
-            val request = Request.Builder().url(imageUrl).build()
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) {
-                throw IOException("Không thể tải ảnh: ${response.code}")
-            }
-
-            val inputStream = response.body?.byteStream() ?: throw IOException("Dữ liệu ảnh rỗng")
-
-            // Lưu vào MediaStore
-            val contentValues = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, "saved_image_${System.currentTimeMillis()}.jpg")
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-                put(MediaStore.Images.Media.IS_PENDING, 1)
-            }
-
-            val resolver = context.contentResolver
-            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-                ?: throw IOException("Không thể tạo URI cho ảnh")
-
-            resolver.openOutputStream(uri)?.use { outputStream ->
-                inputStream.use { it.copyTo(outputStream) }
-            }
-
-            contentValues.clear()
-            contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
-            resolver.update(uri, contentValues, null, null)
-
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Đã lưu ảnh!", Toast.LENGTH_SHORT).show()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Lưu ảnh thất bại: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-}
-
-
 @Composable
 fun PostItemTextOnly(
     post: Post,
     imageUri: Uri?,
     onCommentClick: (Post) -> Unit,
-    viewModel: NewsFeedViewModel
+    viewModel: NewsFeedViewModel,
+    profileViewModel: ProfileViewModel
 ) {
+    var selectedPrivacy by remember { mutableStateOf(post.targetType) }
+    var isExpanded by remember { mutableStateOf(false) } // Trạng thái mở rộng/rút gọn
+
+    val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
+    val isAuthor = post.authorId == currentUserId
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -803,7 +1096,6 @@ fun PostItemTextOnly(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Box(
@@ -839,7 +1131,11 @@ fun PostItemTextOnly(
                             )
                         }
 
-                        Column {
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Text(
                                 text = post.authorName ?: "Unknown",
                                 color = Color.White,
@@ -851,6 +1147,25 @@ fun PostItemTextOnly(
                                 color = Color(0xFF00D09E).copy(alpha = 0.8f),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        if (isAuthor) {
+                            PrivacyDropdown(
+                                selectedPrivacy = selectedPrivacy,
+                                onPrivacyChanged = { newPrivacy ->
+                                    selectedPrivacy = newPrivacy
+                                    val groupIds = if (newPrivacy == 3 && !post.targetGroupIds.isNullOrEmpty()) {
+                                        post.targetGroupIds.split(",").map { it.trim() }
+                                    } else {
+                                        emptyList()
+                                    }
+                                    viewModel.updatePostTarget(
+                                        postId = post.postId,
+                                        targetType = newPrivacy,
+                                        targetGroupIds = groupIds
+                                    )
+                                }
                             )
                         }
                     }
@@ -872,15 +1187,33 @@ fun PostItemTextOnly(
                             )
                             .padding(24.dp)
                     ) {
-                        Text(
-                            text = post.content ?: "",
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Medium,
-                            lineHeight = 32.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val content = post.content ?: ""
+                            val shouldShowExpand = content.length > 100
+                            Text(
+                                text = content,
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Medium,
+                                lineHeight = 32.sp,
+                                textAlign = TextAlign.Center,
+                                maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            if (shouldShowExpand) {
+                                Text(
+                                    text = if (isExpanded) "Rút gọn" else "...Xem thêm",
+                                    color = Color(0xFF00D09E),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier
+                                        .padding(top = 8.dp)
+                                        .clickable { isExpanded = !isExpanded }
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -925,6 +1258,50 @@ fun PostItemTextOnly(
     }
 }
 
+suspend fun saveImageToGallery(context: Context, imageUrl: String) {
+    withContext(Dispatchers.IO) {
+        try {
+            // Tải ảnh từ URL bằng OkHttp
+            val client = OkHttpClient()
+            val request = Request.Builder().url(imageUrl).build()
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                throw IOException("Không thể tải ảnh: ${response.code}")
+            }
+
+            val inputStream = response.body?.byteStream() ?: throw IOException("Dữ liệu ảnh rỗng")
+
+            // Lưu vào MediaStore
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, "saved_image_${System.currentTimeMillis()}.jpg")
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+
+            val resolver = context.contentResolver
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                ?: throw IOException("Không thể tạo URI cho ảnh")
+
+            resolver.openOutputStream(uri)?.use { outputStream ->
+                inputStream.use { it.copyTo(outputStream) }
+            }
+
+            contentValues.clear()
+            contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+            resolver.update(uri, contentValues, null, null)
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Đã lưu ảnh!", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Lưu ảnh thất bại: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
 @Composable
 fun ActionButtons(
     post: Post,
@@ -933,25 +1310,25 @@ fun ActionButtons(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Enhanced Like button
+        // Like Button
         Card(
             modifier = Modifier
                 .shadow(
-                    elevation = if (post.isLikedByCurrentUser) 12.dp else 6.dp,
-                    shape = RoundedCornerShape(28.dp),
+                    elevation = if (post.isLikedByCurrentUser) 8.dp else 4.dp,
+                    shape = RoundedCornerShape(20.dp),
                     ambientColor = if (post.isLikedByCurrentUser)
-                        Color.Red.copy(alpha = 0.4f) else Color.Transparent,
+                        Color.Red.copy(alpha = 0.3f) else Color.Transparent,
                     spotColor = if (post.isLikedByCurrentUser)
-                        Color.Red.copy(alpha = 0.6f) else Color.Transparent
+                        Color.Red.copy(alpha = 0.5f) else Color.Transparent
                 ),
             colors = CardDefaults.cardColors(
                 containerColor = if (post.isLikedByCurrentUser)
                     Color(0xFF2D1B1B) else Color(0xFF2A2A2A)
             ),
-            shape = RoundedCornerShape(28.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -963,11 +1340,11 @@ fun ActionButtons(
                             viewModel.likePost(post.postId)
                         }
                     }
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(24.dp)
                         .background(
                             if (post.isLikedByCurrentUser) {
                                 Brush.radialGradient(
@@ -994,41 +1371,41 @@ fun ActionButtons(
                         contentDescription = "Like",
                         tint = if (post.isLikedByCurrentUser)
                             Color(0xFFFF6B6B) else Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(14.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "${post.likesCount}",
                     color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
 
-        // Enhanced Comment button
+        // Comment Button
         Card(
             modifier = Modifier
                 .shadow(
-                    elevation = 6.dp,
-                    shape = RoundedCornerShape(28.dp),
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(20.dp),
                     ambientColor = Color(0xFF00D09E).copy(alpha = 0.2f)
                 ),
             colors = CardDefaults.cardColors(
                 containerColor = Color(0xFF2A2A2A)
             ),
-            shape = RoundedCornerShape(28.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clickable { onCommentClick(post) }
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(24.dp)
                         .background(
                             Brush.radialGradient(
                                 colors = listOf(
@@ -1044,15 +1421,15 @@ fun ActionButtons(
                         imageVector = Icons.Default.ChatBubbleOutline,
                         contentDescription = "Comments",
                         tint = Color(0xFF00D09E),
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(14.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "${post.commentsCount}",
                     color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -1064,6 +1441,7 @@ fun ActionButtons(
 fun CommentSection(
     post: Post,
     viewModel: NewsFeedViewModel,
+    profileViewModel: ProfileViewModel,
     commentState: ResultState<Any>,
 ) {
     var commentText by remember { mutableStateOf("") }
@@ -1071,194 +1449,242 @@ fun CommentSection(
         is ResultState.Success -> commentState.data as? List<Comment> ?: emptyList()
         else -> emptyList()
     }
+    val coroutineScope = rememberCoroutineScope()
+    val lazyListState = rememberLazyListState()
+    val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(24.dp)
-    ) {
-        // Header with gradient accent
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color(0xFF1A1A1A),
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .width(4.dp)
-                    .height(24.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color(0xFF00F5D4),
-                                Color(0xFF00D09E)
-                            )
-                        ),
-                        shape = RoundedCornerShape(2.dp)
-                    )
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                "Bình luận bài viết",
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = Color.White
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Display comments
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(comments) { comment ->
-                var expanded by remember { mutableStateOf(false) }
-
-                Card(
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp)
+            ) {
+                // Fixed Header
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .shadow(
-                            elevation = 4.dp,
-                            shape = RoundedCornerShape(16.dp)
-                        ),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF2A2A2A)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
+                        .padding(top = 16.dp, bottom = 12.dp)
                 ) {
-                    Row(
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = comment.content,
-                            color = Color.White,
-                            modifier = Modifier.weight(1f),
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp
-                        )
+                            .width(4.dp)
+                            .height(24.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFF00F5D4),
+                                        Color(0xFF00D09E)
+                                    )
+                                ),
+                                shape = RoundedCornerShape(2.dp)
+                            )
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        "Bình luận bài viết",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color.White
+                    )
+                }
 
-                        Box {
-                            IconButton(
-                                onClick = { expanded = true },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Menu",
-                                    tint = Color.White.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                // Scrollable comment list
+                LazyColumn(
+                    state = lazyListState,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .weight(1f) // chỉ phần này cuộn
+                        .fillMaxWidth()
+                ) {
+                    items(comments) { comment ->
+                        var expanded by remember { mutableStateOf(false) }
 
-                            DropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false },
-                                modifier = Modifier.background(
-                                    Color(0xFF2A2A2A),
-                                    RoundedCornerShape(12.dp)
-                                )
-                            ) {
-                                DropdownMenuItem(
-                                    text = {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .shadow(
+                                    elevation = 4.dp,
+                                    shape = RoundedCornerShape(16.dp)
+                                ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF2A2A2A)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    AsyncImage(
+                                        model = comment.authorAvatarUrl,
+                                        contentDescription = "Avatar",
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Column {
                                         Text(
-                                            "Xóa",
-                                            color = Color(0xFFFF6B6B),
+                                            text = comment.authorName,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
                                             fontSize = 14.sp
                                         )
-                                    },
-                                    onClick = {
-                                        expanded = false
-                                        viewModel.deleteComment(post.postId, comment.commentId)
+                                        Text(
+                                            text = comment.createdAt,
+                                            color = Color.White.copy(alpha = 0.6f),
+                                            fontSize = 12.sp
+                                        )
                                     }
+
+                                    Spacer(modifier = Modifier.weight(1f))
+
+                                    if (comment.authorId == currentUserId) {
+                                        Box {
+                                            IconButton(
+                                                onClick = { expanded = true },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.MoreVert,
+                                                    contentDescription = "Menu",
+                                                    tint = Color.White.copy(alpha = 0.7f),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+
+                                            DropdownMenu(
+                                                expanded = expanded,
+                                                onDismissRequest = { expanded = false },
+                                            ) {
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Text(
+                                                            "Xóa",
+                                                            color = Color(0xFFFF6B6B),
+                                                            fontSize = 14.sp
+                                                        )
+                                                    },
+                                                    onClick = {
+                                                        expanded = false
+                                                        viewModel.deleteComment(
+                                                            post.postId,
+                                                            comment.commentId
+                                                        )
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = comment.content,
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                    lineHeight = 20.sp
                                 )
                             }
                         }
                     }
+
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
                 }
-            }
-        }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Modern text input
-        OutlinedTextField(
-            value = commentText,
-            onValueChange = { commentText = it },
-            label = {
-                Text(
-                    "Nhập bình luận...",
-                    color = Color.White.copy(alpha = 0.6f)
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                cursorColor = Color(0xFF00D09E),
-                focusedBorderColor = Color(0xFF00D09E),
-                unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                focusedLabelColor = Color(0xFF00D09E),
-                unfocusedLabelColor = Color.White.copy(alpha = 0.6f)
-            ),
-            shape = RoundedCornerShape(16.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Modern send button
-        Button(
-            onClick = {
-                if (commentText.isNotBlank()) {
-                    viewModel.createComment(post.postId, commentText)
-                    commentText = ""
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.End)
-                .shadow(
-                    elevation = 8.dp,
-                    shape = RoundedCornerShape(20.dp),
-                    ambientColor = Color(0xFF00D09E).copy(alpha = 0.3f)
-                ),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent
-            ),
-            shape = RoundedCornerShape(20.dp),
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                Color(0xFF00F5D4),
-                                Color(0xFF00D09E)
-                            )
+                // Fixed Comment Input
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1A1A1A))
+                        .imePadding() // tránh che bởi bàn phím
+                ) {
+                    OutlinedTextField(
+                        value = commentText,
+                        onValueChange = { commentText = it },
+                        label = {
+                            Text("Nhập bình luận...", color = Color.White.copy(alpha = 0.6f))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            cursorColor = Color(0xFF00D09E),
+                            focusedBorderColor = Color(0xFF00D09E),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            focusedLabelColor = Color(0xFF00D09E),
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.6f)
                         ),
-                        shape = RoundedCornerShape(20.dp)
+                        shape = RoundedCornerShape(16.dp)
                     )
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
-            ) {
-                Text(
-                    "Gửi",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            if (commentText.isNotBlank()) {
+                                viewModel.createComment(post.postId, commentText)
+                                commentText = ""
+                                coroutineScope.launch {
+                                    lazyListState.animateScrollToItem(comments.size)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .shadow(
+                                elevation = 8.dp,
+                                shape = RoundedCornerShape(20.dp),
+                                ambientColor = Color(0xFF00D09E).copy(alpha = 0.3f)
+                            ),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        shape = RoundedCornerShape(20.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(Color(0xFF00F5D4), Color(0xFF00D09E))
+                                    ),
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                                .padding(horizontal = 24.dp, vertical = 12.dp)
+                        ) {
+                            Text(
+                                "Gửi",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
             }
         }
     }
 }
+
 @Composable
 fun CreatePostDialog(
     onDismiss: () -> Unit,
     viewModel: NewsFeedViewModel
 ) {
     var content by remember { mutableStateOf("") }
+    var selectedPrivacy by remember { mutableStateOf(0) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -1268,6 +1694,7 @@ fun CreatePostDialog(
 
     val postCreationState by viewModel.postCreationState.collectAsState()
     val isPosting = postCreationState is ResultState.Loading
+
 
     // Đóng dialog khi đăng thành công
     LaunchedEffect(postCreationState) {
@@ -1353,6 +1780,18 @@ fun CreatePostDialog(
                         .fillMaxSize()
                         .padding(24.dp)
                 ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.TopEnd
+                    ) {
+                        PrivacyDropdown(
+                            selectedPrivacy = selectedPrivacy,
+                            onPrivacyChanged = { selectedPrivacy = it }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     // Content input với gradient border
                     Card(
                         modifier = Modifier
@@ -1522,7 +1961,13 @@ fun CreatePostDialog(
                         onClick = {
                             if (content.isNotBlank()) {
                                 Log.d("CreatePost", "Content length: ${content.length}, content: '$content'")
-                                viewModel.createPost(content = content, category = "general", fileUri = selectedImageUri)
+                                viewModel.createPost(
+                                    content = content,
+                                    category = "general",
+                                    fileUri = selectedImageUri,
+                                    targetType = selectedPrivacy,
+                                    targetGroupIds = null
+                                )
                             }
                         },
                         enabled = content.isNotBlank() && !isPosting,

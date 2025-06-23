@@ -28,7 +28,9 @@ import DI.Models.NewsFeed.CreateCommentRequest
 import DI.Models.NewsFeed.NewsFeedResponse
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
+import DI.Models.NewsFeed.UpdatePostTargetRequest
 import DI.Models.Ocr.OcrData
+import DI.Models.Reports.ReportRequest
 import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
 import DI.Models.UserInfo.UpdatedProfile
@@ -47,6 +49,7 @@ import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.PATCH
 
 interface ApiService {
 
@@ -212,7 +215,9 @@ interface ApiService {
     @POST("NewsFeed")
     suspend fun createPost(
         @Query("content") content: String,
-        @Query("category") category: String,
+        @Query("category") category: String = "general",
+        @Query("targetType") targetType: Int? = null,
+        @Query("targetGroupIds") targetGroupIds: String? = null,
         @Part file: MultipartBody.Part? = null
     ): Response<Post>
 
@@ -240,4 +245,17 @@ interface ApiService {
     suspend fun deleteComment(
         @Path("commentId") commentId: String
     ): Response<Unit>
+
+    @PATCH("NewsFeed/{postId}/target")
+    suspend fun updatePostTarget(
+        @Path("postId") postId: String,
+        @Body request: UpdatePostTargetRequest
+    ): Response<Unit>
+
+    //Report
+    @POST("Reports/generate")
+    suspend fun generateReport(
+        @Body request: ReportRequest
+    ): Response<ResponseBody>
+
 }
