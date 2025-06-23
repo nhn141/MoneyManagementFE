@@ -26,12 +26,10 @@ import DI.ViewModels.GroupFundViewModel
 import DI.ViewModels.NewsFeedViewModel
 import DI.ViewModels.OcrViewModel
 import DI.ViewModels.ProfileViewModel
+import DI.ViewModels.ReportViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import GroupFundScreen
-import DI.ViewModels.CurrencyConverterViewModel
-import DI.ViewModels.NewsFeedViewModel
-import DI.ViewModels.ReportViewModel
 import ModernCategoriesScreen
 import ProfileScreen
 import Screens.MainLayout
@@ -242,7 +240,10 @@ private fun InnerNavHost(
         }
 
         composable(Routes.Calendar) {
-            CalendarScreen(analysisViewModel = analysisViewModel)
+            CalendarScreen(
+                analysisViewModel = analysisViewModel,
+                currencyConverterViewModel = currencyViewModel
+            )
         }
 
         composable(Routes.AddTransaction) {

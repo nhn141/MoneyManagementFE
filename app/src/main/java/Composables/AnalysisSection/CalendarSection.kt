@@ -3,7 +3,11 @@ package DI.Composables.AnalysisSection
 import DI.Models.Analysis.CategoryBreakdown
 import DI.Models.Analysis.CategoryBreakdownPieData
 import DI.Models.Analysis.DateSelection
+import DI.Utils.AppStrings
+import DI.Utils.CurrencyUtils
+import DI.Utils.rememberAppStrings
 import DI.ViewModels.AnalysisViewModel
+import DI.ViewModels.CurrencyConverterViewModel
 import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
@@ -62,6 +66,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneymanagement_frontend.R
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
@@ -79,8 +84,17 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 @Composable
-fun CalendarScreen(analysisViewModel: AnalysisViewModel) {
-    val currentDate = LocalDate.of(2025, 4, 21)
+fun CalendarScreen(
+    analysisViewModel: AnalysisViewModel,
+    currencyConverterViewModel: CurrencyConverterViewModel
+) {
+    val strings = rememberAppStrings()
+
+    // Collect currency state
+    val isVND by currencyConverterViewModel.isVND.collectAsStateWithLifecycle()
+    val exchangeRate by currencyConverterViewModel.exchangeRate.collectAsStateWithLifecycle()
+
+    val currentDate = LocalDate.now()
     val startMonth = remember { YearMonth.of(2000, 1) }
     val endMonth = remember { YearMonth.of(2100, 12) }
     val daysOfWeek = remember { daysOfWeek(firstDayOfWeek = DayOfWeek.MONDAY) }
@@ -108,6 +122,7 @@ fun CalendarScreen(analysisViewModel: AnalysisViewModel) {
         selectedMonth = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
         selectedYear = visibleMonth.year.toString()
     }
+
     var selection by remember { mutableStateOf(DateSelection()) }
     LaunchedEffect(selection) {
         Log.d("DateSelection", "Start: ${selection.start}, End: ${selection.end}")
@@ -134,7 +149,7 @@ fun CalendarScreen(analysisViewModel: AnalysisViewModel) {
     }
     Log.d("CategoryBreakdownValue", "categoryBreakdown: $categoryBreakdown")
 
-    var statisticsMode by remember { mutableStateOf("Aggregate") }
+    var statisticsMode by remember { mutableStateOf(strings.aggregate) }
 
     // Modern gradient background
     Box(
@@ -222,16 +237,23 @@ fun CalendarScreen(analysisViewModel: AnalysisViewModel) {
             // Modern Statistics Mode Toggle
             ModernStatisticsModeToggle(
                 selectedMode = statisticsMode,
-                onModeSelected = { statisticsMode = it }
+                onModeSelected = { statisticsMode = it },
+                strings = strings
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Content Section
-            if (statisticsMode == "Aggregate") {
-                ModernCategoryAggregateSection(categoryBreakdown, selection)
+            if (statisticsMode == strings.aggregate) {
+                ModernCategoryAggregateSection(
+                    categoryBreakdown,
+                    selection,
+                    isVND,
+                    exchangeRate,
+                    strings
+                )
             } else {
-                ModernCategoryBreakdownPieChart(categoryBreakdown)
+                ModernCategoryBreakdownPieChart(categoryBreakdown, strings)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -442,7 +464,8 @@ fun ModernDay(
 @Composable
 fun ModernStatisticsModeToggle(
     selectedMode: String,
-    onModeSelected: (String) -> Unit
+    onModeSelected: (String) -> Unit,
+    strings: AppStrings
 ) {
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -453,15 +476,15 @@ fun ModernStatisticsModeToggle(
             modifier = Modifier.padding(4.dp)
         ) {
             ModernToggleButton(
-                text = "Aggregate",
-                isSelected = selectedMode == "Aggregate",
-                onClick = { onModeSelected("Aggregate") },
+                text = strings.aggregate,
+                isSelected = selectedMode == strings.aggregate,
+                onClick = { onModeSelected(strings.aggregate) },
                 modifier = Modifier.weight(1f)
             )
             ModernToggleButton(
-                text = "Pie Charts",
-                isSelected = selectedMode == "Pie Charts",
-                onClick = { onModeSelected("Pie Charts") },
+                text = strings.pieCharts,
+                isSelected = selectedMode == strings.pieCharts,
+                onClick = { onModeSelected(strings.pieCharts) },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -521,7 +544,10 @@ fun handleRangeSelection(clickedDate: LocalDate, currentSelection: DateSelection
 @Composable
 fun ModernCategoryAggregateSection(
     categoryBreakdown: List<CategoryBreakdown?>,
-    selection: DateSelection
+    selection: DateSelection,
+    isVND: Boolean,
+    exchangeRates: Double?,
+    strings: AppStrings
 ) {
     val selectionDateRange = selection.getSelectionAsYearMonthRange()
 
@@ -540,13 +566,13 @@ fun ModernCategoryAggregateSection(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    "No Data Available",
+                    strings.noDataAvailable,
                     fontWeight = FontWeight.Medium,
                     fontSize = 18.sp,
                     color = Color(0xFF6B7280)
                 )
                 Text(
-                    "Select a date range to view analytics",
+                    strings.selectDateRangeViewAnalytics,
                     fontWeight = FontWeight.Normal,
                     fontSize = 14.sp,
                     color = Color(0xFF9CA3AF),
@@ -560,16 +586,56 @@ fun ModernCategoryAggregateSection(
         ) {
             categoryBreakdown.forEach { item ->
                 val category = item?.category ?: ""
-                val totalIncome = item?.totalIncome.toString()
-                val totalExpense = item?.totalExpense.toString()
-                ModernAggregateItem(category, selectionDateRange, totalIncome, totalExpense)
+
+                // Convert amounts based on currency preference
+                val convertedIncome = item?.totalIncome?.let { vndAmount ->
+                    if (isVND) {
+                        vndAmount
+                    } else {
+                        exchangeRates?.let { rates ->
+                            CurrencyUtils.vndToUsd(
+                                vndAmount,
+                                rates
+                            )
+                        } ?: vndAmount
+                    }
+                } ?: 0.0
+
+                val convertedExpense = item?.totalExpense?.let { vndAmount ->
+                    if (isVND) {
+                        vndAmount
+                    } else {
+                        exchangeRates?.let { rates ->
+                            CurrencyUtils.vndToUsd(
+                                vndAmount,
+                                rates
+                            )
+                        } ?: vndAmount
+                    }
+                } ?: 0.0
+                val formattedIncome = "+${CurrencyUtils.formatAmount(convertedIncome, isVND)}"
+                val formattedExpense = "-${CurrencyUtils.formatAmount(convertedExpense, isVND)}"
+
+                ModernAggregateItem(
+                    category,
+                    selectionDateRange,
+                    formattedIncome,
+                    formattedExpense,
+                    strings
+                )
             }
         }
     }
 }
 
 @Composable
-fun ModernAggregateItem(category: String, date: String, income: String, expense: String) {
+fun ModernAggregateItem(
+    category: String,
+    date: String,
+    income: String,
+    expense: String,
+    strings: AppStrings
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -623,24 +689,24 @@ fun ModernAggregateItem(category: String, date: String, income: String, expense:
                         color = Color(0xFF6B7280)
                     )
                 }
-            }            // Divider
+            }
+            // Divider
             HorizontalDivider(
                 color = Color(0xFFE5E7EB),
                 thickness = 1.dp
             )
-
             // Statistics
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 ModernStatisticItem(
-                    type = "Income",
+                    type = stringResource(R.string.income),
                     amount = income,
                     icon = Icons.AutoMirrored.Filled.TrendingUp,
                     color = Color(0xFF10B981)
                 )
                 ModernStatisticItem(
-                    type = "Expense",
+                    type = stringResource(R.string.expense),
                     amount = expense,
                     icon = Icons.AutoMirrored.Filled.TrendingDown,
                     color = Color(0xFFEF4444)
@@ -724,7 +790,10 @@ fun generateColorFromHSV(index: Int, total: Int): Color {
 }
 
 @Composable
-fun ModernCategoryBreakdownPieChart(categoryBreakdown: List<CategoryBreakdown?>) {
+fun ModernCategoryBreakdownPieChart(
+    categoryBreakdown: List<CategoryBreakdown?>,
+    strings: AppStrings
+) {
     if (categoryBreakdown.isEmpty()) {
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -739,7 +808,7 @@ fun ModernCategoryBreakdownPieChart(categoryBreakdown: List<CategoryBreakdown?>)
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "No data to display",
+                    strings.noDataAvailable,
                     color = Color(0xFF6B7280),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
@@ -772,7 +841,6 @@ fun ModernCategoryBreakdownPieChart(categoryBreakdown: List<CategoryBreakdown?>)
             )
         }
     }
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -783,7 +851,7 @@ fun ModernCategoryBreakdownPieChart(categoryBreakdown: List<CategoryBreakdown?>)
             modifier = Modifier.weight(1f)
         )
         ModernCustomPieChart(
-            type = stringResource(R.string.expenses),
+            type = stringResource(R.string.expense),
             breakdownList = expenseBreakdownList,
             modifier = Modifier.weight(1f)
         )
@@ -810,7 +878,9 @@ fun ModernCustomPieChart(
                 text = type,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
-                color = if (type == "Income") Color(0xFF10B981) else Color(0xFFEF4444),
+                color = if (type.equals("Income", ignoreCase = true)) Color(0xFF10B981) else Color(
+                    0xFFEF4444
+                ),
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
