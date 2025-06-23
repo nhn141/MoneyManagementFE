@@ -107,6 +107,8 @@
     <string name="expense_uppercase">EXPENSE</string>
     <string name="type_income">Income</string>
     <string name="type_expense">Expense</string>
+    <string name="see_more">See more</string>
+    <string name="net_balance">Net Balance</string>
 
     <!-- Transaction Details -->
     <string name="transaction_detail">Transaction Detail</string>

@@ -60,7 +60,8 @@ class CategoryViewModel @Inject constructor(
                     UiEvent.ShowMessage(
                         stringProvider.getString(
                             R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                            result.exceptionOrNull()?.message
+                                ?: stringProvider.getString(R.string.unknown_error)
                         )
                     )
                 )
@@ -75,6 +76,11 @@ class CategoryViewModel @Inject constructor(
         }
     }
 
+    suspend fun getCategoryByID(id: String): Category? {
+        val result = repository.getCategoryById(id)
+        return result.getOrElse { null }
+    }
+
     fun updateCategory(updatedCategory: UpdateCategoryRequest) {
         viewModelScope.launch {
             val result = repository.updateCategory(updatedCategory)
@@ -86,7 +92,8 @@ class CategoryViewModel @Inject constructor(
                     UiEvent.ShowMessage(
                         stringProvider.getString(
                             R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                            result.exceptionOrNull()?.message
+                                ?: stringProvider.getString(R.string.unknown_error)
                         )
                     )
                 )
@@ -105,7 +112,8 @@ class CategoryViewModel @Inject constructor(
                     UiEvent.ShowMessage(
                         stringProvider.getString(
                             R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                            result.exceptionOrNull()?.message
+                                ?: stringProvider.getString(R.string.unknown_error)
                         )
                     )
                 )

@@ -107,6 +107,8 @@
     <string name="expense_uppercase">CHI TIÊU</string>
     <string name="type_income">Thu nhập</string>
     <string name="type_expense">Chi tiêu</string>
+    <string name="see_more">Xem thêm</string>
+    <string name="net_balance">Số dư ròng</string>
 
     <!-- Transaction Details -->
     <string name="transaction_detail">Chi tiết giao dịch</string>
@@ -122,7 +124,7 @@
     <string name="transaction_type">Loại giao dịch</string>
     <string name="transaction_type_unchangeable">Loại giao dịch (Không thể thay đổi)</string>
     <string name="amount_label">Số tiền (%1$s)</string>
-    
+
     <!-- Transaction Form Fields -->
     <string name="title">Tiêu đề</string>
     <string name="amount">Số tiền</string>

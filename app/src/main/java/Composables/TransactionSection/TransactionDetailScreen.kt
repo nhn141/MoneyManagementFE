@@ -1,5 +1,6 @@
 package DI.Composables.TransactionSection
 
+import DI.Composables.CategorySection.getCategoryIcon
 import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.CurrencyConverterViewModel
@@ -32,7 +33,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -348,7 +348,7 @@ fun TransactionDetailBody(
                         )
 
                         ModernDetailItem(
-                            icon = Icons.Default.Category,
+                            icon = getCategoryIcon(categoryName),
                             label = stringResource(R.string.category),
                             value = categoryName,
                             iconTint = Color(0xFF9F7AEA)
