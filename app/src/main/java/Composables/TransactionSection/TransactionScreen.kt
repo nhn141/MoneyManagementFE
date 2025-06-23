@@ -310,8 +310,8 @@ fun TransactionScreen(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = formatAmount(
-                                        4120.0,
+                                    text = CurrencyUtils.formatAmount(
+                                        cashFlow?.totalIncome ?: 0.0,
                                         isVND,
                                         exchangeRate
                                     ), // Cập nhật số tiền
@@ -395,8 +395,8 @@ fun TransactionScreen(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = formatAmount(
-                                        1187.40,
+                                    text = CurrencyUtils.formatAmount(
+                                        cashFlow?.totalExpense ?: 0.0,
                                         isVND,
                                         exchangeRate
                                     ), // Cập nhật số tiền
@@ -698,7 +698,7 @@ fun TransactionRow(
             }
 
             Text(
-                text = formatAmount(
+                text = CurrencyUtils.formatAmount(
                     amount = transaction.amount.toDoubleOrNull() ?: 0.0,
                     isVND = isVND,
                     exchangeRate = exchangeRate
