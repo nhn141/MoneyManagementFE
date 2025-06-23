@@ -121,6 +121,7 @@
     <string name="transaction_deleted_failed">Failed to delete transaction ✗</string>
     <string name="transaction_type">Transaction Type</string>
     <string name="transaction_type_unchangeable">Transaction Type (Unchangeable)</string>
+    <string name="amount_label">Amount (%1$s)</string>
 
     <!-- Transaction Form Fields -->
     <string name="title">Title</string>
@@ -135,6 +136,7 @@
     <string name="save_transaction">Save Transaction</string>
     <string name="scan_receipt">Scan Receipt</string>
     <string name="scan_receipt_description">Scan Receipt</string>
+    <string name="enter_amount">Enter amount</string>
 
     <!-- Transaction Form Validation -->
     <string name="title_empty_error">Title cannot be empty</string>
@@ -425,5 +427,14 @@
     <string name="group_fund_created_success">Group fund created successfully</string>
     <string name="group_fund_updated_success">Group fund updated successfully</string>
     <string name="group_fund_deleted_success">Group fund deleted successfully</string>
+
+    <!-- ================== CURRENCY SETTINGS ================== -->
+    <string name="currency_settings">Currency Settings</string>
+    <string name="currency">Currency</string>
+    <string name="vnd_currency">VND (₫)</string>
+    <string name="usd_currency">USD ($)</string>
+    <string name="current_currency">Current: %1$s</string>
+    <string name="preview_label">Preview: %1$s</string>
+    <string name="usd_decimal_warning">USD amounts support only 2 decimal places</string>
 </resources>
 

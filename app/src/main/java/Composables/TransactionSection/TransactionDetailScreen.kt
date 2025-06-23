@@ -1,5 +1,6 @@
 package DI.Composables.TransactionSection
 
+import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.TransactionViewModel
@@ -8,17 +9,54 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Title
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -94,7 +132,9 @@ fun TransactionDetailScreen(
                 amount = generalTransaction.amount,
                 walletName = wallet?.walletName ?: stringResource(R.string.unknown),
                 date = generalTransaction.timestamp ?: stringResource(R.string.unknown),
-                type = if (generalTransaction.isIncome) stringResource(R.string.income) else stringResource(R.string.expense),
+                type = if (generalTransaction.isIncome) stringResource(R.string.income) else stringResource(
+                    R.string.expense
+                ),
                 transactionId = transactionId,
                 viewModel = viewModel,
                 context = context,
@@ -148,7 +188,8 @@ fun TransactionDetailHeader(
                             Color(0xFF667eea).copy(alpha = 0.1f),
                             CircleShape
                         )
-                ) {                    Icon(
+                ) {
+                    Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(R.string.back),
                         tint = Color(0xFF667eea),
@@ -261,7 +302,7 @@ fun TransactionDetailBody(
                         )
 
                         Text(
-                            text = formatAmount(
+                            text = CurrencyUtils.formatAmount(
                                 amount = amount.toDoubleOrNull() ?: 0.0,
                                 isVND = isVND,
                                 exchangeRate = exchangeRate
@@ -290,7 +331,8 @@ fun TransactionDetailBody(
                             .fillMaxWidth()
                             .padding(24.dp),
                         verticalArrangement = Arrangement.spacedBy(20.dp)
-                    ) {                        Text(
+                    ) {
+                        Text(
                             text = stringResource(R.string.transaction_details),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
@@ -344,7 +386,8 @@ fun TransactionDetailBody(
                 defaultElevation = 12.dp,
                 pressedElevation = 16.dp
             )
-        ) {            Icon(
+        ) {
+            Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = stringResource(R.string.delete),
                 modifier = Modifier.size(28.dp)

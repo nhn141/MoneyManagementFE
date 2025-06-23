@@ -268,10 +268,8 @@ class AnalysisViewModel @Inject constructor(
             )
             val result = analysisRepository.getCategoryBreakdown(startDate, endDate)
             _categoryBreakdown.value = result
-            Log.d("CategoryBreakdown", "Category breakdown data fetched successfully")
         }
     }
-
 }
 
 

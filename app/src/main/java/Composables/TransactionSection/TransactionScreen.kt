@@ -3,6 +3,7 @@ package DI.Composables.TransactionSection
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
+import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.TransactionViewModel
@@ -11,8 +12,21 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -45,18 +59,31 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-import androidx.compose.ui.window.Dialog
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalTime
@@ -64,25 +91,18 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
 
 @Composable
 fun TransactionScreen(
     navController: NavController,
     transactionViewModel: TransactionViewModel,
     categoryViewModel: CategoryViewModel,
-    currencyViewModel: CurrencyConverterViewModel
+    currencyViewModel: CurrencyConverterViewModel,
 ) {
     val scrollState = rememberLazyListState()
     val selected = transactionViewModel.selectedType.value
     val transactions = transactionViewModel.filteredTransactions.value
+    val cashFlow = transactionViewModel.cashFlow.value
     val showSearchDialog = remember { mutableStateOf(false) }
     val showDatePickerDialog = remember { mutableStateOf(false) }
     val selectedDate = remember { mutableStateOf<String>("") }
@@ -131,7 +151,8 @@ fun TransactionScreen(
                             )
                             .clickable { navController.popBackStack() },
                         contentAlignment = Alignment.Center
-                    ) {                        Icon(
+                    ) {
+                        Icon(
                             painter = painterResource(R.drawable.ic_arrow_back),
                             contentDescription = stringResource(R.string.back),
                             tint = Color.White,
@@ -188,7 +209,8 @@ fun TransactionScreen(
                             .fillMaxWidth()
                             .padding(vertical = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
-                    ) {                        Text(
+                    ) {
+                        Text(
                             text = stringResource(R.string.total_balance),
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF666666),
@@ -196,7 +218,11 @@ fun TransactionScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = formatAmount(7783.0, isVND, exchangeRate), // Cập nhật số tiền
+                            text = CurrencyUtils.formatAmount(
+                                amount = cashFlow?.netCashFlow ?: 0.0,
+                                isVND = isVND,
+                                exchangeRate = exchangeRate
+                            ),
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0D1F2D)
@@ -264,10 +290,13 @@ fun TransactionScreen(
                                             CircleShape
                                         ),
                                     contentAlignment = Alignment.Center
-                                ) {                                    Icon(
+                                ) {
+                                    Icon(
                                         painter = painterResource(R.drawable.ic_income),
                                         contentDescription = stringResource(R.string.income),
-                                        tint = if (selected == "Income") Color.White else Color(0xFF4CAF50),
+                                        tint = if (selected == "Income") Color.White else Color(
+                                            0xFF4CAF50
+                                        ),
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -275,13 +304,21 @@ fun TransactionScreen(
                                 Text(
                                     text = stringResource(R.string.income),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = if (selected == "Income") Color.White else Color(0xFF666666),
+                                    color = if (selected == "Income") Color.White else Color(
+                                        0xFF666666
+                                    ),
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = formatAmount(4120.0, isVND, exchangeRate), // Cập nhật số tiền
+                                    text = formatAmount(
+                                        4120.0,
+                                        isVND,
+                                        exchangeRate
+                                    ), // Cập nhật số tiền
                                     fontWeight = FontWeight.Bold,
-                                    color = if (selected == "Income") Color.White else Color(0xFF4CAF50),
+                                    color = if (selected == "Income") Color.White else Color(
+                                        0xFF4CAF50
+                                    ),
                                     fontSize = 16.sp
                                 )
                             }
@@ -338,10 +375,13 @@ fun TransactionScreen(
                                             CircleShape
                                         ),
                                     contentAlignment = Alignment.Center
-                                ) {                                    Icon(
+                                ) {
+                                    Icon(
                                         painter = painterResource(R.drawable.ic_expense),
                                         contentDescription = stringResource(R.string.expense),
-                                        tint = if (selected == "Expense") Color.White else Color(0xFFFF5722),
+                                        tint = if (selected == "Expense") Color.White else Color(
+                                            0xFFFF5722
+                                        ),
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -349,13 +389,21 @@ fun TransactionScreen(
                                 Text(
                                     text = stringResource(R.string.expense),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = if (selected == "Expense") Color.White else Color(0xFF666666),
+                                    color = if (selected == "Expense") Color.White else Color(
+                                        0xFF666666
+                                    ),
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = formatAmount(1187.40, isVND, exchangeRate), // Cập nhật số tiền
+                                    text = formatAmount(
+                                        1187.40,
+                                        isVND,
+                                        exchangeRate
+                                    ), // Cập nhật số tiền
                                     fontWeight = FontWeight.Bold,
-                                    color = if (selected == "Expense") Color.White else Color(0xFFFF5722),
+                                    color = if (selected == "Expense") Color.White else Color(
+                                        0xFFFF5722
+                                    ),
                                     fontSize = 16.sp
                                 )
                             }
@@ -380,7 +428,11 @@ fun TransactionScreen(
                             onClick = {
                                 transactionViewModel.resetSearch()
                                 selectedDate.value = ""
-                                Toast.makeText(context, context.getString(R.string.filters_reset), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.filters_reset),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         )
                         Spacer(modifier = Modifier.width(12.dp))
@@ -483,10 +535,13 @@ fun TransactionScreen(
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate()
 
-                        selectedDate.value = localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        selectedDate.value =
+                            localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
-                        val from = localDate.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        val to = localDate.atTime(LocalTime.MAX).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        val from = localDate.atStartOfDay()
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        val to = localDate.atTime(LocalTime.MAX)
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
                         transactionViewModel.fetchTransactionsByDateRange(from, to)
                     }
@@ -590,8 +645,10 @@ fun TransactionRow(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = modifier
-            .clickable { navController.navigate("transaction_detail/${transaction.transactionID}")
-            Log.d("TransactionRow", "ID: ${transaction.transactionID}")}
+            .clickable {
+                navController.navigate("transaction_detail/${transaction.transactionID}")
+                Log.d("TransactionRow", "ID: ${transaction.transactionID}")
+            }
     ) {
         Column(
             modifier = Modifier
@@ -658,7 +715,6 @@ fun TransactionRow(
 }
 
 
-
 @Composable
 fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String {
     val displayAmount = if (isVND || exchangeRate == null) {
@@ -693,7 +749,6 @@ fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String 
 }
 
 
-
 @Composable
 private fun EmptyTransactionState() {
     Column(
@@ -720,7 +775,7 @@ fun DatePickerModal(
     val datePickerState = rememberDatePickerState()
 
     DatePickerDialog(
-        onDismissRequest = onDismiss,        confirmButton = {
+        onDismissRequest = onDismiss, confirmButton = {
             TextButton(onClick = {
                 onDateSelected(datePickerState.selectedDateMillis)
                 onDismiss()
@@ -787,7 +842,13 @@ fun SearchDialog(
                 "${(500000 / rate).toInt()}-${(1000000 / rate).toInt()}",
                 "${(1000000 / rate).toInt()}+"
             )
-        } ?: listOf("0-50", "50-200", "200-500", "500-1000", "1000+") // Giá trị mặc định nếu exchangeRate null
+        } ?: listOf(
+            "0-50",
+            "50-200",
+            "200-500",
+            "500-1000",
+            "1000+"
+        ) // Giá trị mặc định nếu exchangeRate null
     }
 
     // Define a local object to hold non-composable string constants
@@ -824,26 +885,30 @@ fun SearchDialog(
 
     val timeRangeMap = buildMap {
         put(nonComposableStrings.allOption, "")
-        putAll(mapOf(
-            nonComposableStrings.time0008 to "00:00:00-08:00:00",
-            nonComposableStrings.time0816 to "08:00:00-16:00:00",
-            nonComposableStrings.time1600 to "16:00:00-23:59:59"
-        ))
+        putAll(
+            mapOf(
+                nonComposableStrings.time0008 to "00:00:00-08:00:00",
+                nonComposableStrings.time0816 to "08:00:00-16:00:00",
+                nonComposableStrings.time1600 to "16:00:00-23:59:59"
+            )
+        )
     }
 
     val reverseTimeRangeMap = timeRangeMap.entries.associate { it.value to it.key }
 
     val dayOfWeekMap = buildMap {
         put(nonComposableStrings.allOption, "")
-        putAll(mapOf(
-            nonComposableStrings.monday to "Mon",
-            nonComposableStrings.tuesday to "Tue",
-            nonComposableStrings.wednesday to "Wed",
-            nonComposableStrings.thursday to "Thu",
-            nonComposableStrings.friday to "Fri",
-            nonComposableStrings.saturday to "Sat",
-            nonComposableStrings.sunday to "Sun"
-        ))
+        putAll(
+            mapOf(
+                nonComposableStrings.monday to "Mon",
+                nonComposableStrings.tuesday to "Tue",
+                nonComposableStrings.wednesday to "Wed",
+                nonComposableStrings.thursday to "Thu",
+                nonComposableStrings.friday to "Fri",
+                nonComposableStrings.saturday to "Sat",
+                nonComposableStrings.sunday to "Sun"
+            )
+        )
     }
     val reverseDayOfWeekMap = dayOfWeekMap.entries.associate { it.value to it.key }
     val categoriesResult by viewModel.categories.collectAsState()
@@ -877,7 +942,8 @@ fun SearchDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
-                ) {                    Row(verticalAlignment = Alignment.CenterVertically) {
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = stringResource(R.string.advanced_search),
                             fontWeight = FontWeight.Bold,
@@ -911,9 +977,13 @@ fun SearchDialog(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                ) {                    item {
+                ) {
+                    item {
                         // Date Range Section
-                        SearchSection(title = stringResource(R.string.date_range), icon = Icons.Default.DateRange) {
+                        SearchSection(
+                            title = stringResource(R.string.date_range),
+                            icon = Icons.Default.DateRange
+                        ) {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                                 modifier = Modifier.fillMaxWidth()
@@ -938,7 +1008,10 @@ fun SearchDialog(
                     }
                     item {
                         // Transaction Details Section
-                        SearchSection(title = stringResource(R.string.transaction_details_section), icon = Icons.Default.AccountBalanceWallet) {
+                        SearchSection(
+                            title = stringResource(R.string.transaction_details_section),
+                            icon = Icons.Default.AccountBalanceWallet
+                        ) {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -946,11 +1019,16 @@ fun SearchDialog(
                                 ) {
                                     SearchDropdownField(
                                         label = stringResource(R.string.type),
-                                        options = listOf(stringResource(R.string.all), stringResource(R.string.expense), stringResource(R.string.income)),
+                                        options = listOf(
+                                            stringResource(R.string.all),
+                                            stringResource(R.string.expense),
+                                            stringResource(R.string.income)
+                                        ),
                                         selectedOption = type.ifEmpty { stringResource(R.string.all) },
                                         onOptionSelected = { selected ->
-                                            type = if (selected == nonComposableStrings.allOption) ""
-                                            else selected
+                                            type =
+                                                if (selected == nonComposableStrings.allOption) ""
+                                                else selected
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
@@ -960,7 +1038,8 @@ fun SearchDialog(
                                         options = categoryNames,
                                         selectedOption = category.ifEmpty { stringResource(R.string.all) },
                                         onOptionSelected = { selected ->
-                                            category = if (selected == nonComposableStrings.allOption) "" else selected
+                                            category =
+                                                if (selected == nonComposableStrings.allOption) "" else selected
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
@@ -969,7 +1048,8 @@ fun SearchDialog(
                                 SearchDropdownField(
                                     label = "Amount Range (${if (isVND) "VND" else "USD"})",
                                     options = amountRangeMap.keys.toList(),
-                                    selectedOption = reverseAmountRangeMap[amountRange] ?: stringResource(R.string.all),
+                                    selectedOption = reverseAmountRangeMap[amountRange]
+                                        ?: stringResource(R.string.all),
                                     onOptionSelected = { selected ->
                                         amountRange = amountRangeMap[selected] ?: ""
                                     }
@@ -986,7 +1066,10 @@ fun SearchDialog(
                     }
                     item {
                         // Time Filters Section
-                        SearchSection(title = stringResource(R.string.time_filters), icon = Icons.Default.AccessTime) {
+                        SearchSection(
+                            title = stringResource(R.string.time_filters),
+                            icon = Icons.Default.AccessTime
+                        ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -994,7 +1077,8 @@ fun SearchDialog(
                                 SearchDropdownField(
                                     label = stringResource(R.string.day_of_week),
                                     options = dayOfWeekMap.keys.toList(),
-                                    selectedOption = reverseDayOfWeekMap[dayOfWeek] ?: stringResource(R.string.all),
+                                    selectedOption = reverseDayOfWeekMap[dayOfWeek]
+                                        ?: stringResource(R.string.all),
                                     onOptionSelected = { selected ->
                                         dayOfWeek = dayOfWeekMap[selected] ?: ""
                                     },
@@ -1004,7 +1088,8 @@ fun SearchDialog(
                                 SearchDropdownField(
                                     label = stringResource(R.string.time_range),
                                     options = timeRangeMap.keys.toList(),
-                                    selectedOption = reverseTimeRangeMap[timeRange] ?: stringResource(R.string.all),
+                                    selectedOption = reverseTimeRangeMap[timeRange]
+                                        ?: stringResource(R.string.all),
                                     onOptionSelected = { selected ->
                                         timeRange = timeRangeMap[selected] ?: ""
                                     },
@@ -1042,7 +1127,8 @@ fun SearchDialog(
                             containerColor = Color(0xFFF5F5F5),
                             contentColor = Color(0xFF424242)
                         )
-                    ) {                        Icon(
+                    ) {
+                        Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = stringResource(R.string.reset),
                             modifier = Modifier.size(20.dp)
@@ -1052,7 +1138,11 @@ fun SearchDialog(
                     Button(
                         onClick = {
                             if (startDate.isEmpty() || endDate.isEmpty()) {
-                                Toast.makeText(context, nonComposableStrings.pleaseSelectDates, Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    nonComposableStrings.pleaseSelectDates,
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 return@Button
                             }
 
@@ -1060,14 +1150,19 @@ fun SearchDialog(
                             val endDateMillis = formatter.parse(endDate)?.time ?: 0
 
                             if (startDateMillis > endDateMillis) {
-                                Toast.makeText(context, nonComposableStrings.startDateLaterError, Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    nonComposableStrings.startDateLaterError,
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 return@Button
                             }
 
                             val adjustedAmountRange = if (!isVND && exchangeRate != null) {
                                 amountRange.split("-").joinToString("-") { range ->
                                     val value = range.removeSuffix("+").toDoubleOrNull() ?: 0.0
-                                    ((value * exchangeRate!!).toInt().toString() + (if (range.endsWith("+")) "+" else ""))
+                                    ((value * exchangeRate!!).toInt()
+                                        .toString() + (if (range.endsWith("+")) "+" else ""))
                                 }
                             } else {
                                 amountRange
@@ -1096,7 +1191,11 @@ fun SearchDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.search), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(
+                            stringResource(R.string.search),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
                     }
                 }
             }
@@ -1191,7 +1290,9 @@ fun SearchSearchField(
 
         OutlinedTextField(
             value = value,
-            onValueChange = if (isDateField) { {} } else onChange,
+            onValueChange = if (isDateField) {
+                {}
+            } else onChange,
             readOnly = isDateField,
             placeholder = if (placeholder.isNotEmpty()) {
                 { Text(placeholder, color = Color(0xFFCCCCCC)) }
@@ -1279,7 +1380,9 @@ fun SearchDropdownField(
                         text = {
                             Text(
                                 option,
-                                color = if (option == selectedOption) Color(0xFF00D09E) else Color(0xFF1A1A1A),
+                                color = if (option == selectedOption) Color(0xFF00D09E) else Color(
+                                    0xFF1A1A1A
+                                ),
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1
                             )

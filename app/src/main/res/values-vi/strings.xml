@@ -121,7 +121,8 @@
     <string name="transaction_deleted_failed">Xóa giao dịch thất bại ✗</string>
     <string name="transaction_type">Loại giao dịch</string>
     <string name="transaction_type_unchangeable">Loại giao dịch (Không thể thay đổi)</string>
-
+    <string name="amount_label">Số tiền (%1$s)</string>
+    
     <!-- Transaction Form Fields -->
     <string name="title">Tiêu đề</string>
     <string name="amount">Số tiền</string>
@@ -135,6 +136,7 @@
     <string name="save_transaction">Lưu giao dịch</string>
     <string name="scan_receipt">Quét hóa đơn</string>
     <string name="scan_receipt_description">Quét hóa đơn</string>
+    <string name="enter_amount">Nhập số tiền</string>
 
     <!-- Transaction Form Validation -->
     <string name="title_empty_error">Tiêu đề không được để trống</string>
@@ -275,15 +277,15 @@
     <string name="budget">Ngân sách</string>
     <string name="savings">Tiết kiệm</string>
     <string name="spent">Đã chi</string>
-    
+
     <!-- Period Labels -->
     <string name="daily">Hàng ngày</string>
     <string name="weekly">Hàng tuần</string>
     <string name="monthly">Hàng tháng</string>
     <string name="yearly">Hàng năm</string>
-      <!-- Dropdown content description -->
+    <!-- Dropdown content description -->
     <string name="dropdown">Danh sách thả xuống</string>
-    
+
     <!-- Dynamic titles with period -->
     <string name="period_income">Thu nhập %1$s</string>
     <string name="period_expenses">Chi tiêu %1$s</string>
@@ -422,4 +424,13 @@
     <string name="group_fund_created_success">Tạo quỹ nhóm thành công</string>
     <string name="group_fund_updated_success">Cập nhật quỹ nhóm thành công</string>
     <string name="group_fund_deleted_success">Xoóa quỹ nhóm thành công</string>
+
+    <!-- ================== CURRENCY SETTINGS ================== -->
+    <string name="currency_settings">Cài đặt tiền tệ</string>
+    <string name="currency">Tiền tệ</string>
+    <string name="vnd_currency">VND (₫)</string>
+    <string name="usd_currency">USD ($)</string>
+    <string name="current_currency">Hiện tại: %1$s</string>
+    <string name="preview_label">Xem trước: %1$s</string>
+    <string name="usd_decimal_warning">Số tiền USD chỉ hỗ trợ tối đa 2 chữ số thập phân</string>
 </resources>

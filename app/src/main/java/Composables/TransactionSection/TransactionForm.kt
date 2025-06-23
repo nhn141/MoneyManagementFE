@@ -1,10 +1,12 @@
 package DI.Composables.TransactionSection
 
+import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.CurrencyConverterViewModel
+import DI.ViewModels.OcrViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
-import DI.ViewModels.OcrViewModel
+import Utils.CurrencyInput
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -13,15 +15,22 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
@@ -35,7 +44,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -51,32 +65,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import com.example.moneymanagement_frontend.R
-import com.vanpra.composematerialdialogs.datetime.date.datepicker
-import com.vanpra.composematerialdialogs.datetime.time.timepicker
-import java.text.NumberFormat
-import java.time.LocalDate
-import java.text.SimpleDateFormat
-import java.time.LocalTime
-import java.util.Locale
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.moneymanagement_frontend.R
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults
+import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
+import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Calendar
+import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -132,40 +140,25 @@ fun TransactionForm(
     var walletName by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
 
-    fun formatAmount(input: String, isVND: Boolean): String {
-        val number = input.toLongOrNull() ?: return input
-        val formatted = NumberFormat.getNumberInstance(Locale.US)
-            .format(number)
-            .replace(",", ".")
-        return if (isVND) formatted else "$formatted USD"
-    }
-
-    fun unformatAmount(formatted: String): String {
-        return formatted.replace(".", "").replace(",", "").replace(" USD", "")
-    }
-
-    var rawAmount by remember { mutableStateOf("") }
-
-    val formattedAmount by remember(rawAmount, isVND) {
-        mutableStateOf(formatAmount(rawAmount, isVND))
-    }
+    var formattedAmount by remember { mutableStateOf("") }
 
     val ocrResult by ocrViewModel.ocrResult.collectAsState()
 
     LaunchedEffect(ocrResult) {
         ocrResult?.let { result ->
             val amountFromOcr = result.amount.toBigDecimal().toDouble()
-            val displayAmount = if (isVND || exchangeRate == null) {
+            val convertedAmount = if (isVND || exchangeRate == null) {
                 amountFromOcr
             } else {
                 amountFromOcr / exchangeRate!!
             }
-            rawAmount = displayAmount.toLong().toString()
+            formattedAmount = CurrencyUtils.formatAmount(convertedAmount, isVND, exchangeRate)
 
-            walletsResult?.getOrNull()?.find { it.walletName.equals("Bank", ignoreCase = true) }?.let { wallet ->
-                walletName = wallet.walletName
-                walletId = wallet.walletID
-            }
+            walletsResult?.getOrNull()?.find { it.walletName.equals("Bank", ignoreCase = true) }
+                ?.let { wallet ->
+                    walletName = wallet.walletName
+                    walletId = wallet.walletID
+                }
 
             // Parse the date from ocrResult and update selectedDateTime
             val ocrDate = result.date
@@ -173,7 +166,8 @@ fun TransactionForm(
             try {
                 // Parse ISO 8601 format
                 val instant = java.time.Instant.parse(ocrDate)
-                val localDateTime = instant.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime()
+                val localDateTime =
+                    instant.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime()
 
                 // Create a new Calendar instance and set its time
                 val newCalendar = Calendar.getInstance().apply {
@@ -210,14 +204,8 @@ fun TransactionForm(
             categoryError = null
         }
 
-        if (rawAmount.isEmpty()) {
-            amountError = context.getString(R.string.please_enter_amount)
+        if (amountError != null) {
             isValid = false
-        } else if (rawAmount.toLongOrNull() == null) {
-            amountError = context.getString(R.string.amount_invalid_error)
-            isValid = false
-        } else {
-            amountError = null
         }
 
         if (title.trim().isEmpty()) {
@@ -244,7 +232,8 @@ fun TransactionForm(
                 DropdownSelector(
                     label = stringResource(R.string.wallet),
                     selectedName = walletName,
-                    options = walletsResult?.getOrNull()?.map { it.walletName to it.walletID } ?: emptyList(),
+                    options = walletsResult?.getOrNull()?.map { it.walletName to it.walletID }
+                        ?: emptyList(),
                     onSelect = { name, id ->
                         walletName = name
                         walletId = id
@@ -257,7 +246,8 @@ fun TransactionForm(
                 DropdownSelector(
                     label = stringResource(R.string.category),
                     selectedName = categoryName,
-                    options = categoriesResult?.getOrNull()?.map { it.name to it.categoryID } ?: emptyList(),
+                    options = categoriesResult?.getOrNull()?.map { it.name to it.categoryID }
+                        ?: emptyList(),
                     onSelect = { name, id ->
                         categoryName = name
                         categoryId = id
@@ -267,47 +257,26 @@ fun TransactionForm(
                     error = categoryError
                 )
             }
-        }        // Amount Section
+        }
+
+        // Amount Section
         FormSection(
             title = stringResource(R.string.amount),
             icon = Icons.Default.Payments
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                TransactionTextField(
-                    label = "Amount (${if (isVND) "VND" else "USD"})",
-                    value = formattedAmount,
-                    onValueChange = {
-                        rawAmount = unformatAmount(it.filter { char -> char.isDigit() })
-                        amountError = null
-                    },
-                    leadingIcon = Icons.Default.AttachMoney,
-                    keyboardType = KeyboardType.Number,
-                    error = amountError
-                )
-
-                // Quick Amount Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val amounts = if (isVND) {
-                        listOf("50K", "100K", "200K", "500K")
-                    } else {
-                        listOf("$10", "$20", "$50", "$100")
-                    }
-                    amounts.forEach { amount ->
-                        QuickAmountButton(
-                            text = amount,
-                            onClick = {
-                                rawAmount = unformatAmount(amount.replace("K", "000").replace("$", ""))
-                                amountError = null
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+            CurrencyInput(
+                isVND = isVND,
+                value = formattedAmount,
+                onValueChange = { newValue ->
+                    formattedAmount = newValue
+                },
+                onValidationResult = { errorMessage ->
+                    amountError = errorMessage
                 }
-            }
-        }        // Transaction Details Section
+            )
+        }
+
+        // Transaction Details Section
         FormSection(
             title = stringResource(R.string.transaction_details_form),
             icon = Icons.Default.Receipt
@@ -355,7 +324,7 @@ fun TransactionForm(
         Button(
             onClick = {
                 if (validateForm()) {
-                    val parsedAmount = unformatAmount(formattedAmount).toDoubleOrNull()
+                    val parsedAmount = CurrencyUtils.parseAmount(formattedAmount)
                     if (parsedAmount != null) {
                         val amountInVND = currencyViewModel.toVND(parsedAmount) ?: return@Button
                         viewModel.createTransaction(
@@ -364,12 +333,21 @@ fun TransactionForm(
                             categoryId = categoryId,
                             walletId = walletId,
                             type = type,
-                            transactionDate = storageDate                        ) { success ->
+                            transactionDate = storageDate
+                        ) { success ->
                             if (success) {
-                                Toast.makeText(context, context.getString(R.string.transaction_saved), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.transaction_saved),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 navController.popBackStack()
                             } else {
-                                Toast.makeText(context, context.getString(R.string.save_transaction_failed), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.save_transaction_failed),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
                     }
@@ -383,7 +361,8 @@ fun TransactionForm(
                 containerColor = Color(0xFF00D09E)
             ),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
-        ) {            Text(
+        ) {
+            Text(
                 stringResource(R.string.save_transaction),
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp

@@ -4,37 +4,48 @@ import android.util.Log
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.util.*
+import java.util.Locale
 import kotlin.math.abs
 
 object CurrencyUtils {
-    
-    private val vndFormatter: DecimalFormat = (DecimalFormat.getInstance(Locale("vi", "VN")) as DecimalFormat).apply {
-        applyPattern("#,###")
-        decimalFormatSymbols = decimalFormatSymbols.apply {
-            groupingSeparator = '.'
-        }
-    }
 
-    private val usdFormatter: DecimalFormat = (DecimalFormat.getInstance(Locale.US) as DecimalFormat).apply {
-        applyPattern("#,##0.00")
-    }
-      /**
+    private val vndFormatter: DecimalFormat =
+        (DecimalFormat.getInstance(Locale("vi", "VN")) as DecimalFormat).apply {
+            applyPattern("#,###")
+            decimalFormatSymbols = decimalFormatSymbols.apply {
+                groupingSeparator = '.'
+            }
+        }
+
+    private val usdFormatter: DecimalFormat =
+        (DecimalFormat.getInstance(Locale.US) as DecimalFormat).apply {
+            applyPattern("#,##0.00")
+        }
+
+    /**
      * Format VND amount with proper thousands separator
      */
     fun formatVND(amount: Double): String {
         val absAmount = abs(amount)
-        return if(amount < 0) "-${vndFormatter.format(absAmount)}₫" else "${vndFormatter.format(absAmount)}₫"
+        return if (amount < 0) "-${vndFormatter.format(absAmount)}₫" else "${
+            vndFormatter.format(
+                absAmount
+            )
+        }₫"
     }
-    
+
     /**
      * Format USD amount with proper decimal places
      */
     fun formatUSD(amount: Double): String {
         val absAmount = abs(amount)
-        return if(amount < 0) "-$${usdFormatter.format(absAmount)}" else "$${usdFormatter.format(absAmount)}"
+        return if (amount < 0) "-$${usdFormatter.format(absAmount)}" else "$${
+            usdFormatter.format(
+                absAmount
+            )
+        }"
     }
-    
+
     /**
      * Parse amount string removing currency symbols and separators
      * Handles both USD format (1,234.56) and VND format (1.234.567)
@@ -72,32 +83,44 @@ object CurrencyUtils {
             null
         }
     }
-    
+
     /**
      * Convert VND to USD
      */
     fun vndToUsd(vndAmount: Double, exchangeRate: Double): Double {
         return vndAmount / exchangeRate
     }
-    
+
     /**
      * Convert USD to VND
      */
     fun usdToVnd(usdAmount: Double, exchangeRate: Double): Double {
         return usdAmount * exchangeRate
     }
-    
+
     /**
      * Format amount based on currency type
      */
-    fun formatAmount(amount: Double, isVND: Boolean): String {
-        return if (isVND) {
-            formatVND(amount)
+    fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double? = null): String {
+
+        val convertedAmount = if (isVND) {
+            amount
         } else {
-            formatUSD(amount)
+            // Convert VND to USD if exchange rate is provided
+            if (exchangeRate != null) {
+                vndToUsd(amount, exchangeRate)
+            } else {
+                amount // If no exchange rate, return as is
+            }
         }
-    }    
-    
+
+        return if (isVND) {
+            formatVND(convertedAmount)
+        } else {
+            formatUSD(convertedAmount)
+        }
+    }
+
     /**
      * Format amount in compact form (k, M, B) based on currency type
      */
@@ -108,7 +131,7 @@ object CurrencyUtils {
             amount >= 1_000 -> Pair(amount / 1_000, "k")
             else -> Pair(amount, "")
         }
-        
+
         val formattedNumber = if (isVND) {
             // VND: Use period as thousands separator, no decimal places for compact numbers
             if (suffix.isEmpty()) {
@@ -123,28 +146,28 @@ object CurrencyUtils {
             // USD: Use standard US formatting (comma for thousands, period for decimal)
             String.format(Locale.US, "%.2f", value)
         }
-        
+
         return if (isVND) {
             "${formattedNumber}${suffix}₫"
         } else {
             "$${formattedNumber}${suffix}"
         }
     }
-    
+
     /**
      * Get currency symbol
      */
     fun getCurrencySymbol(isVND: Boolean): String {
         return if (isVND) "₫" else "$"
     }
-    
+
     /**
      * Get currency code
      */
     fun getCurrencyCode(isVND: Boolean): String {
         return if (isVND) "VND" else "USD"
     }
-    
+
     /**
      * Validate amount input
      */
@@ -152,7 +175,7 @@ object CurrencyUtils {
         val parsed = parseAmount(amountString)
         return parsed != null && parsed > 0
     }
-    
+
     /**
      * Format amount for input field display
      */
