@@ -8,18 +8,16 @@ import DI.Composables.AuthSection.RegisterScreen
 import DI.Composables.TransactionSection.AddTransactionScreen
 import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
-import DI.Composables.Currency.CurrencyConverterScreen
 import DI.Composables.FriendSection.FriendProfileScreen
 import DI.Composables.GroupChat.GroupChatMessageScreen
 import DI.Composables.GroupChat.GroupChatScreen
 import DI.Composables.GroupChat.GroupProfileScreen
-import DI.Composables.GroupChat.GroupScreenTest
+import DI.Composables.GroupTransactionComment.GroupTransactionCommentTestScreen
 import DI.Composables.GroupTransactionScreen.GroupTransactionScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
 import DI.Composables.TransactionSection.TransactionScreen
-import DI.Composables.WalletSection.WalletScreen
 import DI.Models.NavBar.BottomNavItem
 import DI.ViewModels.AnalysisViewModel
 import DI.ViewModels.ChatViewModel
@@ -32,8 +30,8 @@ import DI.ViewModels.WalletViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.GroupFundViewModel
+import DI.ViewModels.GroupTransactionCommentViewModel
 import DI.ViewModels.GroupTransactionViewModel
-//import FakeGroupFundViewModel
 import GroupFundScreen
 import ModernCategoriesScreen
 import ProfileScreen
@@ -118,6 +116,7 @@ private fun InnerNavHost(
     val groupFundViewModel = hiltViewModel<GroupFundViewModel>(parentEntry)
     val groupTransactionViewModel = hiltViewModel<GroupTransactionViewModel>(parentEntry)
     val groupChatViewModel = hiltViewModel<GroupChatViewModel>(parentEntry)
+    val groupTransactionCommentViewModel = hiltViewModel<GroupTransactionCommentViewModel>(parentEntry)
 
     NavHost(
         navController    = navController,
@@ -174,7 +173,7 @@ private fun InnerNavHost(
 //                currencyViewModel = currencyViewModel,
 //                groupFundId = "7a4258a0-e192-4886-8c3d-1dbe48041606"
 //                )
-              GroupChatScreen(navController, groupChatViewModel, profileViewModel)
+            GroupChatScreen(navController, groupChatViewModel, profileViewModel)
         }
 
         composable(
@@ -308,6 +307,7 @@ private fun InnerNavHost(
                 navController = navController,
                 groupId = groupId,
                 groupChatViewModel = groupChatViewModel,
+                groupTransactionCommentViewModel = groupTransactionCommentViewModel,
                 profileViewModel = profileViewModel
             )
         }
@@ -318,6 +318,7 @@ private fun InnerNavHost(
                 groupId = groupId,
                 navController = navController,
                 groupChatViewModel = hiltViewModel(),
+                groupTransactionCommentViewModel = groupTransactionCommentViewModel,
                 profileViewModel = hiltViewModel()
             )
         }
@@ -327,7 +328,7 @@ private fun InnerNavHost(
             GroupProfileScreen(
                 groupId = groupId,
                 navController = navController,
-                groupChatViewModel = groupChatViewModel
+                groupChatViewModel = groupChatViewModel,
             )
         }
 

@@ -2,12 +2,10 @@ package DI.Composables.GroupChat
 
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Composables.ProfileSection.MainColor
-import DI.Models.Group.Group
 import DI.Models.Group.UpdateGroupRequest
 import DI.ViewModels.GroupChatViewModel
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -40,7 +38,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import java.time.LocalDateTime
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,6 +70,11 @@ fun GroupProfileScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var editedName by remember { mutableStateOf(group?.name ?: "") }
     var editedDes by remember { mutableStateOf(group?.description ?: "") }
+
+    var showAddUserDialog by remember { mutableStateOf(false) }
+    var newUserId by remember { mutableStateOf("") }
+
+    var showRemoveUserDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -140,8 +142,17 @@ fun GroupProfileScreen(
                     label = "Members",
                     onClick = { showMemberDialog = true }
                 )
+
                 GroupActionButton(Icons.Default.Money, "Funds") {
                     navController.navigate("group_fund_screen/$groupId")
+                }
+
+                GroupActionButton(icon = Icons.Default.PersonAdd, label = "Add User") {
+                    showAddUserDialog = true
+                }
+
+                GroupActionButton(icon = Icons.Default.PersonRemove, label = "Remove User") {
+                    showRemoveUserDialog = true
                 }
             }
 
@@ -190,7 +201,7 @@ fun GroupProfileScreen(
                                 .padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            FriendAvatar(url = member.avatarUrl ?: "")
+                            Avatar(url = member.avatarUrl ?: "", 26)
                             Spacer(Modifier.width(12.dp))
                             Column {
                                 Text(text = member.displayName, fontWeight = FontWeight.Bold)
@@ -252,6 +263,74 @@ fun GroupProfileScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showAddUserDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddUserDialog = false },
+            title = { Text("Enter User ID") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = newUserId,
+                        onValueChange = { newUserId = it },
+                        label = { Text("User ID") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newUserId.isNotBlank()) {
+                        groupChatViewModel.addUserToGroup(groupId, newUserId.trim())
+                        showAddUserDialog = false
+                        newUserId = ""
+                    }
+                }) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showAddUserDialog = false
+                    newUserId = ""
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showRemoveUserDialog) {
+        AlertDialog(
+            onDismissRequest = { showRemoveUserDialog = false },
+            title = { Text("Choose an user to remove") },
+            text = {
+                Column {
+                    members.forEach { member ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    groupChatViewModel.removeUserFromGroup(groupId, member.userId)
+                                    showRemoveUserDialog = false
+                                }
+                                .padding(8.dp)
+                        ) {
+                            FriendAvatar(member.avatarUrl ?: "")
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(text = member.displayName)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showRemoveUserDialog = false }) {
                     Text("Cancel")
                 }
             }

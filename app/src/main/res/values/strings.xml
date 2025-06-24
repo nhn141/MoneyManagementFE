@@ -445,4 +445,9 @@
     <string name="joined_at">Joined At: %1$s</string>
     <string name="role">Role: %1$s</string>
 
+    <!-- ================== GROUP TRANSACTION COMMENT ================== -->
+    <string name="comment_added">Comment Added</string>
+    <string name="comment_updated">Comment Updated</string>
+    <string name="comment_deleted">Comment Deleted</string>
+
 </resources>

@@ -6,7 +6,6 @@ import DI.Models.Wallet.Wallet
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.DateRange
@@ -30,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.moneymanagement_frontend.R
 import java.text.NumberFormat
@@ -44,7 +42,7 @@ import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun   AddGroupTransactionDialog(
+fun AddGroupTransactionDialog(
     walletList: List<Wallet>,
     categoryList: List<Category>,
     onDismiss: () -> Unit,
@@ -59,6 +57,9 @@ fun   AddGroupTransactionDialog(
     var description by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var type by remember { mutableStateOf("") }
+
+    val transactionTypes = listOf("Income", "Expense")
+    var typeExpanded by remember { mutableStateOf(false) }
 
     val calendar = remember { mutableStateOf(Calendar.getInstance()) }
 
@@ -203,13 +204,36 @@ fun   AddGroupTransactionDialog(
                     }
                 )
 
-                OutlinedTextField(
-                    value = type,
-                    onValueChange = { type = it },
-                    label = { Text("Type") },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                ExposedDropdownMenuBox(
+                    expanded = typeExpanded,
+                    onExpandedChange = { typeExpanded = !typeExpanded }
+                ) {
+                    OutlinedTextField(
+                        readOnly = true,
+                        value = type.ifEmpty { "Select Type" },
+                        onValueChange = {},
+                        label = { Text("Type") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(typeExpanded) },
+                        modifier = Modifier
+                            .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true)
+                            .fillMaxWidth()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = typeExpanded,
+                        onDismissRequest = { typeExpanded = false }
+                    ) {
+                        transactionTypes.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    type = option.lowercase() // giữ nguyên 'income' hoặc 'expense' đúng định dạng backend
+                                    typeExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     )

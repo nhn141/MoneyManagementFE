@@ -442,4 +442,9 @@
     <string name="joined_at">Tham gia vào</string>
     <string name="role">Vai trò\n</string>
 
+    <!-- ================== GROUP TRANSACTION COMMENT ================== -->
+    <string name="comment_added">Đã thêm bình luận</string>
+    <string name="comment_updated">Đã cập nhật bình luận</string>
+    <string name="comment_deleted">Đã xóa bình luận</string>
+
 </resources>

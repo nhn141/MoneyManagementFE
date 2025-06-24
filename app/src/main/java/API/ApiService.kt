@@ -29,7 +29,6 @@ import DI.Models.Group.Group
 import DI.Models.Group.GroupChatHistoryDto
 import DI.Models.Group.GroupMember
 import DI.Models.Group.GroupMemberProfile
-import DI.Models.Group.GroupMessage
 import DI.Models.Group.SendGroupMessageRequest
 import DI.Models.Group.UpdateGroupRequest
 import DI.Models.GroupFund.CreateGroupFundDto
@@ -39,6 +38,9 @@ import DI.Models.GroupFund.UpdateGroupFundDto
 import DI.Models.GroupTransaction.CreateGroupTransactionDto
 import DI.Models.GroupTransaction.GroupTransactionDto
 import DI.Models.GroupTransaction.UpdateGroupTransactionDto
+import DI.Models.GroupTransactionComment.CreateGroupTransactionCommentDto
+import DI.Models.GroupTransactionComment.GroupTransactionCommentDto
+import DI.Models.GroupTransactionComment.UpdateGroupTransactionCommentDto
 import DI.Models.Ocr.OcrData
 import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
@@ -279,7 +281,7 @@ interface ApiService {
         @Path("memberId") memberId: String
     ): Response<GroupMemberProfile>
 
-    //Group Message
+    // Group Message
     @GET("/api/groups/{groupId}/messages")
     suspend fun getGroupMessages(@Path("groupId") groupId: String): Response<GroupChatHistoryDto>
 
@@ -288,5 +290,18 @@ interface ApiService {
 
     @POST("/api/groups/{groupId}/read")
     suspend fun markGroupMessagesRead(@Path("groupId") groupId: String): Response<Unit>
+
+    // Group Transaction Comment
+    @GET("GroupTransactionComment/transaction/{transactionId}")
+    suspend fun getGroupTransactionComments(@Path("transactionId") transactionId: String): Response<List<GroupTransactionCommentDto>>
+
+    @POST("GroupTransactionComment")
+    suspend fun addGroupTransactionComment(@Body request: CreateGroupTransactionCommentDto): Response<GroupTransactionCommentDto>
+
+    @PUT("GroupTransactionComment")
+    suspend fun updateGroupTransactionComment(@Body request: UpdateGroupTransactionCommentDto): Response<GroupTransactionCommentDto>
+
+    @DELETE("GroupTransactionComment/{commentId}")
+    suspend fun deleteGroupTransactionComment(@Path("commentId") commentId: String): Response<Unit>
 
 }

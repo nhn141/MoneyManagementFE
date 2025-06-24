@@ -1,4 +1,3 @@
-import DI.Composables.CategorySection.ModernColors
 import DI.Composables.GroupFundSection.AddGroupFundDialog
 import DI.Composables.GroupFundSection.EditGroupFundDialog
 import DI.Models.GroupFund.CreateGroupFundDto
@@ -35,32 +34,6 @@ import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import kotlinx.coroutines.launch
 
-@Composable
-fun GroupFundCard(
-    fund: GroupFundDto,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(6.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .background(ModernColors.cardGradient)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Description: ${fund.description}", fontWeight = FontWeight.Bold, color = ModernColors.OnSurface)
-            Text("Saving Goal: ${fund.savingGoal}", color = ModernColors.OnSurfaceVariant)
-            Text("Balance: ${fund.balance}", color = ModernColors.OnSurfaceVariant)
-        }
-    }
-}
 
 @Composable
 fun GroupFundScreen(
@@ -99,7 +72,6 @@ fun GroupFundScreen(
             groupFundViewModel.addGroupFundEvent.collect { event ->
                 if (event is UiEvent.ShowMessage) {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                    groupFundViewModel.fetchGroupFunds(groupId)
                 }
             }
         }
@@ -107,7 +79,6 @@ fun GroupFundScreen(
             groupFundViewModel.updateGroupFundEvent.collect { event ->
                 if (event is UiEvent.ShowMessage) {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                    groupFundViewModel.fetchGroupFunds(groupId)
                 }
             }
         }
@@ -115,144 +86,10 @@ fun GroupFundScreen(
             groupFundViewModel.deleteGroupFundEvent.collect { event ->
                 if (event is UiEvent.ShowMessage) {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                    groupFundViewModel.fetchGroupFunds(groupId)
                 }
             }
         }
     }
-
-
-//    Scaffold(
-//        containerColor = Color.Transparent,
-//        topBar = {
-//            Surface(modifier = Modifier.fillMaxWidth(), color = Color.Transparent) {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .background(Color(0xFF00D09E))
-//                ) {
-//                    Column(
-//                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)
-//                    ) {
-//                        Row(verticalAlignment = Alignment.CenterVertically) {
-//                            Box(
-//                                modifier = Modifier
-//                                    .size(48.dp)
-//                                    .clip(CircleShape)
-//                                    .background(Color.White.copy(alpha = 0.2f)),
-//                                contentAlignment = Alignment.Center
-//                            ) {
-//                                Icon(
-//                                    imageVector = Icons.Default.Money,
-//                                    contentDescription = "Fund",
-//                                    tint = Color.White,
-//                                    modifier = Modifier.size(28.dp)
-//                                )
-//                            }
-//
-//                            Spacer(modifier = Modifier.width(16.dp))
-//
-//                            Column {
-//                                Text(
-//                                    text = "Group Funds",
-//                                    fontSize = 24.sp,
-//                                    fontWeight = FontWeight.Bold,
-//                                    color = Color.White
-//                                )
-//                                Text(
-//                                    text = "Total: ${funds.size}",
-//                                    fontSize = 16.sp,
-//                                    color = Color.White.copy(alpha = 0.9f),
-//                                    fontWeight = FontWeight.Medium
-//                                )
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        },
-//        floatingActionButton = {
-//            FloatingActionButton(
-//                onClick = { showAddDialog = true },
-//                containerColor = Color(0xFF00D09E),
-//                contentColor = Color.White,
-//                shape = CircleShape,
-//                elevation = FloatingActionButtonDefaults.elevation(12.dp)
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Default.Add,
-//                    contentDescription = "Add Fund",
-//                    modifier = Modifier.size(28.dp)
-//                )
-//            }
-//        }
-//    ) { paddingValues ->
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .background(Brush.verticalGradient(colors = listOf(Color(0xFF00D09E), Color(0xFFF8FFFE))))
-//        ) {
-//            LazyVerticalGrid(
-//                columns = GridCells.Fixed(2),
-//                modifier = Modifier.fillMaxSize(),
-//                contentPadding = PaddingValues(
-//                    start = 20.dp,
-//                    end = 20.dp,
-//                    top = paddingValues.calculateTopPadding() + 16.dp,
-//                    bottom = paddingValues.calculateBottomPadding() + 16.dp
-//                ),
-//                horizontalArrangement = Arrangement.spacedBy(16.dp),
-//                verticalArrangement = Arrangement.spacedBy(16.dp)
-//            ) {
-//                items(funds) { fund ->
-//                    GroupFundCard(
-//                        fund = fund,
-//                        onClick = { selectedFund = fund }
-//                    )
-//                }
-//            }
-//        }
-//
-//        selectedFund?.let { fund ->
-//            EditGroupFundDialog(
-//                fund = fund,
-//                onDismiss = { selectedFund = null },
-//                onUpdate = { newDescription, newSavingGoal ->
-//                    groupFundViewModel.updateGroupFund(
-//                        fund.groupFundID, UpdateGroupFundDto(
-//                            groupFundID = fund.groupFundID,
-//                            description = newDescription,
-//                            savingGoal = newSavingGoal
-//                        ), groupId
-//                    )
-//                    selectedFund = null
-//                },
-//                onDelete = {
-//                    groupFundViewModel.deleteGroupFund(
-//                        fund.groupFundID,
-//                        fund.groupID
-//                    )
-//                    selectedFund = null
-//                }
-//            )
-//        }
-//
-//        if (showAddDialog) {
-//            AddGroupFundDialog(
-//                onDismiss = { showAddDialog = false },
-//                onSave = { description, savingGoal ->
-//                    groupFundViewModel.createGroupFund(
-//                        CreateGroupFundDto(
-//                            groupID = groupId,
-//                            description = description,
-//                            //savingGoal = savingGoal
-//                        )
-//                    )
-//                    showAddDialog = false
-//                }
-//            )
-//        }
-//    }
 
     Box(
         modifier = Modifier
@@ -406,7 +243,7 @@ fun GroupFundScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Balance: ${fund.balance.toString()}",
+                                        text = "Balance: ${fund.balance}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color(0xFF666666)
                                     )
@@ -476,7 +313,7 @@ fun GroupFundScreen(
 
                     // Detailed Info
                     InfoText(label = "Description", value = selectedFund!!.description)
-                    InfoText(label = "Saving Goal", value = "${selectedFund!!.savingGoal}")
+                    InfoText(label = "Saving Goal", value = selectedFund!!.savingGoal)
                     InfoText(label = "Income", value = "${selectedFund!!.totalFundsIn}")
                     InfoText(label = "Expense", value = "${selectedFund!!.totalFundsOut}")
                     InfoText(label = "Balance", value = "${selectedFund!!.balance}")
@@ -550,50 +387,6 @@ fun GroupFundScreen(
         }
     }
 
-//    // Edit Dialog
-//    selectedFund?.let { fund ->
-//        Card(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(20.dp),
-//            shape = RoundedCornerShape(16.dp),
-//            elevation = CardDefaults.cardElevation(8.dp),
-//            colors = CardDefaults.cardColors(containerColor = Color.White)
-//        ) {
-//            Column(modifier = Modifier.padding(16.dp)) {
-//                Text("Description: ${fund.description}", fontWeight = FontWeight.Bold)
-//                Text("Saving Goal: ${fund.savingGoal}")
-//                Text("Balance: ${fund.balance}")
-//                Text("Created At: ${fund.createdAt}")
-//
-//                Spacer(modifier = Modifier.height(16.dp))
-//
-//                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-//                    Button(
-//                        onClick = { showEditDialog = true }
-//                    ) {
-//                        Text("Edit")
-//                    }
-//
-//                    Button(
-//                        onClick = {
-//                            showDeleteDialog = true
-//                        },
-//                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-//                    ) {
-//                        Text("Delete", color = Color.White)
-//                    }
-//
-//                    Spacer(modifier = Modifier.weight(1f))
-//
-//                    TextButton(onClick = { selectedFund = null }) {
-//                        Text("Close")
-//                    }
-//                }
-//            }
-//        }
-//    }
-
     if (showEditDialog && selectedFund != null) {
         EditGroupFundDialog(
             fund = selectedFund!!,
@@ -614,7 +407,7 @@ fun GroupFundScreen(
                 showEditDialog = false
                 selectedFund = null
             },
-            onDelete = {} // không xài ở đây
+            onDelete = {}
         )
     }
 

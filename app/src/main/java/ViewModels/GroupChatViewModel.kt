@@ -1,7 +1,6 @@
 package DI.ViewModels
 
 import DI.API.TokenHandler.AuthStorage
-import DI.Models.Chat.*
 
 import DI.Models.Group.AdminLeaveResult
 import DI.Models.Group.CreateGroupRequest
@@ -9,12 +8,12 @@ import DI.Models.Group.Group
 import DI.Models.Group.GroupMember
 import DI.Models.Group.GroupMemberProfile
 import DI.Models.Group.GroupMessage
-import DI.Models.Group.SendGroupMessageDTO
 import DI.Models.Group.SendGroupMessageRequest
 import DI.Models.Group.SimulatedLatestGroupChatDto
+import DI.Models.Group.TransactionMessageInfo
 import DI.Models.Group.UpdateGroupRequest
+import DI.Models.GroupTransactionComment.GroupTransactionCommentDto
 import DI.Repositories.GroupChatRepository
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -133,192 +132,11 @@ class GroupChatViewModel @Inject constructor(
     private val _createGroupEvent = MutableSharedFlow<String>()
     val createGroupEvent = _createGroupEvent.asSharedFlow()
 
-    init {
-        // testGetUserGroups() //Done
-        // testCreateGroup() //Done
-        // testSendGroupMessage() //Done
-        // testGetGroupMembers() //Done
-        // testLeaveGroup() //Done 1/2 admin leave group => cant,
-        // testUpdateGroup() //Done
-        // testAdminLeaveGroup() //Done
-        // testAssignCollaborator() //Done
-        // testAddUserToGroup() //Done
-        // testRemoveUserFromGroup() //Done
-        // testGetGroupMemberProfile() //Done 1
-        // testMarkMessagesRead()
-        // testLoadGroupMessages()
-    }
+    private val _transactionMessages = MutableStateFlow<List<TransactionMessageInfo>>(emptyList())
+    val transactionMessages: StateFlow<List<TransactionMessageInfo>> = _transactionMessages
 
-    private fun testGetUserGroups() {
-        viewModelScope.launch {
-            val result = repository.getUserGroups()
-            result.onSuccess {
-                Log.d(TAG, "✅ User groups loaded: ${it.map { g -> g.name }}")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to load user groups: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testCreateGroup() {
-        viewModelScope.launch {
-            val request = CreateGroupRequest(
-                name = "Test Group",
-                description = "Testing group creation",
-                initialMemberIds = emptyList()
-            )
-            val result = repository.createGroup(request)
-            result.onSuccess {
-                Log.d(TAG, "✅ Group created: ${it.name} (ID: ${it.groupId})")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to create group: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testSendGroupMessage() {
-        viewModelScope.launch {
-            val result = repository.sendGroupMessage(
-                SendGroupMessageRequest(
-                    groupId = "727b116f-140c-4e1c-ad5a-ab35bc0ff089",
-                    content = "Hello from ViewModel test!"
-                )
-            )
-            result.onSuccess {
-                Log.d(TAG, "✅ Message sent successfully")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to send message: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testGetGroupMembers() {
-        viewModelScope.launch {
-            val result = repository.getGroupMembers("727b116f-140c-4e1c-ad5a-ab35bc0ff089")
-            result.onSuccess {
-                Log.d(TAG, "✅ Group members loaded: ${it.map { m -> m.displayName }}")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to load members: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testLeaveGroup() {
-        viewModelScope.launch {
-            val result = repository.leaveGroup("727b116f-140c-4e1c-ad5a-ab35bc0ff089")
-            result.onSuccess {
-                Log.d(TAG, "✅ Left group successfully")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to leave group: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testUpdateGroup() {
-        viewModelScope.launch {
-            val result = repository.updateGroup(
-                groupId = "9887e399-ed7c-4753-9e13-000182d6ea09",
-                request = UpdateGroupRequest(name = "Updated Group Name", description = "Updated description")
-            )
-            result.onSuccess {
-                Log.d(TAG, "✅ Group updated successfully")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to update group: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testAdminLeaveGroup() {
-        viewModelScope.launch {
-            val result = repository.adminLeaveGroup("9887e399-ed7c-4753-9e13-000182d6ea09")
-            result.onSuccess {
-                Log.d(TAG, "✅ Admin left group: result = $it")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to leave as admin: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testAssignCollaborator() {
-        viewModelScope.launch {
-            val result = repository.assignCollaboratorRole(
-                groupId = "25a71c1e-bac7-457c-ad03-354378e47b7d",
-                userId = "9c73429b-cdfa-4c3e-b495-8815a41c947b"
-            )
-            result.onSuccess {
-                Log.d(TAG, "✅ Assigned collaborator role")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to assign collaborator: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testAddUserToGroup() {
-        viewModelScope.launch {
-            val result = repository.addUserToGroup(
-                groupId = "25a71c1e-bac7-457c-ad03-354378e47b7d",
-                userId = "9c73429b-cdfa-4c3e-b495-8815a41c947b"
-            )
-            result.onSuccess {
-                Log.d(TAG, "✅ User added to group")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to add user: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testRemoveUserFromGroup() {
-        viewModelScope.launch {
-            val result = repository.removeUserFromGroup(
-                groupId = "25a71c1e-bac7-457c-ad03-354378e47b7d",
-                userId = "9c73429b-cdfa-4c3e-b495-8815a41c947b"
-            )
-            result.onSuccess {
-                Log.d(TAG, "✅ User removed from group")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to remove user: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testGetGroupMemberProfile() {
-        viewModelScope.launch {
-            val result = repository.getGroupMemberProfile(
-                groupId = "25a71c1e-bac7-457c-ad03-354378e47b7d",
-                memberId = "e1d08206-12ef-4ce9-b2b7-f7294a6b7b89"
-            )
-            result.onSuccess {
-                Log.d(TAG, "✅ Member profile loaded: $it")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to load member profile: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testMarkMessagesRead() {
-        viewModelScope.launch {
-            val result = repository.markGroupMessagesRead("25a71c1e-bac7-457c-ad03-354378e47b7d")
-            result.onSuccess {
-                Log.d(TAG, "✅ Messages marked as read")
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to mark messages as read: ${it.localizedMessage}")
-            }
-        }
-    }
-
-    private fun testLoadGroupMessages() {
-        viewModelScope.launch {
-            val result = repository.getGroupMessages("25a71c1e-bac7-457c-ad03-354378e47b7d")
-            result.onSuccess { history ->
-                Log.d(TAG, "✅ Loaded ${history.messages.size} messages in '${history.groupName}'")
-                history.messages.forEach { msg ->
-                    Log.d(TAG, "📩 [${msg.sentAt}] ${msg.senderName}: ${msg.content}")
-                }
-            }.onFailure {
-                Log.d(TAG, "❌ Failed to load group messages: ${it.localizedMessage}")
-            }
-        }
-    }
+    private val _groupTransactionComments = MutableStateFlow<Map<String, List<GroupTransactionCommentDto>>>(emptyMap())
+    val groupTransactionComments: StateFlow<Map<String, List<GroupTransactionCommentDto>>> = _groupTransactionComments
 
     fun loadUserGroups() {
         viewModelScope.launch {
@@ -334,6 +152,7 @@ class GroupChatViewModel @Inject constructor(
         viewModelScope.launch {
             repository.getGroupMessages(groupId).onSuccess {
                 _groupMessages.value = it.messages
+                filterTransactionMessages()
             }.onFailure {
                 _error.value = "Failed to load group messages: ${it.localizedMessage}"
             }
@@ -389,7 +208,7 @@ class GroupChatViewModel @Inject constructor(
             repository.createGroup(request)
                 .onSuccess {
                     _createGroupEvent.emit("Group created successfully")
-                    simulateLatestGroupChats() // Cập nhật danh sách nhóm
+                    simulateLatestGroupChats()
                 }
                 .onFailure {
                     _createGroupEvent.emit("Failed to create group: ${it.localizedMessage}")
@@ -507,6 +326,22 @@ class GroupChatViewModel @Inject constructor(
                 _error.value = "Failed to load group: ${it.localizedMessage}"
             }
         }
+    }
+
+    fun filterTransactionMessages() {
+        val rawMessages = _groupMessages.value
+        val filtered = rawMessages
+            .filter { it.content.contains("💰") || it.content.contains("💸") }
+            .mapNotNull { msg ->
+                val id = extractTransactionIdFromMessage(msg.content)
+                id?.let { TransactionMessageInfo(it, msg) }
+            }
+        _transactionMessages.value = filtered
+    }
+
+    private fun extractTransactionIdFromMessage(content: String): String? {
+        val pattern = Regex("transactionId=([a-fA-F0-9\\-]+)") // điều chỉnh theo format thực tế
+        return pattern.find(content)?.groupValues?.getOrNull(1)
     }
 
     fun clearError() {

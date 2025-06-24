@@ -98,7 +98,6 @@ fun GroupTransactionScreen(
             viewModel.addGroupTransactionEvent.collect { event ->
                 if (event is UiEvent.ShowMessage) {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                    viewModel.fetchGroupTransactions(groupFundId)
                 }
             }
         }
@@ -106,7 +105,6 @@ fun GroupTransactionScreen(
             viewModel.updateGroupTransactionEvent.collect { event ->
                 if (event is UiEvent.ShowMessage) {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                    viewModel.fetchGroupTransactions(groupFundId)
                 }
             }
         }
@@ -114,7 +112,6 @@ fun GroupTransactionScreen(
             viewModel.deleteGroupTransactionEvent.collect { event ->
                 if (event is UiEvent.ShowMessage) {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                    viewModel.fetchGroupTransactions(groupFundId)
                 }
             }
         }

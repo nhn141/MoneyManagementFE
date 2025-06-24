@@ -95,3 +95,18 @@ data class SendGroupMessageDTO(
     val groupId: String,
     val content: String
 )
+
+data class TransactionMessageInfo(
+    val transactionId: String,
+    val message: GroupMessage
+)
+
+data class GroupChatItemDto(
+    val groupId: String,
+    val groupName: String,
+    val latestMessageContent: String,
+    val sendAt: String,
+    val unreadCount: Int,
+    val transactionId: String?, // null nếu không phải transaction
+    val isTransactionMessage: Boolean
+)
