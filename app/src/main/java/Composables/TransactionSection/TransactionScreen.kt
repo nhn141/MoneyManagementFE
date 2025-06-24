@@ -67,6 +67,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -81,6 +82,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
+import com.moneymanager.ui.screens.MoneyAppColors
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
@@ -119,10 +121,10 @@ fun TransactionScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
+                brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF00D09E),
-                        Color(0xFFF8FFFE)
+                        MoneyAppColors.Background,
+                        Color(0xFFECFDF5) // Emerald-50
                     )
                 )
             )
@@ -133,26 +135,13 @@ fun TransactionScreen(
                 .padding(end = 10.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Top Bar
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 24.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.transaction),
-                    color = Color.White,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            // Header card
+            TransactionHeader()
 
             // Balance Card
             Card(
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MoneyAppColors.Primary),
                 elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -167,7 +156,7 @@ fun TransactionScreen(
                     Text(
                         text = stringResource(R.string.net_balance),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF666666),
+                        color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f),
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -179,10 +168,9 @@ fun TransactionScreen(
                         ),
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0D1F2D)
+                        color = MoneyAppColors.OnPrimary
                     )
                 }
-                Log.d("TransactionScreen", "isVND: $isVND, exchangeRate: $exchangeRate")
             }
 
             // Income + Expense Cards
@@ -197,7 +185,7 @@ fun TransactionScreen(
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = if (selected == "Income")
-                            Color(0xFF4CAF50) else Color.White
+                            Color(0xFF4CAF50) else MoneyAppColors.PrimaryVariant
                     ),
                     elevation = CardDefaults.cardElevation(
                         defaultElevation = if (selected == "Income") 16.dp else 8.dp
@@ -282,7 +270,7 @@ fun TransactionScreen(
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = if (selected == "Expense")
-                            Color(0xFFFF5722) else Color.White
+                            Color(0xFFFF5722) else MoneyAppColors.PrimaryVariant
                     ),
                     elevation = CardDefaults.cardElevation(
                         defaultElevation = if (selected == "Expense") 16.dp else 8.dp
@@ -542,21 +530,12 @@ private fun ActionButton(
         modifier = Modifier
             .size(44.dp)
             .background(
-                if (isPrimary) {
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFF00D09E),
-                            Color(0xFF00B888)
-                        )
-                    )
-                } else {
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color.White,
-                            Color(0xFFF8F8F8)
-                        )
-                    )
-                },
+                color =
+                    if (isPrimary) {
+                        MoneyAppColors.Primary
+                    } else {
+                        Color.White
+                    },
                 CircleShape
             )
             .clickable { onClick() },
@@ -568,6 +547,53 @@ private fun ActionButton(
             tint = if (isPrimary) Color.White else Color(0xFF666666),
             modifier = Modifier.size(20.dp)
         )
+    }
+}
+
+@Composable
+fun TransactionHeader() {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MoneyAppColors.Surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 24.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // User Avatar - Replace with AsyncImage for API data
+            Icon(
+                painter = painterResource(R.drawable.ic_transaction),
+                contentDescription = "Transaction Header",
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MoneyAppColors.Primary)
+                    .padding(5.dp),
+                tint = MoneyAppColors.Surface
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                Text(
+                    text = stringResource(R.string.transaction_screen_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MoneyAppColors.OnSurface
+                )
+                Text(
+                    text = stringResource(R.string.transaction_screen_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MoneyAppColors.OnBackground
+                )
+            }
+        }
     }
 }
 

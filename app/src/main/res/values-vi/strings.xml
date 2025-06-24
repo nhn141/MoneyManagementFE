@@ -109,6 +109,8 @@
     <string name="type_expense">Chi tiêu</string>
     <string name="see_more">Xem thêm</string>
     <string name="net_balance">Số dư ròng</string>
+    <string name="transaction_screen_description">Dễ dàng xem và quản lý giao dịch</string>
+
 
     <!-- Transaction Details -->
     <string name="transaction_detail">Chi tiết giao dịch</string>
@@ -199,6 +201,9 @@
     <string name="transaction_form_unknown_description">Mô tả không xác định</string>
     <string name="transaction_form_unknown_id">ID không xác định</string>
     <string name="transaction_form_unknown_error">Lỗi không xác định</string>
+
+    <!-- Wallet Types -->
+    <string name="wallet_type_personal">Cá nhân</string>
 
     <!-- ================== DATE & TIME ================== -->
     <string name="date">Ngày</string>

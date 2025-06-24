@@ -4,12 +4,17 @@ import DI.Composables.CategorySection.ModernColors
 import DI.Models.UiEvent.UiEvent
 import DI.Models.Wallet.AddWalletRequest
 import DI.Models.Wallet.Wallet
+import DI.Utils.CurrencyUtils
+import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.WalletViewModel
+import Utils.CurrencyInputTextField
+import Utils.USDInputPreview
+import ViewModels.AuthViewModel
+import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -17,20 +22,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.launch
-import java.text.NumberFormat
-import java.util.*
 import com.example.moneymanagement_frontend.R
+import kotlinx.coroutines.launch
 
 // Color scheme
 object WalletColors {
@@ -48,41 +53,52 @@ object WalletColors {
 
 @Composable
 fun WalletScreen(
-    viewModel: WalletViewModel
+    walletViewModel: WalletViewModel,
+    currencyConverterViewModel: CurrencyConverterViewModel,
+    authViewModel: AuthViewModel
 ) {
-    val walletsState by viewModel.wallets.collectAsStateWithLifecycle()
+    val walletsState by walletViewModel.wallets.collectAsStateWithLifecycle()
+    val isVND by currencyConverterViewModel.isVND.collectAsState()
+    val exchangeRates by currencyConverterViewModel.exchangeRate.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var editingWallet by remember { mutableStateOf<Wallet?>(null) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    // Reload init data when token is refreshed
+    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
+    LaunchedEffect(refreshTokenState) {
+        if (refreshTokenState?.isSuccess == true) {
+            walletViewModel.getWallets()
+        }
+    }
 
     LaunchedEffect(Unit) {
         // Collect events for add, update, and delete actions
         launch {
-            viewModel.addWalletEvent.collect { event ->
-                when(event) {
+            walletViewModel.addWalletEvent.collect { event ->
+                when (event) {
                     is UiEvent.ShowMessage -> {
-                        snackbarHostState.showSnackbar(event.message)
+                        Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         }
         launch {
-            viewModel.updateWalletEvent.collect { event ->
-                when(event) {
+            walletViewModel.updateWalletEvent.collect { event ->
+                when (event) {
                     is UiEvent.ShowMessage -> {
-                        snackbarHostState.showSnackbar(event.message)
+                        Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         }
         launch {
-            viewModel.deleteWalletEvent.collect { event ->
-                when(event) {
+            walletViewModel.deleteWalletEvent.collect { event ->
+                when (event) {
                     is UiEvent.ShowMessage -> {
-                        snackbarHostState.showSnackbar(event.message)
+                        Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -125,24 +141,29 @@ fun WalletScreen(
                         CircularProgressIndicator(color = WalletColors.Primary)
                     }
                 }
+
                 walletsResult.isSuccess -> {
                     val wallets = walletsResult.getOrNull() ?: emptyList()
                     WalletContent(
                         wallets = wallets,
+                        isVND = isVND,
+                        exchangeRates = exchangeRates,
                         onAddWallet = { showAddDialog = true },
                         onEditWallet = { wallet ->
                             editingWallet = wallet
                             showEditDialog = true
                         },
                         onDeleteWallet = { walletId ->
-                            viewModel.deleteWallet(walletId)
+                            walletViewModel.deleteWallet(walletId)
                         }
                     )
                 }
+
                 walletsResult.isFailure -> {
                     ErrorMessage(
-                        message = walletsResult.exceptionOrNull()?.message ?: stringResource(R.string.unknown_error),
-                        onRetry = { viewModel.getWallets() }
+                        message = walletsResult.exceptionOrNull()?.message
+                            ?: stringResource(R.string.unknown_error),
+                        onRetry = { walletViewModel.getWallets() }
                     )
                 }
             }
@@ -151,9 +172,11 @@ fun WalletScreen(
         // Dialogs
         if (showAddDialog) {
             AddWalletDialog(
+                isVND = isVND,
+                exchangeRates = exchangeRates,
                 onDismiss = { showAddDialog = false },
                 onConfirm = { request ->
-                    viewModel.addWallet(request)
+                    walletViewModel.addWallet(request)
                     showAddDialog = false
                 }
             )
@@ -162,80 +185,62 @@ fun WalletScreen(
         if (showEditDialog && editingWallet != null) {
             EditWalletDialog(
                 wallet = editingWallet!!,
+                isVND = isVND,
+                exchangeRates = exchangeRates,
                 onDismiss = {
                     showEditDialog = false
                     editingWallet = null
                 },
                 onConfirm = { wallet ->
-                    viewModel.updateWallet(wallet)
+                    walletViewModel.updateWallet(wallet)
                     showEditDialog = false
                     editingWallet = null
-                }
-            )
-        }
-
-
-        // Snackbar
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) { snackbarData ->
-            Snackbar(
-                snackbarData = snackbarData,
-                containerColor = WalletColors.Success,
-                contentColor = WalletColors.OnPrimary
-            )
+                })
         }
     }
 }
 
 @Composable
 private fun WalletHeader() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Wallet icon
+        Text(
+            text = stringResource(R.string.my_wallets),
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = WalletColors.OnSurface
+        )
+
+        // Simple, minimal wallet icon - no gradient, no shadow
         Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(40.dp)
                 .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(WalletColors.Primary, WalletColors.PrimaryVariant)
-                    ),
+                    color = WalletColors.Primary.copy(alpha = 0.1f),
                     shape = CircleShape
-                )
-                .shadow(8.dp, CircleShape),
+                ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.AccountBalanceWallet,
                 contentDescription = null,
-                tint = WalletColors.OnPrimary,
-                modifier = Modifier.size(32.dp)
+                tint = WalletColors.Primary,
+                modifier = Modifier.size(20.dp)
             )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.my_wallets),
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = WalletColors.OnSurface
-        )
-
-        Text(
-            text = stringResource(R.string.manage_wallets),
-            fontSize = 16.sp,
-            color = WalletColors.OnSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
     }
 }
 
 @Composable
 private fun WalletContent(
     wallets: List<Wallet>,
+    isVND: Boolean,
+    exchangeRates: Double?,
     onAddWallet: () -> Unit,
     onEditWallet: (Wallet) -> Unit,
     onDeleteWallet: (String) -> Unit
@@ -249,7 +254,11 @@ private fun WalletContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Total balance card
-        TotalBalanceCard(totalBalance = wallets.sumOf { it.balance })
+        TotalBalanceCard(
+            totalBalance = wallets.sumOf { it.balance },
+            isVND = isVND,
+            exchangeRates = exchangeRates
+        )
 
         // Add wallet button
         AddWalletButton(onClick = onAddWallet)
@@ -258,6 +267,8 @@ private fun WalletContent(
         wallets.forEach { wallet ->
             WalletCard(
                 wallet = wallet,
+                isVND = isVND,
+                exchangeRates = exchangeRates,
                 onEdit = { onEditWallet(wallet) },
                 onDelete = {
                     walletToDelete = wallet
@@ -271,7 +282,8 @@ private fun WalletContent(
     }
 
     // Delete confirmation dialog - outside of LazyColumn
-    walletToDelete?.let { wallet ->        AlertDialog(
+    walletToDelete?.let { wallet ->
+        AlertDialog(
             onDismissRequest = { walletToDelete = null },
             title = {
                 Text(
@@ -319,7 +331,20 @@ private fun WalletContent(
 }
 
 @Composable
-private fun TotalBalanceCard(totalBalance: Double) {
+private fun TotalBalanceCard(
+    totalBalance: Double,
+    isVND: Boolean,
+    exchangeRates: Double?
+) {
+    // Convert total balance based on currency preference
+    val convertedBalance = if (isVND) {
+        totalBalance
+    } else {
+        exchangeRates?.let { rates ->
+            CurrencyUtils.vndToUsd(totalBalance, rates)
+        } ?: totalBalance
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -341,7 +366,8 @@ private fun TotalBalanceCard(totalBalance: Double) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
-            ) {                Column {
+            ) {
+                Column {
                     Text(
                         text = stringResource(R.string.total_balance),
                         color = WalletColors.OnPrimary.copy(alpha = 0.8f),
@@ -350,7 +376,7 @@ private fun TotalBalanceCard(totalBalance: Double) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = formatCurrency(totalBalance),
+                        text = CurrencyUtils.formatAmount(convertedBalance, isVND),
                         color = WalletColors.OnPrimary,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold
@@ -407,9 +433,20 @@ private fun AddWalletButton(onClick: () -> Unit) {
 @Composable
 private fun WalletCard(
     wallet: Wallet,
+    isVND: Boolean,
+    exchangeRates: Double?,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    // Convert wallet balance based on currency preference
+    val convertedBalance = if (isVND) {
+        wallet.balance
+    } else {
+        exchangeRates?.let { rates ->
+            CurrencyUtils.vndToUsd(wallet.balance, rates)
+        } ?: wallet.balance
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -452,7 +489,8 @@ private fun WalletCard(
                     IconButton(
                         onClick = onEdit,
                         modifier = Modifier.size(32.dp)
-                    ) {                        Icon(
+                    ) {
+                        Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = stringResource(R.string.edit),
                             tint = WalletColors.Primary,
@@ -487,7 +525,7 @@ private fun WalletCard(
 
             // Balance
             Text(
-                text = formatCurrency(wallet.balance),
+                text = CurrencyUtils.formatAmount(convertedBalance, isVND),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = WalletColors.Primary
@@ -495,23 +533,25 @@ private fun WalletCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Footer
-            Divider(color = WalletColors.Primary.copy(alpha = 0.1f))
+            // Footer with meaningful information
+            HorizontalDivider(color = WalletColors.Primary.copy(alpha = 0.1f))
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically            ) {
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = stringResource(R.string.available_balance),
+                    text = if (isVND) "VND" else "USD",
                     fontSize = 12.sp,
-                    color = WalletColors.OnSurfaceVariant
+                    color = WalletColors.OnSurfaceVariant,
+                    fontWeight = FontWeight.Medium
                 )
 
                 Text(
-                    text = stringResource(R.string.active),
+                    text = stringResource(R.string.wallet_type_personal),
                     fontSize = 12.sp,
                     color = WalletColors.Success,
                     fontWeight = FontWeight.Medium
@@ -523,11 +563,16 @@ private fun WalletCard(
 
 @Composable
 private fun AddWalletDialog(
+    isVND: Boolean,
+    exchangeRates: Double?,
     onDismiss: () -> Unit,
     onConfirm: (AddWalletRequest) -> Unit
 ) {
     var walletName by remember { mutableStateOf("") }
-    var balance by remember { mutableStateOf("") }
+    var amountTextFieldValue by remember { mutableStateOf(TextFieldValue("")) }
+    var parsedAmount by remember { mutableDoubleStateOf(0.0) }
+    var showUSDPreview by remember { mutableStateOf(false) }
+    var isAmountFieldFocused by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -538,7 +583,8 @@ private fun AddWalletDialog(
             colors = CardDefaults.cardColors(containerColor = WalletColors.Surface)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp)            ) {
+                modifier = Modifier.padding(24.dp)
+            ) {
                 Text(
                     text = stringResource(R.string.add_new_wallet),
                     fontSize = 24.sp,
@@ -560,17 +606,36 @@ private fun AddWalletDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = balance,
-                    onValueChange = { balance = it },
-                    label = { Text(stringResource(R.string.initial_balance)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = WalletColors.Primary,
-                        focusedLabelColor = WalletColors.Primary
+                // Amount Input with Currency Support
+                Column {
+                    CurrencyInputTextField(
+                        value = amountTextFieldValue,
+                        onValueChange = { newValue -> amountTextFieldValue = newValue },
+                        isVND = isVND,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { focusState ->
+                                isAmountFieldFocused = focusState.isFocused
+                            },
+                        placeholder = stringResource(R.string.initial_balance),
+                        onFormatted = { _, amount ->
+                            parsedAmount = amount ?: 0.0
+                        }
                     )
-                )
+
+                    // Track focus state for USD preview
+                    LaunchedEffect(amountTextFieldValue.text, isVND, isAmountFieldFocused) {
+                        showUSDPreview =
+                            !isVND && isAmountFieldFocused && amountTextFieldValue.text.isNotEmpty()
+                    }
+
+                    if (showUSDPreview) {
+                        USDInputPreview(
+                            inputText = amountTextFieldValue.text,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -580,27 +645,40 @@ private fun AddWalletDialog(
                 ) {
                     Button(
                         onClick = {
+                            // Convert the amount to VND if currently in USD mode
+                            val balanceInVND = if (isVND) {
+                                parsedAmount
+                            } else {
+                                exchangeRates?.let { rates ->
+                                    CurrencyUtils.usdToVnd(parsedAmount, rates)
+                                } ?: parsedAmount
+                            }
+
                             val request = AddWalletRequest(
                                 walletName = walletName.trim(),
-                                balance = balance.toDoubleOrNull() ?: 0.0
+                                balance = balanceInVND
                             )
                             onConfirm(request)
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = WalletColors.Primary
-                        ),                        enabled = walletName.isNotBlank()
+                        ),
+                        enabled = walletName.isNotBlank() && parsedAmount > 0
                     ) {
                         Text(stringResource(R.string.wallet_form_add))
                     }
 
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(0.8f),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = WalletColors.OnSurfaceVariant
                         ),
-                        border = BorderStroke(1.dp, WalletColors.OnSurfaceVariant.copy(alpha = 0.3f))
+                        border = BorderStroke(
+                            1.dp,
+                            WalletColors.OnSurfaceVariant.copy(alpha = 0.3f)
+                        )
                     ) {
                         Text(stringResource(R.string.cancel))
                     }
@@ -613,11 +691,28 @@ private fun AddWalletDialog(
 @Composable
 private fun EditWalletDialog(
     wallet: Wallet,
+    isVND: Boolean,
+    exchangeRates: Double?,
     onDismiss: () -> Unit,
     onConfirm: (Wallet) -> Unit
 ) {
     var walletName by remember { mutableStateOf(wallet.walletName) }
-    var balance by remember { mutableStateOf(wallet.balance.toString()) }
+
+    // Convert wallet balance for display based on current currency mode
+    val displayBalance = if (isVND) {
+        wallet.balance
+    } else {
+        exchangeRates?.let { rates ->
+            CurrencyUtils.vndToUsd(wallet.balance, rates)
+        } ?: wallet.balance
+    }
+
+    var amountTextFieldValue by remember {
+        mutableStateOf(TextFieldValue(CurrencyUtils.formatForInput(displayBalance, isVND)))
+    }
+    var parsedAmount by remember { mutableDoubleStateOf(displayBalance) }
+    var showUSDPreview by remember { mutableStateOf(false) }
+    var isAmountFieldFocused by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -628,7 +723,8 @@ private fun EditWalletDialog(
             colors = CardDefaults.cardColors(containerColor = WalletColors.Surface)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp)            ) {
+                modifier = Modifier.padding(24.dp)
+            ) {
                 Text(
                     text = stringResource(R.string.wallet_form_edit_title),
                     fontSize = 24.sp,
@@ -650,17 +746,36 @@ private fun EditWalletDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = balance,
-                    onValueChange = { balance = it },
-                    label = { Text(stringResource(R.string.wallet_form_amount)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = WalletColors.Primary,
-                        focusedLabelColor = WalletColors.Primary
+                // Amount Input with Currency Support
+                Column {
+                    CurrencyInputTextField(
+                        value = amountTextFieldValue,
+                        onValueChange = { newValue -> amountTextFieldValue = newValue },
+                        isVND = isVND,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { focusState ->
+                                isAmountFieldFocused = focusState.isFocused
+                            },
+                        placeholder = stringResource(R.string.wallet_form_amount),
+                        onFormatted = { _, amount ->
+                            parsedAmount = amount ?: 0.0
+                        }
                     )
-                )
+
+                    // Track focus state for USD preview
+                    LaunchedEffect(amountTextFieldValue.text, isVND, isAmountFieldFocused) {
+                        showUSDPreview =
+                            !isVND && isAmountFieldFocused && amountTextFieldValue.text.isNotEmpty()
+                    }
+
+                    if (showUSDPreview) {
+                        USDInputPreview(
+                            inputText = amountTextFieldValue.text,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -670,16 +785,26 @@ private fun EditWalletDialog(
                 ) {
                     Button(
                         onClick = {
+                            // Convert the amount to VND if currently in USD mode
+                            val balanceInVND = if (isVND) {
+                                parsedAmount
+                            } else {
+                                exchangeRates?.let { rates ->
+                                    CurrencyUtils.usdToVnd(parsedAmount, rates)
+                                } ?: parsedAmount
+                            }
+
                             val updatedWallet = wallet.copy(
                                 walletName = walletName.trim(),
-                                balance = balance.toDoubleOrNull() ?: wallet.balance
+                                balance = balanceInVND
                             )
                             onConfirm(updatedWallet)
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = WalletColors.Primary
-                        ),                        enabled = walletName.isNotBlank()
+                        ),
+                        enabled = walletName.isNotBlank() && parsedAmount > 0
                     ) {
                         Text(stringResource(R.string.save))
                     }
@@ -690,7 +815,10 @@ private fun EditWalletDialog(
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = WalletColors.OnSurfaceVariant
                         ),
-                        border = BorderStroke(1.dp, WalletColors.OnSurfaceVariant.copy(alpha = 0.3f))
+                        border = BorderStroke(
+                            1.dp,
+                            WalletColors.OnSurfaceVariant.copy(alpha = 0.3f)
+                        )
                     ) {
                         Text(stringResource(R.string.cancel))
                     }
@@ -747,8 +875,4 @@ private fun ErrorMessage(
             Text(stringResource(R.string.try_again))
         }
     }
-}
-
-private fun formatCurrency(amount: Double): String {
-    return NumberFormat.getCurrencyInstance(Locale.US).format(amount)
 }

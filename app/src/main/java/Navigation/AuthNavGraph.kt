@@ -1,7 +1,7 @@
 package DI.Navigation
 
 import DI.API.TokenHandler.TokenExpirationHandler
-import DI.Composables.AnalysisSection.AnalysisBody
+import DI.Composables.AnalysisSection.AnalysisScreen
 import DI.Composables.AnalysisSection.CalendarScreen
 import DI.Composables.AuthSection.LoginScreen
 import DI.Composables.AuthSection.RegisterScreen
@@ -9,6 +9,7 @@ import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.ExportReports.ReportScreen
 import DI.Composables.FriendSection.FriendProfileScreen
+import DI.Composables.HomeSection.HomePage
 import DI.Composables.NewsFeedSection.NewsFeedScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.AddTransactionScreen
@@ -126,7 +127,7 @@ private fun InnerNavHost(
         modifier = modifier
     ) {
         composable(BottomNavItem.Home.route) {
-
+            HomePage(navController = navController)
         }
 
         composable(BottomNavItem.Friend.route) {
@@ -161,7 +162,9 @@ private fun InnerNavHost(
 
         composable(BottomNavItem.Wallet.route) {
             WalletScreen(
-                viewModel = walletViewModel,
+                walletViewModel = walletViewModel,
+                currencyConverterViewModel = currencyViewModel,
+                authViewModel = authViewModel,
             )
         }
 
@@ -231,7 +234,7 @@ private fun InnerNavHost(
         }
 
         composable(BottomNavItem.Analysis.route) {
-            AnalysisBody(
+            AnalysisScreen(
                 navController = navController,
                 authViewModel = authViewModel,
                 analysisViewModel = analysisViewModel,

@@ -109,6 +109,8 @@
     <string name="type_expense">Expense</string>
     <string name="see_more">See more</string>
     <string name="net_balance">Net Balance</string>
+    <string name="transaction_screen_description">View and manage your transactions easily</string>
+
 
     <!-- Transaction Details -->
     <string name="transaction_detail">Transaction Detail</string>
@@ -199,6 +201,9 @@
     <string name="transaction_form_unknown_description">Unknown Description</string>
     <string name="transaction_form_unknown_id">Unknown ID</string>
     <string name="transaction_form_unknown_error">Unknown Error</string>
+
+    <!-- Wallet Types -->
+    <string name="wallet_type_personal">Personal</string>
 
     <!-- ================== DATE & TIME ================== -->
     <string name="date">Date</string>

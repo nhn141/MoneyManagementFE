@@ -16,6 +16,17 @@ sealed class BottomNavItem(val route: String, val icon: Int, val title: String) 
     object Report : BottomNavItem("report", R.drawable.ic_report, "Report")
 
     companion object {
-        val allRoutes = listOf(Transaction, Category, Wallet, Analysis, Report, Profile, NewsFeed, Friend, Chat)
+        val allRoutes = listOf(
+            Home,
+            Transaction,
+            Category,
+            Wallet,
+            Analysis,
+            Report,
+            Profile,
+            NewsFeed,
+            Friend,
+            Chat
+        )
     }
 }

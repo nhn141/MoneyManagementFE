@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
+import com.moneymanager.ui.screens.MoneyAppColors
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.models.BarProperties
 import ir.ehsannarmani.compose_charts.models.Bars
@@ -64,7 +65,6 @@ import ir.ehsannarmani.compose_charts.models.IndicatorPosition
 import ir.ehsannarmani.compose_charts.models.LabelProperties
 import ir.ehsannarmani.compose_charts.models.PopupProperties
 import java.time.LocalDate
-import java.util.Locale
 
 @Composable
 fun handleSelectedPeriodTitle(selectedPeriod: String): String {
@@ -78,7 +78,7 @@ fun handleSelectedPeriodTitle(selectedPeriod: String): String {
 }
 
 @Composable
-fun AnalysisBody(
+fun AnalysisScreen(
     navController: NavController,
     authViewModel: AuthViewModel,
     analysisViewModel: AnalysisViewModel,
@@ -160,7 +160,14 @@ fun AnalysisBody(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF5F7FA)) // Light grayish background
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MoneyAppColors.Background,
+                            Color(0xFFECFDF5)
+                        )
+                    )
+                )
     ) {
         Column(
             modifier =
@@ -174,7 +181,7 @@ fun AnalysisBody(
             // Header with clean card design
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MoneyAppColors.Primary),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
@@ -188,13 +195,13 @@ fun AnalysisBody(
                         text = stringResource(R.string.financial_analysis),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2E3A59) // Dark blue-gray
+                        color = MoneyAppColors.OnPrimary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = stringResource(R.string.track_income_expenses),
                         fontSize = 16.sp,
-                        color = Color(0xFF8F9BB3) // Medium gray
+                        color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f)
                     )
                 }
             } // Modern period selector with pill design
@@ -228,7 +235,9 @@ fun AnalysisBody(
                         ModernCalendarButton(onClick = { navController.navigate(Routes.Calendar) })
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))                    // Chart legend
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Chart legend
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(24.dp)
@@ -294,7 +303,7 @@ fun AnalysisBody(
                                         text = "k",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF667EEA)
+                                        color = Color(0xFF2196F3)
                                     )
                                     Text(
                                         text = "Thousand",
@@ -311,7 +320,7 @@ fun AnalysisBody(
                                         text = "M",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF667EEA)
+                                        color = Color(0xFF2196F3)
                                     )
                                     Text(
                                         text = "Million",
@@ -328,7 +337,7 @@ fun AnalysisBody(
                                         text = "B",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF667EEA)
+                                        color = Color(0xFF2196F3)
                                     )
                                     Text(
                                         text = "Billion",
@@ -410,12 +419,9 @@ fun ModernPeriodSelector(
                                         colors =
                                             listOf(
                                                 Color(
-                                                    0xFF667EEA
+                                                    0xFF2196F3
                                                 ), // Main theme color
-                                                Color(
-                                                    0xFF764BA2
-                                                ) // Complementary
-                                                // purple
+                                                MoneyAppColors.Primary
                                             )
                                     )
                                 } else {
@@ -464,7 +470,7 @@ fun ModernCalendarButton(onClick: () -> Unit) {
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
-                        colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+                        colors = listOf(Color(0xFF2196F3), MoneyAppColors.Primary)
                     )
                 )
                 .clickable {
@@ -661,15 +667,6 @@ fun IncomeExpensesBarChart(
                 )
             }
         }
-
-    fun formatLargeNumber(value: Double): String {
-        return when {
-            value >= 1_000_000_000 -> String.format(Locale.US, "%.1fb", value / 1_000_000_000)
-            value >= 1_000_000 -> String.format(Locale.US, "%.1fm", value / 1_000_000)
-            value >= 1_000 -> String.format(Locale.US, "%.1fk", value / 1_000)
-            else -> String.format(Locale.US, "%.0f", value)
-        }
-    }
 
     val maxValue =
         maxOf(convertedIncomeValues.maxOrNull() ?: 0.0, convertedExpenseValues.maxOrNull() ?: 0.0)
