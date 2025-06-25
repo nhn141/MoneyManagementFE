@@ -33,11 +33,15 @@ class AnalysisViewModel @Inject constructor(
         _categoryBreakdown.asStateFlow()
 
     init {
+        refreshAllData()
+    }
+
+    fun refreshAllData() {
         val today = LocalDate.now()
-        getDailySummary(today.toString())
-        getWeeklySummary(today.toString())
-        getMonthlySummary(today.year.toString(), today.monthValue.toString())
-        getYearlySummary(today.year.toString())
+        this.getDailySummary(today.toString())
+        this.getWeeklySummary(today.toString())
+        this.getMonthlySummary(today.year.toString(), today.monthValue.toString())
+        this.getYearlySummary(today.year.toString())
     }
 
     private fun abbreviateDayFlexible(day: String): String {

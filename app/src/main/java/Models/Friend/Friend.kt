@@ -5,6 +5,6 @@ data class Friend(
     val username: String,
     val displayName: String,
     val isOnline: Boolean,
-    val lastActive: String,
+    val lastActive: String?,
     val isPendingRequest: Boolean
 )

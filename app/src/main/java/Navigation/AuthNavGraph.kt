@@ -9,7 +9,7 @@ import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.ExportReports.ReportScreen
 import DI.Composables.FriendSection.FriendProfileScreen
-import DI.Composables.HomeSection.HomePage
+import DI.Composables.HomeSection.HomeScreen
 import DI.Composables.NewsFeedSection.NewsFeedScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.AddTransactionScreen
@@ -39,11 +39,12 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -116,24 +117,55 @@ private fun InnerNavHost(
     val transactionViewModel = hiltViewModel<TransactionViewModel>(parentEntry)
     val walletViewModel = hiltViewModel<WalletViewModel>(parentEntry)
     val ocrViewModel = hiltViewModel<OcrViewModel>(parentEntry)
-    val currencyViewModel = viewModel<CurrencyConverterViewModel>(parentEntry)
+    val currencyViewModel = hiltViewModel<CurrencyConverterViewModel>(parentEntry)
     val groupFundViewModel = hiltViewModel<GroupFundViewModel>(parentEntry)
     val newsFeedViewModel = hiltViewModel<NewsFeedViewModel>(parentEntry)
     val reportViewModel = hiltViewModel<ReportViewModel>(parentEntry)
 
+    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
+
+    fun refreshAppData() {
+        transactionViewModel.refreshData()
+        profileViewModel.refreshAllData()
+        newsFeedViewModel.loadNextPost()
+        analysisViewModel.refreshAllData()
+
+        // For HomeScreen
+        currencyViewModel.refreshAllData()
+        walletViewModel.getWallets()
+        friendViewModel.refreshAllData()
+        chatViewModel.getLatestChats()
+    }
+
+    LaunchedEffect(refreshTokenState) {
+        if (refreshTokenState?.isSuccess == true) {
+            // Call your reload functions here
+            refreshAppData()
+        }
+    }
+
     NavHost(
         navController = navController,
-        startDestination = BottomNavItem.Profile.route,
+        startDestination = BottomNavItem.Setting.route,
         modifier = modifier
     ) {
         composable(BottomNavItem.Home.route) {
-            HomePage(navController = navController)
+            HomeScreen(
+                navController = navController,
+                friendViewModel = friendViewModel,
+                chatViewModel = chatViewModel,
+                profileViewModel = profileViewModel,
+                transactionViewModel = transactionViewModel,
+                currencyConverterViewModel = currencyViewModel,
+                walletViewModel = walletViewModel,
+                categoryViewModel = categoryViewModel,
+                newsFeedViewModel = newsFeedViewModel
+            )
         }
 
-        composable(BottomNavItem.Friend.route) {
+        composable(Routes.Friend) {
             FriendsScreenTheme {
                 FriendsScreen(
-                    authViewModel = authViewModel,
                     friendViewModel = friendViewModel,
                     profileViewModel = profileViewModel,
                     navController = navController
@@ -141,9 +173,8 @@ private fun InnerNavHost(
             }
         }
 
-        composable(BottomNavItem.Chat.route) {
+        composable(Routes.Chat) {
             ChatScreen(
-                authViewModel = authViewModel,
                 chatViewModel = chatViewModel,
                 profileViewModel = profileViewModel,
                 friendViewModel = friendViewModel,
@@ -160,15 +191,15 @@ private fun InnerNavHost(
             )
         }
 
-        composable(BottomNavItem.Wallet.route) {
+        composable(Routes.Wallet) {
             WalletScreen(
                 walletViewModel = walletViewModel,
                 currencyConverterViewModel = currencyViewModel,
-                authViewModel = authViewModel,
+                navController = navController
             )
         }
 
-        composable(BottomNavItem.GroupFund.route) {
+        composable(Routes.GroupFund) {
             GroupFundScreen(
                 navController = navController,
                 groupFundViewModel = groupFundViewModel,
@@ -183,7 +214,7 @@ private fun InnerNavHost(
             )
         }
 
-        composable(BottomNavItem.Report.route) {
+        composable(Routes.Report) {
             ReportScreen(
                 viewModel = reportViewModel
             )
@@ -216,7 +247,7 @@ private fun InnerNavHost(
             )
         }
 
-        composable(BottomNavItem.Profile.route) {
+        composable(BottomNavItem.Setting.route) {
             ProfileScreen(
                 appNavController = appNavController,
                 navController = navController,
@@ -236,7 +267,6 @@ private fun InnerNavHost(
         composable(BottomNavItem.Analysis.route) {
             AnalysisScreen(
                 navController = navController,
-                authViewModel = authViewModel,
                 analysisViewModel = analysisViewModel,
                 currencyConverterViewModel = currencyViewModel
             )
@@ -260,12 +290,11 @@ private fun InnerNavHost(
             )
         }
 
-        composable(BottomNavItem.Category.route) {
+        composable(Routes.Category) {
             ModernCategoriesScreen(
                 categoryViewModel = categoryViewModel,
-                authViewModel = authViewModel,
+                navController = navController
             )
-            //          CurrencyConverterScreen(viewModel = currencyViewModel)
         }
 
         composable(

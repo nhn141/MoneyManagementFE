@@ -1,25 +1,40 @@
 package DI.ViewModels
 
 import DI.CurrencyApi
+import Utils.LanguageManager
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class CurrencyConverterViewModel : ViewModel() {
+@HiltViewModel
+class CurrencyConverterViewModel @Inject constructor(
+    @ApplicationContext private val context: Context
+) : ViewModel() {
+
     private val _exchangeRate = MutableStateFlow<Double?>(null)
     val exchangeRate: StateFlow<Double?> = _exchangeRate
 
     private val _isVND = MutableStateFlow(true)
     val isVND: StateFlow<Boolean> = _isVND
 
-    init {
+    fun refreshAllData() {
+        loadCurrentLanguage()
         loadExchangeRate()
     }
 
-    private fun loadExchangeRate() {
+    fun loadCurrentLanguage() {
+        val language = LanguageManager.getLanguagePreferenceSync(context)
+        _isVND.value = (language == "vi")
+    }
+
+    fun loadExchangeRate() {
         viewModelScope.launch {
             val rate = CurrencyApi.getUsdToVndRate()
             _exchangeRate.value = rate

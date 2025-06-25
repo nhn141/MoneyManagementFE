@@ -1,4 +1,5 @@
 package DI.ViewModels
+
 import DI.Composables.ProfileSection.AvatarVersionManager
 import DI.Models.UserInfo.Profile
 import DI.Models.UserInfo.UpdatedProfile
@@ -51,13 +52,16 @@ class ProfileViewModel @Inject constructor(
     val friendProfile: StateFlow<Result<Profile>?> = _friendProfile.asStateFlow()
 
     init {
+        refreshAllData()
+    }
+
+    fun refreshAllData() {
         viewModelScope.launch {
-            AvatarVersionManager.getAvatarVersion(context).collect  {
+            AvatarVersionManager.getAvatarVersion(context).collect {
                 _avatarVersion.value = it
             }
         }
         getProfile()
-        Log.d("ProfileViewModel", "ProfileViewModel initialized")
     }
 
     fun uploadAvatar(file: File) {
@@ -65,7 +69,7 @@ class ProfileViewModel @Inject constructor(
             _isLoadingAvatar.value = true
             val result = profileRepository.uploadAvatar(file)
             _uploadAvatarState.value = result
-            if(result.isSuccess) {
+            if (result.isSuccess) {
                 val newVersion = "v${System.currentTimeMillis()}"
                 AvatarVersionManager.setAvatarVersion(context, newVersion)
                 _avatarVersion.value = newVersion
@@ -85,7 +89,7 @@ class ProfileViewModel @Inject constructor(
     fun updateProfile(updatedProfile: UpdatedProfile) {
         viewModelScope.launch {
             val result = profileRepository.updateProfile(updatedProfile)
-            if(result.isSuccess) {
+            if (result.isSuccess) {
                 _updatedProfileState.emit(true)
             } else {
                 _updatedProfileState.emit(false)
@@ -120,9 +124,10 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoadingAvatar.value = true
             val profileList = profileRepository.getOtherUserProfiles(friendIds)
-            val friendProfiles = profileList.mapNotNull { profile -> // filters only successful results
-                profile.getOrNull() // null results are filtered out
-            }
+            val friendProfiles =
+                profileList.mapNotNull { profile -> // filters only successful results
+                    profile.getOrNull() // null results are filtered out
+                }
 
             // Match profiles by ID and extract avatarUrl
             val userAvatars = friendProfiles

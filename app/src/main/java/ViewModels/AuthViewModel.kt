@@ -16,7 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repository: AuthRepository,
-    private val app : Application
+    private val app: Application
 ) : ViewModel() {
 
     private val _isAuthenticated = MutableStateFlow(false)
@@ -54,7 +54,13 @@ class AuthViewModel @Inject constructor(
         _loginState.value = null
     }
 
-    fun register(firstName: String, lastName: String, email: String, password: String, confirmPassword: String) {
+    fun register(
+        firstName: String,
+        lastName: String,
+        email: String,
+        password: String,
+        confirmPassword: String
+    ) {
         viewModelScope.launch {
             val result = repository.register(firstName, lastName, email, password, confirmPassword)
             _registerState.value = result
@@ -87,7 +93,10 @@ class AuthViewModel @Inject constructor(
                 _isAuthenticated.value = false
                 _refreshTokenState.value = Result.failure(exception)
             }
-            Log.d("AuthViewModel", "RefreshToken result: $result, isAuthenticated: ${_isAuthenticated.value}")
+            Log.d(
+                "AuthViewModel",
+                "RefreshToken result: $result, isAuthenticated: ${_isAuthenticated.value}"
+            )
         }
     }
 

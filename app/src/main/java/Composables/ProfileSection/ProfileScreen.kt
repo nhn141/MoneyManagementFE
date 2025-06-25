@@ -13,28 +13,58 @@ import DI.ViewModels.ProfileViewModel
 import ViewModels.AuthViewModel
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PermIdentity
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,9 +80,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 
@@ -95,7 +122,9 @@ fun ProfileScreen(
                 // Profile Card
                 ProfileHeaderCard(profile, navController, profileViewModel)
 
-                Spacer(modifier = Modifier.height(24.dp))                // Account Settings
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Account Settings
                 SectionTitle(stringResource(R.string.account_settings))
                 SettingsItem(
                     icon = Icons.Default.Person,
@@ -113,7 +142,9 @@ fun ProfileScreen(
                     subtitle = stringResource(R.string.manage_alerts_notifications)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))                // Financial Settings
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Financial Settings
                 SectionTitle(stringResource(R.string.financial_settings))
                 SettingsItem(
                     icon = Icons.Default.CreditCard,
@@ -131,7 +162,9 @@ fun ProfileScreen(
                     subtitle = stringResource(R.string.customize_spending_categories)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))                // Support and Info
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Support and Info
                 SectionTitle(stringResource(R.string.support_info))
                 LanguageSelector()
                 SettingsItem(
@@ -158,7 +191,8 @@ fun ProfileScreen(
                         .fillMaxWidth(0.5f)
                         .padding(vertical = 8.dp)
                         .align(Alignment.CenterHorizontally),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)                ) {
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
                     Text(
                         text = stringResource(R.string.log_out),
                         style = MaterialTheme.typography.labelLarge,
@@ -182,7 +216,8 @@ fun TopAppBar(viewModel: CurrencyConverterViewModel) {
             .fillMaxWidth()
             .padding(bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween    ) {
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
         Text(
             text = stringResource(R.string.profile_screen_title),
             style = MaterialTheme.typography.headlineMedium.copy(
@@ -252,7 +287,9 @@ fun TopAppBar(viewModel: CurrencyConverterViewModel) {
                         )
 
                         Row(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 3.5.dp),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 3.5.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -300,7 +337,8 @@ fun ProfileHeaderCard(
                 .fillMaxWidth()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
-        ) {            if(profile == null) {
+        ) {
+            if (profile == null) {
                 Text(stringResource(R.string.no_profile_data), color = TextPrimaryColor)
                 return@Column
             }

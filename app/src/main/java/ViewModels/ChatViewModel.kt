@@ -1,7 +1,6 @@
 package DI.ViewModels
 
 import DI.API.TokenHandler.AuthStorage
-import DI.Models.Category.Category
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
 import DI.Models.Chat.LatestChat
@@ -11,17 +10,14 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.microsoft.signalr.HubConnection
 import com.microsoft.signalr.HubConnectionBuilder
 import com.microsoft.signalr.HubConnectionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.reactivex.rxjava3.core.Single
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -49,11 +45,6 @@ class ChatViewModel @Inject constructor(
     private val _latestChats = MutableStateFlow<Result<List<LatestChat>>?>(null)
     val latestChats: StateFlow<Result<List<LatestChat>>?> = _latestChats.asStateFlow()
 
-    init {
-        connectToSignalR()
-        getLatestChats()
-    }
-
     fun connectToSignalR() {
         val token = AuthStorage.getToken(context)
         val userId = AuthStorage.getUserIdFromToken(context)
@@ -67,7 +58,8 @@ class ChatViewModel @Inject constructor(
         hubConnection?.on("ReceiveMessage", { message: ChatMessage ->
             Log.d("SignalR", "New message received: $message")
 
-            val updatedMessages = _chatMessages.value?.getOrNull()?.toMutableList() ?: mutableListOf()
+            val updatedMessages =
+                _chatMessages.value?.getOrNull()?.toMutableList() ?: mutableListOf()
             updatedMessages.add(message)
 
             _chatMessages.value = Result.success(updatedMessages)

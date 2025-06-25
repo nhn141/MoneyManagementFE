@@ -1,10 +1,10 @@
 package DI.Composables.AnalysisSection
 
+import DI.Composables.HomeSection.MoneyAppColors
 import DI.Navigation.Routes
 import DI.Utils.CurrencyUtils
 import DI.ViewModels.AnalysisViewModel
 import DI.ViewModels.CurrencyConverterViewModel
-import ViewModels.AuthViewModel
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-import com.moneymanager.ui.screens.MoneyAppColors
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.models.BarProperties
 import ir.ehsannarmani.compose_charts.models.Bars
@@ -64,7 +63,6 @@ import ir.ehsannarmani.compose_charts.models.IndicatorCount
 import ir.ehsannarmani.compose_charts.models.IndicatorPosition
 import ir.ehsannarmani.compose_charts.models.LabelProperties
 import ir.ehsannarmani.compose_charts.models.PopupProperties
-import java.time.LocalDate
 
 @Composable
 fun handleSelectedPeriodTitle(selectedPeriod: String): String {
@@ -80,32 +78,12 @@ fun handleSelectedPeriodTitle(selectedPeriod: String): String {
 @Composable
 fun AnalysisScreen(
     navController: NavController,
-    authViewModel: AuthViewModel,
     analysisViewModel: AnalysisViewModel,
     currencyConverterViewModel: CurrencyConverterViewModel
-) {    // Collect currency state
+) {
+    // Collect currency state
     val isVND by currencyConverterViewModel.isVND.collectAsStateWithLifecycle()
     val exchangeRate by currencyConverterViewModel.exchangeRate.collectAsStateWithLifecycle()
-
-    // Reload init data when token is refreshed
-    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
-    LaunchedEffect(refreshTokenState) {
-        if (refreshTokenState?.isSuccess == true) {
-            val today = LocalDate.now()
-            analysisViewModel.getDailySummary(today.toString())
-            analysisViewModel.getWeeklySummary(today.toString())
-            analysisViewModel.getMonthlySummary(today.year.toString(), today.monthValue.toString())
-            analysisViewModel.getYearlySummary(today.year.toString())
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        val today = LocalDate.now()
-        analysisViewModel.getDailySummary(today.toString())
-        analysisViewModel.getWeeklySummary(today.toString())
-        analysisViewModel.getMonthlySummary(today.year.toString(), today.monthValue.toString())
-        analysisViewModel.getYearlySummary(today.year.toString())
-    }
 
     val periodGraphResult = analysisViewModel.periodGraph.collectAsState()
 

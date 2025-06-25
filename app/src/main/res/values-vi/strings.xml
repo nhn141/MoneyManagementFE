@@ -268,7 +268,9 @@
     <!-- Time ranges -->
     <string name="time_00_08">00:00–08:00</string>
     <string name="time_08_16">08:00–16:00</string>
-    <string name="time_16_00">16:00–00:00</string>    <!-- ================== FINANCIAL ANALYSIS ================== -->
+    <string name="time_16_00">16:00–00:00</string>
+
+    <!-- ================== FINANCIAL ANALYSIS ================== -->
     <string name="financial_analysis">Phân tích tài chính</string>
     <string name="track_income_expenses">Theo dõi thu nhập và chi tiêu của bạn</string>
     <string name="income_expenses">Thu nhập &amp; Chi tiêu</string>
@@ -397,7 +399,7 @@
     <string name="pending_requests_count">Bạn có %1$d lời mời chờ xử lý.</string>
     <string name="reject">Từ chối</string>
     <string name="accept">Chấp nhận</string>
-    <string name="no_friends_found">Không tìm thấy bạn bè nào.</string>
+    <string name="no_friends_found">Không có bạn bè nào.</string>
     <string name="no_friends_search">Không tìm thấy bạn bè</string>
     <string name="try_different_search">Hãy thử từ khóa khác</string>
     <string name="friends">Bạn bè</string>
@@ -407,6 +409,15 @@
     <string name="last_active_unknown">Không rõ lần hoạt động cuối</string>
     <string name="delete_friend">Xóa</string>
     <string name="unfriend">Hủy kết bạn</string>
+    <string name="sent_request_at">Đã gửi lúc %1$s</string>
+    <string name="friend_request_sent">Đã gửi lời mời kết bạn!</string>
+    <string name="friend_request_accepted">Lời mời kết bạn đã được chấp nhận!</string>
+    <string name="friend_request_rejected">Lời mời kết bạn đã bị từ chối!</string>
+    <string name="friend_deleted">Đã xóa bạn bè!</string>
+    <string name="last_active">Hoạt động lần cuối: %1$s</string>
+    <string name="no_full_name">Tên không có sẵn</string>
+    <string name="delete_friend_confirm">Bạn có chắc muốn xóa bạn này không? Hành động này không thể hoàn tác.</string>
+
 
     <!-- ================== MESSAGING & CHAT ================== -->
     <string name="message">Nhắn tin</string>
@@ -440,4 +451,16 @@
     <string name="current_currency">Hiện tại: %1$s</string>
     <string name="preview_label">Xem trước: %1$s</string>
     <string name="usd_decimal_warning">Số tiền USD chỉ hỗ trợ tối đa 2 chữ số thập phân</string>
+
+    <!-- ================== HOME SCREEN ================== -->
+    <string name="greeting_text">Xin chào, %1$s!</string>
+    <string name="view_all">Xem tất cả</string>
+    <string name="social_updates">Cập nhật xã hội</string>
+    <string name="friend_requests_count">%1$d lời mời kết bạn</string>
+    <string name="unread_messages_count">%1$d tin nhắn chưa đọc</string>
+    <string name="more_features">Tính năng khác</string>
+    <string name="no_posts_available">Chưa có bài viết nào</string>
+    <string name="unknown_author">Tác giả không xác định</string>
+    <string name="latest_post_format">%1$s đã đăng: %2$s</string>
+
 </resources>

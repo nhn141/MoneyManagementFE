@@ -1,6 +1,6 @@
 package DI.Composables.TransactionSection
 
-import DI.Models.Category.Category
+import DI.Composables.HomeSection.MoneyAppColors
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
 import DI.Utils.CurrencyUtils
@@ -82,7 +82,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-import com.moneymanager.ui.screens.MoneyAppColors
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
@@ -111,11 +110,6 @@ fun TransactionScreen(
     val isVND by currencyViewModel.isVND.collectAsState() // Lấy trạng thái isVND
     val exchangeRate by currencyViewModel.exchangeRate.collectAsState() // Lấy tỷ giá
     var visibleCount by remember { mutableStateOf(5) }
-
-    LaunchedEffect(Unit) {
-        categoryViewModel.getCategories()
-        transactionViewModel.fetchTransactions()
-    }
 
     Box(
         modifier = Modifier
@@ -605,15 +599,14 @@ fun TransactionRow(
     categoryViewModel: CategoryViewModel,
     currencyViewModel: CurrencyConverterViewModel
 ) {
-    var category by remember { mutableStateOf<Category?>(null) }
+    val categories = categoryViewModel.categories.collectAsState().value?.getOrNull() ?: emptyList()
+    val category = categories.find { it.categoryID == transaction.categoryID }
+
     val isVND by currencyViewModel.isVND.collectAsState()
     val exchangeRate by currencyViewModel.exchangeRate.collectAsState()
 
-    LaunchedEffect(transaction.categoryID) {
-        category = categoryViewModel.getCategoryByID(transaction.categoryID)
-    }
 
-    val dateTime = DateTimeUtils.formatDateTime(transaction)
+    val dateTime = DateTimeUtils.formatDateTime(transaction.timestamp, LocalContext.current)
 
     Card(
         shape = RoundedCornerShape(16.dp),

@@ -1,12 +1,12 @@
 import DI.Composables.CategorySection.AddNewCategoryDialog
 import DI.Composables.CategorySection.ModernColors
 import DI.Composables.CategorySection.getCategoryIcon
+import DI.Composables.HomeSection.MoneyAppColors
 import DI.Models.Category.AddCategoryRequest
 import DI.Models.Category.Category
 import DI.Models.Category.UpdateCategoryRequest
 import DI.Models.UiEvent.UiEvent
 import DI.ViewModels.CategoryViewModel
-import ViewModels.AuthViewModel
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -38,6 +38,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Check
@@ -81,8 +82,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-import com.moneymanager.ui.screens.MoneyAppColors
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.launch
 
@@ -504,17 +505,14 @@ fun ModernCategoryDetailDialog(
 @Composable
 fun ModernCategoriesScreen(
     categoryViewModel: CategoryViewModel,
-    authViewModel: AuthViewModel,
+    navController: NavController
 ) {
-    val context = LocalContext.current
 
-    // Reload init data when token is refreshed
-    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
-    LaunchedEffect(refreshTokenState) {
-        if (refreshTokenState?.isSuccess == true) {
-            categoryViewModel.getCategories();
-        }
+    LaunchedEffect(Unit) {
+        categoryViewModel.getCategories()
     }
+
+    val context = LocalContext.current
 
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -565,54 +563,76 @@ fun ModernCategoriesScreen(
                         .fillMaxWidth()
                         .background(ModernColors.SecondaryLight)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 20.dp)
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 24.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 20.dp),
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.2f)),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Apps,
-                                    contentDescription = stringResource(R.string.category),
-                                    tint = Color.White,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Apps,
+                                        contentDescription = stringResource(R.string.category),
+                                        tint = Color.White,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
 
-                            Spacer(modifier = Modifier.width(16.dp))
+                                Spacer(modifier = Modifier.width(16.dp))
 
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.my_categories),
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = stringResource(
-                                        R.string.category_count,
-                                        categories.size,
-                                        stringResource(
-                                            if (categories.size == 1)
-                                                R.string.category_single
-                                            else
-                                                R.string.category_plural
-                                        )
-                                    ),
-                                    fontSize = 16.sp,
-                                    color = Color.White.copy(alpha = 0.9f),
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.my_categories),
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = stringResource(
+                                            R.string.category_count,
+                                            categories.size,
+                                            stringResource(
+                                                if (categories.size == 1)
+                                                    R.string.category_single
+                                                else
+                                                    R.string.category_plural
+                                            )
+                                        ),
+                                        fontSize = 16.sp,
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .clickable(onClick = { navController.popBackStack() }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.category),
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
                         }
                     }
                 }

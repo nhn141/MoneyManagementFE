@@ -54,7 +54,10 @@ class TransactionViewModel @Inject constructor(
     val selectedTransaction: State<Transaction?> = _selectedTransaction
 
     init {
-        Log.d("TransactionScreenViewModel", "ViewModel initialized")
+        refreshData()
+    }
+
+    fun refreshData() {
         loadCategories()
     }
 

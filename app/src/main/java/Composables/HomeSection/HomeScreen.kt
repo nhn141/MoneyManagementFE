@@ -1,12 +1,28 @@
-package com.moneymanager.ui.screens
+package DI.Composables.HomeSection
 
-import androidx.compose.foundation.Image
+import DI.Composables.CategorySection.getCategoryIcon
+import DI.Composables.ProfileSection.AvatarImage
+import DI.Composables.ProfileSection.MainColor
+import DI.Composables.TransactionSection.GeneralTransactionItem
+import DI.Models.NavBar.BottomNavItem
+import DI.Models.UserInfo.Profile
+import DI.Navigation.Routes
+import DI.Utils.CurrencyUtils
+import DI.Utils.DateTimeUtils
+import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.ChatViewModel
+import DI.ViewModels.CurrencyConverterViewModel
+import DI.ViewModels.FriendViewModel
+import DI.ViewModels.NewsFeedViewModel
+import DI.ViewModels.ProfileViewModel
+import DI.ViewModels.TransactionViewModel
+import DI.ViewModels.WalletViewModel
+import Utils.LanguageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,222 +32,131 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Feed
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Message
-import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.Work
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import java.text.NumberFormat
+import com.example.moneymanagement_frontend.R
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
-// Data Classes for hardcoded data - Replace with API models
-data class UserProfile(
-    val name: String,
-    val avatarResource: Int, // Replace with avatar URL from API
-    val currentDate: String
-)
-
-data class FinancialOverview(
-    val totalBalance: Double,
-    val monthlyIncome: Double,
-    val monthlyExpenses: Double,
-    val currency: String = "₫" // Vietnamese Dong as per user location
-)
-
-data class Transaction(
-    val id: String,
-    val date: String,
-    val category: String,
-    val categoryIcon: ImageVector,
-    val description: String,
-    val amount: Double,
-    val isIncome: Boolean
-)
-
-data class SocialNotification(
-    val friendRequests: Int,
-    val unreadMessages: Int,
-    val recentActivity: String
-)
-
-data class QuickAction(
-    val title: String,
-    val icon: ImageVector,
-    val destination: String,
-    val backgroundColor: Color
-)
-
-data class NavigationItem(
-    val title: String,
-    val icon: ImageVector,
-    val destination: String
-)
-
-// Theme Colors
-object MoneyAppColors {
-    val Primary = Color(0xFF10B981) // Emerald-500
-    val PrimaryVariant = Color(0xFF059669) // Emerald-600
-    val Secondary = Color(0xFF34D399) // Emerald-400
-    val Background = Color(0xFFF0FDF4) // Green-50
-    val Surface = Color(0xFFFFFFFF)
-    val OnPrimary = Color.White
-    val OnSurface = Color(0xFF1F2937) // Gray-800
-    val OnBackground = Color(0xFF424242)
-    val Success = Color(0xFF10B981)
-    val Error = Color(0xFFEF4444)
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
-    // Hardcoded data - Replace with API calls
-    val userProfile = remember {
+fun HomeScreen(
+    navController: NavController,
+    walletViewModel: WalletViewModel,
+    categoryViewModel: CategoryViewModel,
+    transactionViewModel: TransactionViewModel,
+    currencyConverterViewModel: CurrencyConverterViewModel,
+    profileViewModel: ProfileViewModel,
+    friendViewModel: FriendViewModel,
+    chatViewModel: ChatViewModel,
+    newsFeedViewModel: NewsFeedViewModel
+) {
+    val exchangeRate =
+        currencyConverterViewModel.exchangeRate.collectAsStateWithLifecycle().value ?: 1.0
+    val isVND = currencyConverterViewModel.isVND.collectAsStateWithLifecycle().value
+
+    val languageCode = LanguageManager.getLanguagePreferenceSync(LocalContext.current)
+
+    val profile =
+        profileViewModel.profile.collectAsStateWithLifecycle().value?.getOrNull() ?: Profile()
+    val avatarUrl = profile.avatarUrl
+    val avatarVersion = profileViewModel.avatarVersion.collectAsState().value
+    val userProfile = remember(profile, avatarUrl, avatarVersion, isVND) {
         UserProfile(
-            name = "John",
-            avatarResource = android.R.drawable.ic_menu_gallery, // Placeholder
-            currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy"))
+            name = profile.displayName.ifBlank { "${profile.firstName} ${profile.lastName}" },
+            avatarUrl = avatarUrl,
+            avatarVersion = avatarVersion,
+            currentDate = DateTimeUtils.getReadableCurrentDate(languageCode)
         )
     }
 
-    val financialOverview = remember {
+    val wallets =
+        walletViewModel.wallets.collectAsStateWithLifecycle().value?.getOrNull() ?: emptyList()
+    val transactions = transactionViewModel.allTransactions
+    val currentMonthTransactions =
+        transactions.filter { parseMonth(it.timestamp) == LocalDate.now().month }
+
+    val financialOverview = remember(wallets, currentMonthTransactions) {
+        val totalBalance = wallets.sumOf { it.balance.toDouble() }
+        val incomeThisMonth = currentMonthTransactions.filter { it.isIncome }
+        val expenseThisMonth = currentMonthTransactions.filter { !it.isIncome }
+        val monthlyIncome = incomeThisMonth.sumOf { it.amount.toDouble() }
+        val monthlyExpenses = expenseThisMonth.sumOf { it.amount.toDouble() }
+
         FinancialOverview(
-            totalBalance = 30000000.0, // 30 million VND
-            monthlyIncome = 12000000.0, // 12 million VND
-            monthlyExpenses = 7500000.0, // 7.5 million VND
-            currency = "₫"
+            totalBalance = totalBalance,
+            monthlyIncome = monthlyIncome,
+            monthlyExpenses = monthlyExpenses,
         )
     }
 
-    val recentTransactions = remember {
-        listOf(
-            Transaction(
-                "1",
-                "June 23",
-                "Food",
-                Icons.Default.Restaurant,
-                "Dinner at Cafe",
-                -150000.0,
-                false
-            ),
-            Transaction(
-                "2",
-                "June 23",
-                "Salary",
-                Icons.Default.Work,
-                "Monthly Salary",
-                12000000.0,
-                true
-            ),
-            Transaction(
-                "3",
-                "June 22",
-                "Transport",
-                Icons.Default.DirectionsCar,
-                "Grab to Office",
-                -45000.0,
-                false
-            ),
-            Transaction(
-                "4",
-                "June 22",
-                "Shopping",
-                Icons.Default.ShoppingCart,
-                "Grocery Shopping",
-                -320000.0,
-                false
-            ),
-            Transaction(
-                "5",
-                "June 21",
-                "Entertainment",
-                Icons.Default.Movie,
-                "Movie Tickets",
-                -180000.0,
-                false
-            )
-        )
-    }
+    val recentTransactions = getMostRecentTransactions(currentMonthTransactions, 5)
+
+    val friendRequests =
+        friendViewModel.friendRequests.collectAsStateWithLifecycle().value?.getOrNull()
+            ?: emptyList()
+    val latestChats =
+        chatViewModel.latestChats.collectAsStateWithLifecycle().value?.getOrNull() ?: emptyList()
+
+    val latestSocialNotification = newsFeedViewModel.getLatestSocialInfo()
 
     val socialNotifications = remember {
         SocialNotification(
-            friendRequests = 2,
-            unreadMessages = 3,
-            recentActivity = "John posted: 'New budget goal achieved!'"
+            friendRequests = friendRequests.size,
+            unreadMessages = latestChats.sumOf { it.unreadCount },
+            recentActivity = latestSocialNotification.latestPost
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MoneyAppColors.Background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        MoneyAppColors.Background,
+                        Color(0xFFECFDF5)
+                    )
                 )
             )
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = navController)
-        },
-        containerColor = MoneyAppColors.Background
-    ) { paddingValues ->
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -246,12 +171,16 @@ fun HomeScreen(navController: NavController) {
 
             // Financial Overview
             item {
-                FinancialOverviewCard(financialOverview = financialOverview)
+                FinancialOverviewCard(
+                    financialOverview = financialOverview,
+                    isVND = isVND,
+                    exchangeRate = exchangeRate
+                )
             }
 
-            // Quick Actions
+            // Charts
             item {
-                QuickActionsSection(navController = navController)
+
             }
 
             // Recent Transactions
@@ -259,7 +188,9 @@ fun HomeScreen(navController: NavController) {
                 RecentTransactionsSection(
                     transactions = recentTransactions,
                     navController = navController,
-                    currency = financialOverview.currency
+                    categoryViewModel = categoryViewModel,
+                    isVND = isVND,
+                    exchangeRate = exchangeRate
                 )
             }
 
@@ -296,21 +227,22 @@ fun PersonalizedGreeting(userProfile: UserProfile) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // User Avatar - Replace with AsyncImage for API data
-            Image(
-                painter = painterResource(id = userProfile.avatarResource),
-                contentDescription = "User Avatar",
+            // User Avatar
+            Box(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(MoneyAppColors.Primary)
-            )
+                    .background(MainColor.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                AvatarImage(userProfile.avatarUrl, userProfile.avatarVersion)
+            }
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column {
                 Text(
-                    text = "Hi, ${userProfile.name}!",
+                    text = stringResource(R.string.greeting_text, userProfile.name),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MoneyAppColors.OnSurface
@@ -326,7 +258,11 @@ fun PersonalizedGreeting(userProfile: UserProfile) {
 }
 
 @Composable
-fun FinancialOverviewCard(financialOverview: FinancialOverview) {
+fun FinancialOverviewCard(
+    financialOverview: FinancialOverview,
+    isVND: Boolean,
+    exchangeRate: Double
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MoneyAppColors.Primary),
@@ -338,13 +274,17 @@ fun FinancialOverviewCard(financialOverview: FinancialOverview) {
                 .padding(20.dp)
         ) {
             Text(
-                text = "Total Balance",
+                text = stringResource(R.string.total_balance),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f)
             )
 
             Text(
-                text = "${financialOverview.currency}${formatCurrency(financialOverview.totalBalance)}",
+                text = CurrencyUtils.formatAmount(
+                    financialOverview.totalBalance,
+                    isVND,
+                    exchangeRate
+                ),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MoneyAppColors.OnPrimary
@@ -358,12 +298,16 @@ fun FinancialOverviewCard(financialOverview: FinancialOverview) {
             ) {
                 Column {
                     Text(
-                        text = "Income",
+                        text = stringResource(R.string.income),
                         style = MaterialTheme.typography.bodySmall,
                         color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f)
                     )
                     Text(
-                        text = "${financialOverview.currency}${formatCurrency(financialOverview.monthlyIncome)}",
+                        text = CurrencyUtils.formatAmount(
+                            financialOverview.monthlyIncome,
+                            isVND,
+                            exchangeRate
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MoneyAppColors.OnPrimary
@@ -372,12 +316,16 @@ fun FinancialOverviewCard(financialOverview: FinancialOverview) {
 
                 Column {
                     Text(
-                        text = "Expenses",
+                        text = stringResource(R.string.expense),
                         style = MaterialTheme.typography.bodySmall,
                         color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f)
                     )
                     Text(
-                        text = "${financialOverview.currency}${formatCurrency(financialOverview.monthlyExpenses)}",
+                        text = CurrencyUtils.formatAmount(
+                            financialOverview.monthlyExpenses,
+                            isVND,
+                            exchangeRate
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MoneyAppColors.OnPrimary
@@ -389,60 +337,15 @@ fun FinancialOverviewCard(financialOverview: FinancialOverview) {
 }
 
 @Composable
-fun QuickActionsSection(navController: NavController) {
-    val quickActions = listOf(
-        QuickAction("Add Transaction", Icons.Default.Add, "transaction", MoneyAppColors.Primary),
-        QuickAction(
-            "View Wallet",
-            Icons.Default.AccountBalanceWallet,
-            "wallet",
-            MoneyAppColors.Secondary
-        ),
-        QuickAction(
-            "Analytics",
-            Icons.Default.Analytics,
-            "analytics",
-            MoneyAppColors.PrimaryVariant
-        )
-    )
-
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(horizontal = 4.dp)
-    ) {
-        items(quickActions) { action ->
-            FilledTonalButton(
-                onClick = {
-                    // Replace with actual navigation
-                    navController.navigate(action.destination)
-                },
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = action.backgroundColor
-                ),
-                modifier = Modifier.height(48.dp)
-            ) {
-                Icon(
-                    imageVector = action.icon,
-                    contentDescription = action.title,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = action.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun RecentTransactionsSection(
-    transactions: List<Transaction>,
+    transactions: List<GeneralTransactionItem>,
+    categoryViewModel: CategoryViewModel,
+    isVND: Boolean,
+    exchangeRate: Double,
     navController: NavController,
-    currency: String
 ) {
+    val categories = categoryViewModel.categories.collectAsState().value?.getOrNull() ?: emptyList()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MoneyAppColors.Surface),
@@ -459,17 +362,17 @@ fun RecentTransactionsSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Recent Transactions",
+                    text = stringResource(R.string.recent_transactions),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MoneyAppColors.OnSurface
                 )
 
                 TextButton(
-                    onClick = { navController.navigate("transaction") }
+                    onClick = { navController.navigate(BottomNavItem.Transaction.route) }
                 ) {
                     Text(
-                        text = "View All",
+                        text = stringResource(R.string.view_all),
                         color = MoneyAppColors.Primary
                     )
                 }
@@ -478,9 +381,12 @@ fun RecentTransactionsSection(
             Spacer(modifier = Modifier.height(12.dp))
 
             transactions.forEach { transaction ->
+                val category = categories.find { it.categoryID == transaction.categoryID }
                 TransactionItem(
                     transaction = transaction,
-                    currency = currency,
+                    categoryName = category?.name ?: stringResource(R.string.unknown_category),
+                    isVND = isVND,
+                    exchangeRate = exchangeRate,
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
             }
@@ -490,10 +396,14 @@ fun RecentTransactionsSection(
 
 @Composable
 fun TransactionItem(
-    transaction: Transaction,
-    currency: String,
+    transaction: GeneralTransactionItem,
+    categoryName: String,
+    isVND: Boolean,
+    exchangeRate: Double,
     modifier: Modifier = Modifier
 ) {
+    val formattedDate = DateTimeUtils.formatDateTime(transaction.timestamp, LocalContext.current)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -513,8 +423,8 @@ fun TransactionItem(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = transaction.categoryIcon,
-                contentDescription = transaction.category,
+                imageVector = getCategoryIcon(categoryName),
+                contentDescription = categoryName,
                 tint = if (transaction.isIncome) MoneyAppColors.Success else MoneyAppColors.Error,
                 modifier = Modifier.size(20.dp)
             )
@@ -527,7 +437,7 @@ fun TransactionItem(
             modifier = Modifier.weight(1f)
         ) {
             Text(
-                text = transaction.description,
+                text = transaction.title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = MoneyAppColors.OnSurface,
@@ -535,7 +445,7 @@ fun TransactionItem(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "${transaction.date} • ${transaction.category}",
+                text = "${formattedDate.formattedDate} • $categoryName",
                 style = MaterialTheme.typography.bodySmall,
                 color = MoneyAppColors.OnBackground
             )
@@ -543,13 +453,11 @@ fun TransactionItem(
 
         // Amount
         Text(
-            text = "${if (transaction.isIncome) "+" else ""}$currency${
-                formatCurrency(
-                    kotlin.math.abs(
-                        transaction.amount
-                    )
-                )
-            }",
+            text = CurrencyUtils.formatAmount(
+                transaction.amount.toDoubleOrNull() ?: 1.0,
+                isVND,
+                exchangeRate
+            ),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = if (transaction.isIncome) MoneyAppColors.Success else MoneyAppColors.Error
@@ -560,12 +468,11 @@ fun TransactionItem(
 @Composable
 fun NavigationLinksSection(navController: NavController) {
     val navigationItems = listOf(
-        NavigationItem("Category", Icons.Default.Category, "category"),
-        NavigationItem("Report", Icons.Default.Assessment, "report"),
-        NavigationItem("Settings", Icons.Default.Settings, "settings"),
-        NavigationItem("Friends", Icons.Default.People, "friends"),
-        NavigationItem("Chat", Icons.Default.Chat, "chat"),
-        NavigationItem("News Feed", Icons.Default.Feed, "news_feed"),
+        NavigationItem("Category", Icons.Default.Category, Routes.Category),
+        NavigationItem("Wallet", Icons.Default.AccountBalanceWallet, Routes.Wallet),
+        NavigationItem("Report", Icons.Default.Assessment, Routes.Report),
+        NavigationItem("Friends", Icons.Default.People, Routes.Friend),
+        NavigationItem("Chat", Icons.AutoMirrored.Filled.Chat, Routes.Chat),
         NavigationItem("Group Chat", Icons.Default.Groups, "group_chat"),
         NavigationItem("Group Fund", Icons.Default.AccountBalance, "group_fund"),
         NavigationItem("Group Transaction", Icons.Default.SwapHoriz, "group_transaction")
@@ -582,7 +489,7 @@ fun NavigationLinksSection(navController: NavController) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Quick Access",
+                text = stringResource(R.string.more_features),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MoneyAppColors.OnSurface
@@ -672,7 +579,7 @@ fun SocialNotificationsSection(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Social Updates",
+                text = stringResource(R.string.social_updates),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MoneyAppColors.OnSurface
@@ -684,17 +591,23 @@ fun SocialNotificationsSection(
             if (notifications.friendRequests > 0) {
                 SocialNotificationItem(
                     icon = Icons.Default.PersonAdd,
-                    text = "${notifications.friendRequests} Friend Requests",
-                    onClick = { navController.navigate("friends") }
+                    text = stringResource(
+                        R.string.friend_requests_count,
+                        notifications.friendRequests
+                    ),
+                    onClick = { navController.navigate(Routes.Friend) }
                 )
             }
 
             // Unread Messages
             if (notifications.unreadMessages > 0) {
                 SocialNotificationItem(
-                    icon = Icons.Default.Message,
-                    text = "${notifications.unreadMessages} Unread Messages",
-                    onClick = { navController.navigate("chat") }
+                    icon = Icons.AutoMirrored.Filled.Message,
+                    text = stringResource(
+                        R.string.unread_messages_count,
+                        notifications.unreadMessages
+                    ),
+                    onClick = { navController.navigate(Routes.Chat) }
                 )
             }
 
@@ -702,7 +615,7 @@ fun SocialNotificationsSection(
             SocialNotificationItem(
                 icon = Icons.Default.Notifications,
                 text = notifications.recentActivity,
-                onClick = { navController.navigate("news_feed") }
+                onClick = { navController.navigate(BottomNavItem.NewsFeed.route) }
             )
         }
     }
@@ -734,7 +647,9 @@ fun SocialNotificationItem(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
             color = MoneyAppColors.OnSurface,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
 
         Icon(
@@ -745,85 +660,3 @@ fun SocialNotificationItem(
         )
     }
 }
-
-@Composable
-fun BottomNavigationBar(navController: NavController) {
-    val bottomNavItems = listOf(
-        NavigationItem("Home", Icons.Default.Home, "home"),
-        NavigationItem("Transaction", Icons.Default.Receipt, "transaction"),
-        NavigationItem("Wallet", Icons.Default.AccountBalanceWallet, "wallet"),
-        NavigationItem("Analytics", Icons.Default.Analytics, "analytics"),
-        NavigationItem("Profile", Icons.Default.Person, "profile")
-    )
-
-    NavigationBar(
-        containerColor = MoneyAppColors.Surface,
-        contentColor = MoneyAppColors.Primary
-    ) {
-        bottomNavItems.forEach { item ->
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.title
-                    )
-                },
-                label = {
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                },
-                selected = false, // Implement proper selection logic
-                onClick = {
-                    navController.navigate(item.destination)
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MoneyAppColors.Primary,
-                    selectedTextColor = MoneyAppColors.Primary,
-                    indicatorColor = MoneyAppColors.Primary.copy(alpha = 0.1f),
-                    unselectedIconColor = MoneyAppColors.OnBackground,
-                    unselectedTextColor = MoneyAppColors.OnBackground
-                )
-            )
-        }
-    }
-}
-
-// Utility function to format currency
-fun formatCurrency(amount: Double): String {
-    val formatter = NumberFormat.getNumberInstance(Locale("vi", "VN"))
-    return formatter.format(amount.toLong())
-}
-
-// Main Activity Integration Example
-/*
-@Composable
-fun MoneyAppNavigation() {
-    val navController = rememberNavController()
-
-    NavHost(
-        navController = navController,
-        startDestination = "home"
-    ) {
-        composable("home") {
-            HomeScreen(navController = navController)
-        }
-        // Add other screen composables here
-        // Replace with actual screen implementations
-        composable("transaction") { /* TransactionScreen(navController) */ }
-        composable("wallet") { /* WalletScreen(navController) */ }
-        composable("category") { /* CategoryScreen(navController) */ }
-        composable("analytics") { /* AnalyticsScreen(navController) */ }
-        composable("report") { /* ReportScreen(navController) */ }
-        composable("settings") { /* SettingsScreen(navController) */ }
-        composable("friends") { /* FriendsScreen(navController) */ }
-        composable("chat") { /* ChatScreen(navController) */ }
-        composable("news_feed") { /* NewsFeedScreen(navController) */ }
-        composable("group_chat") { /* GroupChatScreen(navController) */ }
-        composable("group_fund") { /* GroupFundScreen(navController) */ }
-        composable("group_transaction") { /* GroupTransactionScreen(navController) */ }
-        composable("profile") { /* ProfileScreen(navController) */ }
-    }
-}
-*/
