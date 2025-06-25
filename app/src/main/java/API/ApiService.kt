@@ -24,6 +24,7 @@ import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.Models.Friend.RejectFriendRequestResponse
 import DI.Models.Group.AdminLeaveResult
+import DI.Models.Group.AvatarDTO
 import DI.Models.Group.CreateGroupRequest
 import DI.Models.Group.Group
 import DI.Models.Group.GroupChatHistoryDto
@@ -303,5 +304,25 @@ interface ApiService {
 
     @DELETE("GroupTransactionComment/{commentId}")
     suspend fun deleteGroupTransactionComment(@Path("commentId") commentId: String): Response<Unit>
+
+    // Group Avatar
+    @Multipart
+    @POST("groups/{groupId}/avatar")
+    suspend fun uploadGroupAvatar(
+        @Path("groupId") groupId: String,
+        @Part file: MultipartBody.Part
+    ): Response<AvatarDTO>
+
+    @GET("groups/{groupId}/avatar")
+    suspend fun getGroupAvatar(@Path("groupId") groupId: String): Response<AvatarDTO>
+
+    @PUT("groups/{groupId}/avatar")
+    suspend fun updateGroupAvatar(
+        @Path("groupId") groupId: String,
+        @Body avatarUrl: AvatarDTO
+    ): Response<Unit>
+
+    @DELETE("groups/{groupId}/avatar")
+    suspend fun deleteGroupAvatar(@Path("groupId") groupId: String): Response<Unit>
 
 }

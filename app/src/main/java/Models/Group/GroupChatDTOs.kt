@@ -65,7 +65,8 @@ data class GroupChatHistory(
 
 data class UpdateGroupRequest(
     val name: String? = null,
-    val description: String? = null
+    val description: String? = null,
+    val imageUrl: String? = null
 )
 
 data class AdminLeaveResult(
@@ -109,4 +110,8 @@ data class GroupChatItemDto(
     val unreadCount: Int,
     val transactionId: String?, // null nếu không phải transaction
     val isTransactionMessage: Boolean
+)
+
+data class AvatarDTO(
+    val avatarUrl: String
 )

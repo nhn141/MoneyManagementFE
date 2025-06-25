@@ -449,5 +449,6 @@
     <string name="comment_added">Comment Added</string>
     <string name="comment_updated">Comment Updated</string>
     <string name="comment_deleted">Comment Deleted</string>
+    <string name="no_comments">There are no comments yet, be the first to comment!</string>
 
 </resources>

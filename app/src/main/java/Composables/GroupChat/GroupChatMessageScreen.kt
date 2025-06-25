@@ -401,75 +401,112 @@ fun CommentDialog(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(bottom = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(comments) { comment ->
-                        Column {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Avatar(comment.userAvatarUrl ?: "", 26)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(comment.userName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Text(
-                                        ChatTimeFormatter.formatTimestamp(comment.createdAt),
-                                        fontSize = 12.sp,
-                                        color = Color.Gray
-                                    )
-                                }
+                // Kiểm tra nếu không có bình luận
+                if (comments.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "No Comments",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(40.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.no_comments),
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(bottom = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(comments) { comment ->
+                            Column {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Avatar(comment.userAvatarUrl ?: "", 26)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            comment.userName,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+                                        Text(
+                                            ChatTimeFormatter.formatTimestamp(comment.createdAt),
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
 
-                                val currentUserId = (profile?.getOrNull()?.id?: "")
-                                if (comment.userId == currentUserId) {
-                                    if (editingCommentId != comment.commentId) {
-                                        IconButton(onClick = {
-                                            editingCommentId = comment.commentId
-                                            editedContent = comment.content
-                                        }) {
-                                            Icon(Icons.Default.Edit, contentDescription = "Edit")
-                                        }
-                                        IconButton(onClick = { onDelete(comment.commentId) }) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                    val currentUserId = (profile?.getOrNull()?.id ?: "")
+                                    if (comment.userId == currentUserId) {
+                                        if (editingCommentId != comment.commentId) {
+                                            IconButton(onClick = {
+                                                editingCommentId = comment.commentId
+                                                editedContent = comment.content
+                                            }) {
+                                                Icon(
+                                                    Icons.Default.Edit,
+                                                    contentDescription = "Edit"
+                                                )
+                                            }
+                                            IconButton(onClick = { onDelete(comment.commentId) }) {
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "Delete"
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            if (editingCommentId == comment.commentId) {
-                                OutlinedTextField(
-                                    value = editedContent,
-                                    onValueChange = { editedContent = it },
-                                    label = { Text("Edit comment") },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                Row(
-                                    horizontalArrangement = Arrangement.End,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    TextButton(onClick = {
-                                        onEdit(comment.commentId, editedContent)
-                                        editingCommentId = null
-                                        editedContent = ""
-                                    }) { Text("Save") }
-                                    TextButton(onClick = {
-                                        editingCommentId = null
-                                        editedContent = ""
-                                    }) { Text("Cancel") }
+                                if (editingCommentId == comment.commentId) {
+                                    OutlinedTextField(
+                                        value = editedContent,
+                                        onValueChange = { editedContent = it },
+                                        label = { Text("Edit comment") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.End,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        TextButton(onClick = {
+                                            onEdit(comment.commentId, editedContent)
+                                            editingCommentId = null
+                                            editedContent = ""
+                                        }) { Text("Save") }
+                                        TextButton(onClick = {
+                                            editingCommentId = null
+                                            editedContent = ""
+                                        }) { Text("Cancel") }
+                                    }
+                                } else {
+                                    Text(
+                                        text = comment.content,
+                                        modifier = Modifier.padding(start = 44.dp),
+                                        fontSize = 15.sp
+                                    )
                                 }
-                            } else {
-                                Text(
-                                    text = comment.content,
-                                    modifier = Modifier.padding(start = 44.dp),
-                                    fontSize = 15.sp
-                                )
-                            }
 
-                            HorizontalDivider()
+                                HorizontalDivider()
+                            }
                         }
                     }
                 }

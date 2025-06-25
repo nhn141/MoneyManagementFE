@@ -2,10 +2,15 @@ package DI.Composables.GroupChat
 
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Composables.ProfileSection.MainColor
+import DI.Composables.ProfileSection.uriToFile
 import DI.Models.Group.UpdateGroupRequest
 import DI.ViewModels.GroupChatViewModel
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,6 +27,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -37,10 +44,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupProfileScreen(
     groupId: String,
@@ -53,6 +62,7 @@ fun GroupProfileScreen(
     LaunchedEffect(Unit) {
         groupChatViewModel.loadGroupById(groupId)
         groupChatViewModel.loadGroupMembers(groupId)
+        groupChatViewModel.getGroupAvatar(groupId)
     }
 
     LaunchedEffect(Unit) {
@@ -61,9 +71,18 @@ fun GroupProfileScreen(
         }
     }
 
+    val nonComposableStrings = remember {
+        object {
+            val avatarUploadSuccess = context.getString(R.string.avatar_upload_success)
+            val avatarUploadFailed = context.getString(R.string.avatar_upload_failed)
+        }
+    }
+
     val group = groupChatViewModel.selectedGroup.collectAsState().value
     val members = groupChatViewModel.groupMembers.collectAsState().value
 
+    val groupAvatarUrl by groupChatViewModel.groupAvatarUrl.collectAsState()
+    val isAvatarLoading by groupChatViewModel.isAvatarLoading.collectAsState()
 
     var showMemberDialog by remember { mutableStateOf(false) }
 
@@ -75,6 +94,40 @@ fun GroupProfileScreen(
     var newUserId by remember { mutableStateOf("") }
 
     var showRemoveUserDialog by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
+                uri: Uri? ->
+            uri?.let {
+                coroutineScope.launch(Dispatchers.IO) {
+                    try {
+                        val file = uriToFile(it, context)
+                        if (file != null) {
+                            groupChatViewModel.uploadGroupAvatar(groupId, file)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(
+                                    context,
+                                    nonComposableStrings.avatarUploadSuccess,
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                context,
+                                nonComposableStrings.avatarUploadFailed,
+                                Toast.LENGTH_SHORT
+                            )
+                                .show()
+                        }
+                    }
+                }
+            }
+        }
 
     Box(
         modifier = Modifier
@@ -113,8 +166,64 @@ fun GroupProfileScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(modifier = Modifier.size(120.dp)) {
-                FriendAvatar(group?.imageUrl ?: "")
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // Avatar Section
+                Box(modifier = Modifier.size(120.dp)) {
+                    if (isAvatarLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        if (groupAvatarUrl != null) {
+                            val url = groupAvatarUrl ?: ""
+                            FriendAvatar(url)
+                        } else {
+                            Icon(
+                                painter = painterResource(R.drawable.profile_image),
+                                contentDescription = stringResource(R.string.default_avatar)
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier =
+                        Modifier.size(32.dp)
+                            .clip(CircleShape)
+                            .background(MainColor)
+                            .align(Alignment.BottomEnd)
+                            .clickable { launcher.launch("image/*") }
+                            .border(2.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Change group avatar",
+                            tint = Color.White
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(Color.Red)
+                            .align(Alignment.BottomStart)
+                            .clickable {
+                                groupAvatarUrl?.let {
+                                    groupChatViewModel.deleteGroupAvatar(groupId)
+                                }
+                            }
+                            .border(2.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Group Avatar",
+                            tint = Color.White
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

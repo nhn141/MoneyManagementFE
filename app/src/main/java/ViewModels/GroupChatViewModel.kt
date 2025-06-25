@@ -28,6 +28,7 @@ import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -137,6 +138,12 @@ class GroupChatViewModel @Inject constructor(
 
     private val _groupTransactionComments = MutableStateFlow<Map<String, List<GroupTransactionCommentDto>>>(emptyMap())
     val groupTransactionComments: StateFlow<Map<String, List<GroupTransactionCommentDto>>> = _groupTransactionComments
+
+    private val _groupAvatarUrl = MutableStateFlow<String?>(null)
+    val groupAvatarUrl: StateFlow<String?> = _groupAvatarUrl
+
+    private val _isAvatarLoading = MutableStateFlow(false)
+    val isAvatarLoading: StateFlow<Boolean> = _isAvatarLoading
 
     fun loadUserGroups() {
         viewModelScope.launch {
@@ -342,6 +349,58 @@ class GroupChatViewModel @Inject constructor(
     private fun extractTransactionIdFromMessage(content: String): String? {
         val pattern = Regex("transactionId=([a-fA-F0-9\\-]+)") // điều chỉnh theo format thực tế
         return pattern.find(content)?.groupValues?.getOrNull(1)
+    }
+
+    fun getGroupAvatar(groupId: String) {
+        viewModelScope.launch {
+            _isAvatarLoading.value = true
+            repository.getGroupAvatar(groupId).onSuccess { avatarUrl ->
+                _groupAvatarUrl.value = avatarUrl
+                _isAvatarLoading.value = false
+            }.onFailure {
+                _error.value = "Failed to load group avatar: ${it.localizedMessage}"
+                _isAvatarLoading.value = false
+            }
+        }
+    }
+
+    fun uploadGroupAvatar(groupId: String, file: File) {
+        _isAvatarLoading.value = true  // Đánh dấu trạng thái đang tải avatar
+        viewModelScope.launch {
+            repository.uploadGroupAvatar(groupId, file).onSuccess { avatarUrl ->
+                _groupAvatarUrl.value = avatarUrl  // Cập nhật URL avatar
+                _isAvatarLoading.value = false
+            }.onFailure { exception ->
+                _error.value = "Error uploading avatar: ${exception.localizedMessage}"  // Thông báo lỗi
+                _isAvatarLoading.value = false
+            }
+        }
+    }
+
+    fun updateGroupAvatar(groupId: String, avatarUrl: String) {
+        viewModelScope.launch {
+            _isAvatarLoading.value = true
+            repository.updateGroupAvatar(groupId, avatarUrl).onSuccess {
+                _groupAvatarUrl.value = avatarUrl // Cập nhật avatar mới
+                _isAvatarLoading.value = false
+            }.onFailure {
+                _error.value = "Failed to update group avatar: ${it.localizedMessage}"
+                _isAvatarLoading.value = false
+            }
+        }
+    }
+
+    fun deleteGroupAvatar(groupId: String) {
+        viewModelScope.launch {
+            _isAvatarLoading.value = true
+            repository.deleteGroupAvatar(groupId).onSuccess {
+                _groupAvatarUrl.value = null // Set lại ảnh avatar mặc định
+                _isAvatarLoading.value = false
+            }.onFailure {
+                _error.value = "Failed to delete group avatar: ${it.localizedMessage}"
+                _isAvatarLoading.value = false
+            }
+        }
     }
 
     fun clearError() {

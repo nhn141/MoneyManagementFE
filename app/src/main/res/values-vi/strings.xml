@@ -446,5 +446,6 @@
     <string name="comment_added">Đã thêm bình luận</string>
     <string name="comment_updated">Đã cập nhật bình luận</string>
     <string name="comment_deleted">Đã xóa bình luận</string>
+    <string name="no_comments">Chưa có bình luận nào, hãy là người đầu tiên bình luận</string>
 
 </resources>

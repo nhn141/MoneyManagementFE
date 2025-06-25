@@ -2,6 +2,7 @@ package DI.Repositories
 
 import API.ApiService
 import DI.Models.Group.AdminLeaveResult
+import DI.Models.Group.AvatarDTO
 import DI.Models.Group.CreateGroupRequest
 import DI.Models.Group.Group
 import DI.Models.Group.GroupChatHistoryDto
@@ -10,6 +11,10 @@ import DI.Models.Group.GroupMemberProfile
 import DI.Models.Group.SendGroupMessageRequest
 import DI.Models.Group.UpdateGroupRequest
 import android.util.Log
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -176,6 +181,62 @@ class GroupChatRepository @Inject constructor(
 
     suspend fun markGroupMessagesRead(groupId: String): Result<Unit> = try {
         val response = apiService.markGroupMessagesRead(groupId)
+        if (response.isSuccessful) {
+            Result.success(Unit)
+        } else {
+            val error = response.errorBody()?.string()
+            Result.failure(Exception(error))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun uploadGroupAvatar(groupId: String, file: File): Result<String> = try {
+        val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+        val part = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+        val response = apiService.uploadGroupAvatar(groupId, part)  // Gọi API upload avatar
+
+        if (response.isSuccessful) {
+            response.body()?.let {
+                Result.success(it.avatarUrl)  // Trả về URL của ảnh đã upload
+            } ?: Result.failure(Exception("Empty response body"))
+        } else {
+            val error = response.errorBody()?.string()
+            Result.failure(Exception(error))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun updateGroupAvatar(groupId: String, avatarUrl: String): Result<Unit> = try {
+        val response = apiService.updateGroupAvatar(groupId, AvatarDTO(avatarUrl))
+        if (response.isSuccessful) {
+            Result.success(Unit)
+        } else {
+            val error = response.errorBody()?.string()
+            Result.failure(Exception(error))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getGroupAvatar(groupId: String): Result<String> = try {
+        val response = apiService.getGroupAvatar(groupId)
+        if (response.isSuccessful) {
+            response.body()?.let {
+                Result.success(it.avatarUrl)
+            } ?: Result.failure(Exception("Avatar URL is empty"))
+        } else {
+            val error = response.errorBody()?.string()
+            Result.failure(Exception(error))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun deleteGroupAvatar(groupId: String): Result<Unit> = try {
+        val response = apiService.deleteGroupAvatar(groupId)
         if (response.isSuccessful) {
             Result.success(Unit)
         } else {
