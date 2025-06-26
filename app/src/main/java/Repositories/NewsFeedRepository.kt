@@ -7,9 +7,12 @@ import DI.Models.NewsFeed.CreateCommentRequest
 import DI.Models.NewsFeed.NewsFeedResponse
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
+import DI.Models.NewsFeed.ReplyCommentRequest
+import DI.Models.NewsFeed.ReplyCommentResponse
 import DI.Models.NewsFeed.ResultState
 import DI.Models.NewsFeed.UpdatePostTargetRequest
 import android.net.Uri
+import android.util.Log
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -174,6 +177,43 @@ class NewsFeedRepository @Inject constructor(
             ResultState.Error("Network error: ${e.message}")
         } catch (e: Exception) {
             ResultState.Error("Unexpected error: ${e.message}")
+        }
+    }
+
+    suspend fun replyToComment(request: ReplyCommentRequest): Result<ReplyCommentResponse> {
+        return try {
+            Log.d("ReplyToComment", "Starting replyToComment with request: $request")
+            val response = apiService.replyToComment(request)
+            Log.d("ReplyToComment", "API response: code=${response.code()}, message=${response.message()}, body=${response.body()}")
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    Log.d("ReplyToComment", "Reply successful: $it")
+                    Result.success(it)
+                } ?: run {
+                    Log.e("ReplyToComment", "Empty response body")
+                    Result.failure(Exception("Empty response body"))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Log.e("ReplyToComment", "Reply failed: code=${response.code()}, message=${response.message()}, errorBody=$errorBody")
+                Result.failure(Exception("Reply failed: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ReplyToComment", "Exception in replyToComment: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteReply(replyId: String): Result<Unit> {
+        return try {
+            val response = apiService.deleteReply(replyId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Delete failed: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

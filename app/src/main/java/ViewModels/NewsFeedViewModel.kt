@@ -5,8 +5,11 @@ import DI.Models.NewsFeed.CreateCommentRequest
 import DI.Models.NewsFeed.ResultState
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
+import DI.Models.NewsFeed.ReplyCommentRequest
+import DI.Models.NewsFeed.ReplyCommentResponse
 import DI.Repositories.NewsFeedRepository
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -48,6 +51,12 @@ class NewsFeedViewModel @Inject constructor(
 
     private val _updateTargetState = MutableStateFlow<ResultState<Unit>?>(null)
     val updateTargetState: StateFlow<ResultState<Unit>?> = _updateTargetState.asStateFlow()
+
+    private val _replyState = MutableStateFlow<ResultState<ReplyCommentResponse>?>(null)
+    val replyState: StateFlow<ResultState<ReplyCommentResponse>?> = _replyState.asStateFlow()
+
+    private val _deleteReplyState = MutableStateFlow<ResultState<Unit>?>(null)
+    val deleteReplyState: StateFlow<ResultState<Unit>?> = _deleteReplyState.asStateFlow()
 
 
 
@@ -255,4 +264,37 @@ class NewsFeedViewModel @Inject constructor(
     fun clearUpdateTargetState() {
         _updateTargetState.value = null
     }
+
+    fun replyToComment(request: ReplyCommentRequest, postId: String) {
+        viewModelScope.launch {
+            _replyState.value = ResultState.Loading
+
+            val result = repository.replyToComment(request)
+
+            _replyState.value = result.fold(
+                onSuccess = {
+                    // Sau khi reply thành công thì gọi lại fetch comment
+                    fetchComments(postId)
+                    ResultState.Success(it)
+                },
+                onFailure = {
+                    ResultState.Error(it.message ?: "Unknown error")
+                }
+            )
+        }
+        Log.d("NewsFeedViewModel", "replyToComment: ${request.content} - ${request.commentId}")
+    }
+
+
+    fun deleteReply(replyId: String) {
+        viewModelScope.launch {
+            _deleteReplyState.value = ResultState.Loading
+            val result = repository.deleteReply(replyId)
+            _deleteReplyState.value = result.fold(
+                onSuccess = { ResultState.Success(Unit) },
+                onFailure = { ResultState.Error(it.message ?: "Unknown error") }
+            )
+        }
+    }
+
 }

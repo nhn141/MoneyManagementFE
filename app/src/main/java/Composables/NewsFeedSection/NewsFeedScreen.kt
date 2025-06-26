@@ -4,6 +4,8 @@ import DI.Composables.ProfileSection.uriToFile
 import DI.Models.NewsFeed.Comment
 import DI.Models.NewsFeed.ResultState
 import DI.Models.NewsFeed.Post
+import DI.Models.NewsFeed.ReplyCommentRequest
+import DI.Models.NewsFeed.ReplyCommentResponse
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.VerticalPager
@@ -92,12 +94,15 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -107,6 +112,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.draw.alpha
@@ -1449,9 +1455,24 @@ fun CommentSection(
         is ResultState.Success -> commentState.data as? List<Comment> ?: emptyList()
         else -> emptyList()
     }
+    val replyState by viewModel.replyState.collectAsState() // Lắng nghe replyState
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
+
+    // Xử lý trạng thái reply
+    LaunchedEffect(replyState) {
+        when (replyState) {
+            is ResultState.Success -> {
+                // Có thể hiển thị SnackBar hoặc Toast
+                // Danh sách comment đã được làm mới trong ViewModel
+            }
+            is ResultState.Error -> {
+                // Hiển thị thông báo lỗi
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -1507,6 +1528,8 @@ fun CommentSection(
                 ) {
                     items(comments) { comment ->
                         var expanded by remember { mutableStateOf(false) }
+                        var showReplyInput by remember { mutableStateOf(false) } // Trạng thái hiển thị input reply
+                        var replyText by remember { mutableStateOf("") } // Nội dung reply
 
                         Card(
                             modifier = Modifier
@@ -1521,6 +1544,7 @@ fun CommentSection(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
+                                // Phần hiển thị thông tin comment (giữ nguyên)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     AsyncImage(
                                         model = comment.authorAvatarUrl,
@@ -1577,10 +1601,7 @@ fun CommentSection(
                                                     },
                                                     onClick = {
                                                         expanded = false
-                                                        viewModel.deleteComment(
-                                                            post.postId,
-                                                            comment.commentId
-                                                        )
+                                                        viewModel.deleteComment(post.postId, comment.commentId)
                                                     }
                                                 )
                                             }
@@ -1596,6 +1617,103 @@ fun CommentSection(
                                     fontSize = 14.sp,
                                     lineHeight = 20.sp
                                 )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Nút "Trả lời"
+                                TextButton(
+                                    onClick = { showReplyInput = !showReplyInput },
+                                    modifier = Modifier.align(Alignment.Start)
+                                ) {
+                                    Text(
+                                        text = if (showReplyInput) "Hủy" else "Trả lời",
+                                        color = Color(0xFF00D09E),
+                                        fontSize = 12.sp
+                                    )
+                                }
+
+                                // Input field cho reply
+                                if (showReplyInput) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    OutlinedTextField(
+                                        value = replyText,
+                                        onValueChange = { replyText = it },
+                                        label = {
+                                            Text("Nhập phản hồi...", color = Color.White.copy(alpha = 0.6f))
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.White,
+                                            cursorColor = Color(0xFF00D09E),
+                                            focusedBorderColor = Color(0xFF00D09E),
+                                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                                            focusedLabelColor = Color(0xFF00D09E),
+                                            unfocusedLabelColor = Color.White.copy(alpha = 0.6f)
+                                        ),
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Button(
+                                        onClick = {
+                                            if (replyText.isNotBlank()) {
+                                                viewModel.replyToComment(
+                                                    ReplyCommentRequest(
+                                                        commentId = comment.commentId,
+                                                        content = replyText,
+                                                        parentReplyId = null
+                                                    ),
+                                                    post.postId
+                                                )
+                                                replyText = ""
+                                                showReplyInput = false
+                                            }
+                                        },
+                                        modifier = Modifier.align(Alignment.End),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                        shape = RoundedCornerShape(20.dp),
+                                        contentPadding = PaddingValues(0.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .background(
+                                                    Brush.horizontalGradient(
+                                                        colors = listOf(Color(0xFF00F5D4), Color(0xFF00D09E))
+                                                    ),
+                                                    shape = RoundedCornerShape(20.dp)
+                                                )
+                                                .padding(horizontal = 24.dp, vertical = 12.dp)
+                                        ) {
+                                            Text(
+                                                "Gửi",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Hiển thị danh sách reply
+                                if (comment.replies.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Column(
+                                        modifier = Modifier.padding(start = 16.dp) // Thụt lề để phân biệt reply
+                                    ) {
+                                        comment.replies.forEach { reply ->
+                                            ReplyItem(
+                                                reply = reply,
+                                                currentUserId = currentUserId,
+                                                onDelete = { replyId ->
+                                                    viewModel.deleteReply(replyId)
+                                                }
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1674,6 +1792,93 @@ fun CommentSection(
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ReplyItem(
+    reply: ReplyCommentResponse,
+    currentUserId: String,
+    onDelete: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        AsyncImage(
+            model = reply.authorAvatarUrl,
+            contentDescription = "Avatar",
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = reply.authorName,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = reply.createdAt,
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontSize = 10.sp
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (reply.authorId == currentUserId) {
+                    Box {
+                        IconButton(
+                            onClick = { expanded = true },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Menu",
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        "Xóa",
+                                        color = Color(0xFFFF6B6B),
+                                        fontSize = 12.sp
+                                    )
+                                },
+                                onClick = {
+                                    expanded = false
+                                    onDelete(reply.replyId)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Text(
+                text = reply.content,
+                color = Color.White,
+                fontSize = 12.sp,
+                lineHeight = 18.sp
+            )
         }
     }
 }
