@@ -7,14 +7,12 @@ import DI.Composables.AuthSection.LoginScreen
 import DI.Composables.AuthSection.RegisterScreen
 import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
+import DI.Composables.ExportReports.ReportScreen
 import DI.Composables.FriendSection.FriendProfileScreen
 import DI.Composables.GroupChat.GroupChatMessageScreen
 import DI.Composables.GroupChat.GroupChatScreen
 import DI.Composables.GroupChat.GroupProfileScreen
-import DI.Composables.GroupTransactionComment.GroupTransactionCommentTestScreen
 import DI.Composables.GroupTransactionScreen.GroupTransactionScreen
-import DI.Composables.ExportReports.ReportScreen
-import DI.Composables.FriendSection.FriendProfileScreen
 import DI.Composables.HomeSection.HomeScreen
 import DI.Composables.NewsFeedSection.NewsFeedScreen
 import DI.Composables.ProfileSection.EditProfileScreen
@@ -22,24 +20,23 @@ import DI.Composables.TransactionSection.AddTransactionScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
 import DI.Composables.TransactionSection.TransactionScreen
+import DI.Composables.WalletSection.WalletScreen
 import DI.Models.NavBar.BottomNavItem
 import DI.ViewModels.AnalysisViewModel
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.FriendViewModel
+import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.GroupFundViewModel
+import DI.ViewModels.GroupTransactionCommentViewModel
+import DI.ViewModels.GroupTransactionViewModel
 import DI.ViewModels.NewsFeedViewModel
 import DI.ViewModels.OcrViewModel
 import DI.ViewModels.ProfileViewModel
 import DI.ViewModels.ReportViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
-import DI.ViewModels.CurrencyConverterViewModel
-import DI.ViewModels.GroupChatViewModel
-import DI.ViewModels.GroupFundViewModel
-import DI.ViewModels.GroupTransactionCommentViewModel
-import DI.ViewModels.GroupTransactionViewModel
 import GroupFundScreen
 import ModernCategoriesScreen
 import ProfileScreen
@@ -131,7 +128,8 @@ private fun InnerNavHost(
     val groupFundViewModel = hiltViewModel<GroupFundViewModel>(parentEntry)
     val groupTransactionViewModel = hiltViewModel<GroupTransactionViewModel>(parentEntry)
     val groupChatViewModel = hiltViewModel<GroupChatViewModel>(parentEntry)
-    val groupTransactionCommentViewModel = hiltViewModel<GroupTransactionCommentViewModel>(parentEntry)
+    val groupTransactionCommentViewModel =
+        hiltViewModel<GroupTransactionCommentViewModel>(parentEntry)
     val newsFeedViewModel = hiltViewModel<NewsFeedViewModel>(parentEntry)
     val reportViewModel = hiltViewModel<ReportViewModel>(parentEntry)
 
@@ -210,15 +208,10 @@ private fun InnerNavHost(
                 currencyConverterViewModel = currencyViewModel,
                 navController = navController
             )
-            // GroupChatScreen(navController, groupChatViewModel, profileViewModel)
         }
 
-        composable(Routes.GroupFund) {
-            GroupFundScreen(
-                navController = navController,
-                groupFundViewModel = groupFundViewModel,
-                groupId = "12"
-            )
+        composable(Routes.GroupChat) {
+            GroupChatScreen(navController, groupChatViewModel, profileViewModel)
         }
 
         composable(BottomNavItem.NewsFeed.route) {
@@ -345,8 +338,7 @@ private fun InnerNavHost(
 
         composable("group_transaction/{groupFundId}") { backStackEntry ->
             val groupFundId = backStackEntry.arguments?.getString("groupFundId")
-            if (groupFundId != null)
-            {
+            if (groupFundId != null) {
                 GroupTransactionScreen(
                     navController,
                     groupTransactionViewModel,
@@ -369,17 +361,6 @@ private fun InnerNavHost(
                 groupChatViewModel = groupChatViewModel,
                 groupTransactionCommentViewModel = groupTransactionCommentViewModel,
                 profileViewModel = profileViewModel
-            )
-        }
-
-        composable("group_chat_message_screen/{groupId}") { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
-            GroupChatMessageScreen(
-                groupId = groupId,
-                navController = navController,
-                groupChatViewModel = hiltViewModel(),
-                groupTransactionCommentViewModel = groupTransactionCommentViewModel,
-                profileViewModel = hiltViewModel()
             )
         }
 

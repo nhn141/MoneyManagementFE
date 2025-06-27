@@ -18,7 +18,5 @@ object Routes {
     const val TransactionDetail = "transaction_detail/{transactionId}"
     const val TransactionEdit = "transaction_edit/{transactionId}"
     const val GroupChatMessage = "group_chat_message/{groupId}"
-    const val GroupFund = "group_fund"
-
-    val all = setOf(Login, Register, Main, Auth, Calendar, ChatMessage)
+    const val GroupChat = "group_chat"
 }

@@ -239,9 +239,6 @@ interface ApiService {
         @Body request: UpdateGroupFundDto
     ): Response<GroupFundDto>
 
-    @DELETE("GroupFunds/{id}")
-    suspend fun deleteGroupFund(@Path("id") id: String): Response<DeleteResponse>
-
     //NewsFeed
     @GET("NewsFeed")
     suspend fun getNewsFeed(
@@ -296,7 +293,8 @@ interface ApiService {
         @Body request: ReportRequest
     ): Response<ResponseBody>
 
-    @DELETE("GroupFunds/{id}") suspend fun deleteGroupFund(@Path("id") id: String): Response<DeleteResponse>
+    @DELETE("GroupFunds/{id}")
+    suspend fun deleteGroupFund(@Path("id") id: String): Response<DeleteResponse>
 
     // Group Transaction
     @GET("GroupTransactions/{groupFundId}")
@@ -321,7 +319,8 @@ interface ApiService {
     @PUT("/api/groups/{groupId}")//
     suspend fun updateGroup(
         @Path("groupId") groupId: String,
-        @Body request: UpdateGroupRequest): Response<Group>
+        @Body request: UpdateGroupRequest
+    ): Response<Group>
 
     // Group Member
     @GET("/api/groups/{groupId}/members")
@@ -330,12 +329,14 @@ interface ApiService {
     @POST("/api/groups/{groupId}/members/{userId}")
     suspend fun addUserToGroup(
         @Path("groupId") groupId: String,
-        @Path("userId") userId: String): Response<Unit>
+        @Path("userId") userId: String
+    ): Response<Unit>
 
     @DELETE("/api/groups/{groupId}/members/{userId}")
     suspend fun removeUserFromGroup(
         @Path("groupId") groupId: String,
-        @Path("userId") userId: String): Response<Unit>
+        @Path("userId") userId: String
+    ): Response<Unit>
 
     @POST("/api/groups/{groupId}/admin-leave")
     suspend fun adminLeaveGroup(@Path("groupId") groupId: String): Response<AdminLeaveResult>
@@ -346,7 +347,8 @@ interface ApiService {
     @POST("/api/groups/{groupId}/members/{userId}/collaborator")
     suspend fun assignCollaboratorRole(
         @Path("groupId") groupId: String,
-        @Path("userId") userId: String): Response<Unit>
+        @Path("userId") userId: String
+    ): Response<Unit>
 
     @GET("/api/groups/{groupId}/members/{memberId}/profile")
     suspend fun getGroupMemberProfile(

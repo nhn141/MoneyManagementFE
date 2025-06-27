@@ -467,7 +467,6 @@
     <string name="comment_updated">Đã cập nhật bình luận</string>
     <string name="comment_deleted">Đã xóa bình luận</string>
     <string name="no_comments">Chưa có bình luận nào, hãy là người đầu tiên bình luận</string>
-    <string name="group_fund_deleted_success">Xoóa quỹ nhóm thành công</string>
 
     <!-- ================== CURRENCY SETTINGS ================== -->
     <string name="currency_settings">Cài đặt tiền tệ</string>

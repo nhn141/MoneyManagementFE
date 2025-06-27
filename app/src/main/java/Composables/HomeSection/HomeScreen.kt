@@ -37,7 +37,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Message
-import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Category
@@ -46,7 +45,6 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -473,9 +471,7 @@ fun NavigationLinksSection(navController: NavController) {
         NavigationItem("Report", Icons.Default.Assessment, Routes.Report),
         NavigationItem("Friends", Icons.Default.People, Routes.Friend),
         NavigationItem("Chat", Icons.AutoMirrored.Filled.Chat, Routes.Chat),
-        NavigationItem("Group Chat", Icons.Default.Groups, "group_chat"),
-        NavigationItem("Group Fund", Icons.Default.AccountBalance, "group_fund"),
-        NavigationItem("Group Transaction", Icons.Default.SwapHoriz, "group_transaction")
+        NavigationItem("Group Chat", Icons.Default.Groups, Routes.GroupChat),
     )
 
     Card(
