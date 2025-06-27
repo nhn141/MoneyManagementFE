@@ -42,7 +42,14 @@ import DI.Models.GroupTransaction.UpdateGroupTransactionDto
 import DI.Models.GroupTransactionComment.CreateGroupTransactionCommentDto
 import DI.Models.GroupTransactionComment.GroupTransactionCommentDto
 import DI.Models.GroupTransactionComment.UpdateGroupTransactionCommentDto
+import DI.Models.NewsFeed.Comment
+import DI.Models.NewsFeed.CreateCommentRequest
+import DI.Models.NewsFeed.NewsFeedResponse
+import DI.Models.NewsFeed.Post
+import DI.Models.NewsFeed.PostDetail
+import DI.Models.NewsFeed.UpdatePostTargetRequest
 import DI.Models.Ocr.OcrData
+import DI.Models.Reports.ReportRequest
 import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
 import DI.Models.UserInfo.UpdatedProfile
@@ -55,6 +62,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
@@ -92,7 +100,6 @@ interface ApiService {
     suspend fun deleteCategory(@Path("id") id: String): Response<ResponseBody>
 
 
-
     // Wallets
     @GET("Wallets")
     suspend fun getWallets(): List<Wallet>
@@ -110,7 +117,6 @@ interface ApiService {
     suspend fun deleteWallet(@Path("id") id: String): Response<ResponseBody>
 
 
-
     @GET("Transactions")
     suspend fun getTransactions(): List<Transaction>
 
@@ -118,7 +124,7 @@ interface ApiService {
     suspend fun updateTransaction(@Body transaction: Transaction): Response<Transaction>
 
     @POST("Transactions")
-    suspend fun createTransaction(@Body transaction : Transaction): Response<Transaction>
+    suspend fun createTransaction(@Body transaction: Transaction): Response<Transaction>
 
     @GET("Transactions/{id}")
     suspend fun getTransactionById(@Path("id") id: String): Response<Transaction>
@@ -145,7 +151,10 @@ interface ApiService {
     ): Response<List<Transaction>>
 
     @GET("Statistics/category-breakdown")
-    suspend fun getCategoryBreakdown(@Query("startDate") startDate: String, @Query("endDate") endDate: String): List<CategoryBreakdown>
+    suspend fun getCategoryBreakdown(
+        @Query("startDate") startDate: String,
+        @Query("endDate") endDate: String
+    ): List<CategoryBreakdown>
 
     // Ocr
 
@@ -209,7 +218,10 @@ interface ApiService {
     suspend fun getWeeklySummary(@Query("startDate") startDate: String): WeeklySummary
 
     @GET("Calendar/monthly")
-    suspend fun getMonthlySummary(@Query("year") year: String, @Query("month") month: String): MonthlySummary
+    suspend fun getMonthlySummary(
+        @Query("year") year: String,
+        @Query("month") month: String
+    ): MonthlySummary
 
     @GET("Calendar/yearly")
     suspend fun getYearlySummary(@Query("year") year: String): YearlySummary
@@ -222,7 +234,67 @@ interface ApiService {
     suspend fun createGroupFund(@Body request: CreateGroupFundDto): Response<GroupFundDto>
 
     @PUT("GroupFunds/{id}")
-    suspend fun updateGroupFund(@Path("id") id: String, @Body request: UpdateGroupFundDto): Response<GroupFundDto>
+    suspend fun updateGroupFund(
+        @Path("id") id: String,
+        @Body request: UpdateGroupFundDto
+    ): Response<GroupFundDto>
+
+    @DELETE("GroupFunds/{id}")
+    suspend fun deleteGroupFund(@Path("id") id: String): Response<DeleteResponse>
+
+    //NewsFeed
+    @GET("NewsFeed")
+    suspend fun getNewsFeed(
+        @Query("page") page: Int,
+        @Query("pageSize") pageSize: Int
+    ): Response<NewsFeedResponse>
+
+    @Multipart
+    @POST("NewsFeed")
+    suspend fun createPost(
+        @Query("content") content: String,
+        @Query("category") category: String = "general",
+        @Query("targetType") targetType: Int? = null,
+        @Query("targetGroupIds") targetGroupIds: String? = null,
+        @Part file: MultipartBody.Part? = null
+    ): Response<Post>
+
+    @GET("NewsFeed/{postId}")
+    suspend fun getPostDetail(
+        @Path("postId") postId: String
+    ): Response<PostDetail>
+
+    @POST("NewsFeed/{postId}/like")
+    suspend fun likePost(
+        @Path("postId") postId: String
+    ): Response<Unit>
+
+    @DELETE("NewsFeed/{postId}/like")
+    suspend fun unlikePost(
+        @Path("postId") postId: String
+    ): Response<Unit>
+
+    @POST("NewsFeed/comment")
+    suspend fun createComment(
+        @Body request: CreateCommentRequest
+    ): Response<Comment>
+
+    @DELETE("NewsFeed/comment/{commentId}")
+    suspend fun deleteComment(
+        @Path("commentId") commentId: String
+    ): Response<Unit>
+
+    @PATCH("NewsFeed/{postId}/target")
+    suspend fun updatePostTarget(
+        @Path("postId") postId: String,
+        @Body request: UpdatePostTargetRequest
+    ): Response<Unit>
+
+    //Report
+    @POST("Reports/generate")
+    suspend fun generateReport(
+        @Body request: ReportRequest
+    ): Response<ResponseBody>
 
     @DELETE("GroupFunds/{id}") suspend fun deleteGroupFund(@Path("id") id: String): Response<DeleteResponse>
 

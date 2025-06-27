@@ -107,6 +107,10 @@
     <string name="expense_uppercase">CHI TIÊU</string>
     <string name="type_income">Thu nhập</string>
     <string name="type_expense">Chi tiêu</string>
+    <string name="see_more">Xem thêm</string>
+    <string name="net_balance">Số dư ròng</string>
+    <string name="transaction_screen_description">Dễ dàng xem và quản lý giao dịch</string>
+
 
     <!-- Transaction Details -->
     <string name="transaction_detail">Chi tiết giao dịch</string>
@@ -121,6 +125,7 @@
     <string name="transaction_deleted_failed">Xóa giao dịch thất bại ✗</string>
     <string name="transaction_type">Loại giao dịch</string>
     <string name="transaction_type_unchangeable">Loại giao dịch (Không thể thay đổi)</string>
+    <string name="amount_label">Số tiền (%1$s)</string>
 
     <!-- Transaction Form Fields -->
     <string name="title">Tiêu đề</string>
@@ -135,6 +140,7 @@
     <string name="save_transaction">Lưu giao dịch</string>
     <string name="scan_receipt">Quét hóa đơn</string>
     <string name="scan_receipt_description">Quét hóa đơn</string>
+    <string name="enter_amount">Nhập số tiền</string>
 
     <!-- Transaction Form Validation -->
     <string name="title_empty_error">Tiêu đề không được để trống</string>
@@ -195,6 +201,9 @@
     <string name="transaction_form_unknown_description">Mô tả không xác định</string>
     <string name="transaction_form_unknown_id">ID không xác định</string>
     <string name="transaction_form_unknown_error">Lỗi không xác định</string>
+
+    <!-- Wallet Types -->
+    <string name="wallet_type_personal">Cá nhân</string>
 
     <!-- ================== DATE & TIME ================== -->
     <string name="date">Ngày</string>
@@ -259,7 +268,9 @@
     <!-- Time ranges -->
     <string name="time_00_08">00:00–08:00</string>
     <string name="time_08_16">08:00–16:00</string>
-    <string name="time_16_00">16:00–00:00</string>    <!-- ================== FINANCIAL ANALYSIS ================== -->
+    <string name="time_16_00">16:00–00:00</string>
+
+    <!-- ================== FINANCIAL ANALYSIS ================== -->
     <string name="financial_analysis">Phân tích tài chính</string>
     <string name="track_income_expenses">Theo dõi thu nhập và chi tiêu của bạn</string>
     <string name="income_expenses">Thu nhập &amp; Chi tiêu</string>
@@ -275,15 +286,15 @@
     <string name="budget">Ngân sách</string>
     <string name="savings">Tiết kiệm</string>
     <string name="spent">Đã chi</string>
-    
+
     <!-- Period Labels -->
     <string name="daily">Hàng ngày</string>
     <string name="weekly">Hàng tuần</string>
     <string name="monthly">Hàng tháng</string>
     <string name="yearly">Hàng năm</string>
-      <!-- Dropdown content description -->
+    <!-- Dropdown content description -->
     <string name="dropdown">Danh sách thả xuống</string>
-    
+
     <!-- Dynamic titles with period -->
     <string name="period_income">Thu nhập %1$s</string>
     <string name="period_expenses">Chi tiêu %1$s</string>
@@ -388,7 +399,7 @@
     <string name="pending_requests_count">Bạn có %1$d lời mời chờ xử lý.</string>
     <string name="reject">Từ chối</string>
     <string name="accept">Chấp nhận</string>
-    <string name="no_friends_found">Không tìm thấy bạn bè nào.</string>
+    <string name="no_friends_found">Không có bạn bè nào.</string>
     <string name="no_friends_search">Không tìm thấy bạn bè</string>
     <string name="try_different_search">Hãy thử từ khóa khác</string>
     <string name="friends">Bạn bè</string>
@@ -398,6 +409,15 @@
     <string name="last_active_unknown">Không rõ lần hoạt động cuối</string>
     <string name="delete_friend">Xóa</string>
     <string name="unfriend">Hủy kết bạn</string>
+    <string name="sent_request_at">Đã gửi lúc %1$s</string>
+    <string name="friend_request_sent">Đã gửi lời mời kết bạn!</string>
+    <string name="friend_request_accepted">Lời mời kết bạn đã được chấp nhận!</string>
+    <string name="friend_request_rejected">Lời mời kết bạn đã bị từ chối!</string>
+    <string name="friend_deleted">Đã xóa bạn bè!</string>
+    <string name="last_active">Hoạt động lần cuối: %1$s</string>
+    <string name="no_full_name">Tên không có sẵn</string>
+    <string name="delete_friend_confirm">Bạn có chắc muốn xóa bạn này không? Hành động này không thể hoàn tác.</string>
+
 
     <!-- ================== MESSAGING & CHAT ================== -->
     <string name="message">Nhắn tin</string>
@@ -447,5 +467,26 @@
     <string name="comment_updated">Đã cập nhật bình luận</string>
     <string name="comment_deleted">Đã xóa bình luận</string>
     <string name="no_comments">Chưa có bình luận nào, hãy là người đầu tiên bình luận</string>
+    <string name="group_fund_deleted_success">Xoóa quỹ nhóm thành công</string>
+
+    <!-- ================== CURRENCY SETTINGS ================== -->
+    <string name="currency_settings">Cài đặt tiền tệ</string>
+    <string name="currency">Tiền tệ</string>
+    <string name="vnd_currency">VND (₫)</string>
+    <string name="usd_currency">USD ($)</string>
+    <string name="current_currency">Hiện tại: %1$s</string>
+    <string name="preview_label">Xem trước: %1$s</string>
+    <string name="usd_decimal_warning">Số tiền USD chỉ hỗ trợ tối đa 2 chữ số thập phân</string>
+
+    <!-- ================== HOME SCREEN ================== -->
+    <string name="greeting_text">Xin chào, %1$s!</string>
+    <string name="view_all">Xem tất cả</string>
+    <string name="social_updates">Cập nhật xã hội</string>
+    <string name="friend_requests_count">%1$d lời mời kết bạn</string>
+    <string name="unread_messages_count">%1$d tin nhắn chưa đọc</string>
+    <string name="more_features">Tính năng khác</string>
+    <string name="no_posts_available">Chưa có bài viết nào</string>
+    <string name="unknown_author">Tác giả không xác định</string>
+    <string name="latest_post_format">%1$s đã đăng: %2$s</string>
 
 </resources>

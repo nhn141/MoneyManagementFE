@@ -3,23 +3,35 @@ package DI.Composables.TransactionSection
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Wallet.Wallet
+import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
+import Utils.CurrencyInput
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
@@ -48,27 +60,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-import java.util.Calendar
 import com.vanpra.composematerialdialogs.MaterialDialog
-import com.vanpra.composematerialdialogs.MaterialDialogState
-import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
+import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
-import java.time.LocalDate
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.time.LocalTime
+import java.util.Calendar
 import java.util.Locale
 
 
@@ -171,7 +177,8 @@ fun TransactionEditHeader(
                     )
                     .clickable { navController.popBackStack() },
                 contentAlignment = Alignment.Center
-            ) {                Icon(
+            ) {
+                Icon(
                     painter = painterResource(R.drawable.ic_arrow_back),
                     contentDescription = stringResource(R.string.back),
                     tint = Color(0xFF2D3748),
@@ -259,13 +266,18 @@ fun TransactionEditBody(
     // Hiển thị số tiền theo đơn vị được chọn
     var amount by remember {
         mutableStateOf(
-            formatAmountForInput(
+            CurrencyUtils.formatAmount(
                 amount = transaction.amount,
                 isVND = isVND,
                 exchangeRate = exchangeRate
             )
         )
     }
+    Log.d(
+        "TransactionEditBody",
+        "Initial amount: $amount, isVND: $isVND, exchangeRate: $exchangeRate"
+    )
+
     var title by remember { mutableStateOf(transaction.description) }
     val type by remember { mutableStateOf(transaction.type) }
     val isIncome = type.equals("income", ignoreCase = true)
@@ -275,11 +287,12 @@ fun TransactionEditBody(
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
+    var amountError by remember { mutableStateOf<String?>(null) }
+
     // Create non-composable strings object for error messages and toasts
     val nonComposableStrings = remember {
         object {
             val titleEmptyError = context.getString(R.string.title_empty_error)
-            val amountInvalidError = context.getString(R.string.amount_invalid_error)
             val categoryEmptyError = context.getString(R.string.category_empty_error)
             val walletEmptyError = context.getString(R.string.wallet_empty_error)
             val dateTimeEmptyError = context.getString(R.string.date_time_empty_error)
@@ -307,7 +320,8 @@ fun TransactionEditBody(
                 Column(
                     modifier = Modifier.padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
-                ) {                    Text(
+                ) {
+                    Text(
                         text = stringResource(R.string.transaction_type_unchangeable),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -348,7 +362,8 @@ fun TransactionEditBody(
                 Column(
                     modifier = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {                    TransactionTextField(
+                ) {
+                    TransactionTextField(
                         label = stringResource(R.string.title),
                         value = title,
                         onValueChange = { title = it },
@@ -356,13 +371,16 @@ fun TransactionEditBody(
                         placeholder = stringResource(R.string.enter_transaction_title)
                     )
 
-                    TransactionTextField(
-                        label = "Amount (${if (isVND) "VND" else "USD"})", // Hiển thị đơn vị tiền tệ
+                    CurrencyInput(
+                        isVND = isVND,
+                        label = stringResource(R.string.amount, if (isVND) "₫" else "$"),
                         value = amount,
-                        onValueChange = { amount = it },
-                        keyboardType = KeyboardType.Number,
-                        leadingIcon = Icons.Default.AttachMoney,
-                        placeholder = "0,00"
+                        onValueChange = { newAmount ->
+                            amount = newAmount
+                        },
+                        onValidationResult = { errorMessage ->
+                            amountError = errorMessage
+                        }
                     )
 
                     DropdownSelector(
@@ -431,32 +449,41 @@ fun TransactionEditBody(
             }
 
             // Save Button
-            Button(                onClick = {
+            Button(
+                onClick = {
+
                     // Validate all fields
                     when {
                         title.isBlank() -> {
                             showError = true
                             errorMessage = nonComposableStrings.titleEmptyError
                         }
-                        amount.isBlank() || amount.replace(".", "").replace(",", ".").toDoubleOrNull() == null -> {
+
+                        amountError != null -> {
                             showError = true
-                            errorMessage = nonComposableStrings.amountInvalidError
+                            errorMessage = amountError!!
                         }
+
                         categoryId.isBlank() -> {
                             showError = true
                             errorMessage = nonComposableStrings.categoryEmptyError
                         }
+
                         walletId.isBlank() -> {
                             showError = true
                             errorMessage = nonComposableStrings.walletEmptyError
                         }
+
                         selectedDateTime.value == null -> {
                             showError = true
                             errorMessage = nonComposableStrings.dateTimeEmptyError
                         }
+
                         else -> {
                             showError = false
-                            val amountInVND = currencyViewModel.toVND(amount.replace(".", "").replace(",", ".").toDoubleOrNull() ?: 0.0) ?: return@Button
+                            val amountInVND = currencyViewModel.toVND(
+                                CurrencyUtils.parseAmount(amount) ?: 0.0,
+                            ) ?: return@Button
                             val updatedTransaction = transaction.copy(
                                 description = title,
                                 amount = amountInVND, // Lưu số tiền ở VND
@@ -478,10 +505,18 @@ fun TransactionEditBody(
                                 transactionDate = updatedTransaction.transactionDate
                             ) { success ->
                                 if (success) {
-                                    Toast.makeText(context, nonComposableStrings.transactionUpdateSuccess, Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        nonComposableStrings.transactionUpdateSuccess,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                     navController.popBackStack()
                                 } else {
-                                    Toast.makeText(context, nonComposableStrings.transactionUpdateFailed, Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        nonComposableStrings.transactionUpdateFailed,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         }
@@ -502,12 +537,14 @@ fun TransactionEditBody(
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
-                ) {                    Text(
+                ) {
+                    Text(
                         text = stringResource(R.string.save_changes),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White
-                    )                }
+                    )
+                }
             }
         }
     }
@@ -522,7 +559,11 @@ fun TransactionEditBody(
     ) {
         datepicker(
             initialDate = selectedDateTime.value?.let {
-                LocalDate.of(it.get(Calendar.YEAR), it.get(Calendar.MONTH) + 1, it.get(Calendar.DAY_OF_MONTH))
+                LocalDate.of(
+                    it.get(Calendar.YEAR),
+                    it.get(Calendar.MONTH) + 1,
+                    it.get(Calendar.DAY_OF_MONTH)
+                )
             } ?: LocalDate.now(),
             title = stringResource(R.string.select_a_date)
         ) { localDate ->

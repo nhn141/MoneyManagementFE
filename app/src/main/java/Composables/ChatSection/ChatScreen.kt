@@ -1,37 +1,31 @@
 package DI.Composables.ChatSection
 
+import ChatTimeFormatter
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Composables.ProfileSection.MainColor
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
-import ViewModels.AuthViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -39,38 +33,40 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.graphics.SolidColor
 import androidx.navigation.NavController
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.res.stringResource
 import com.example.moneymanagement_frontend.R
 
 @Composable
 fun ChatScreen(
     navController: NavController,
-    authViewModel: AuthViewModel,
     chatViewModel: ChatViewModel,
     profileViewModel: ProfileViewModel,
     friendViewModel: FriendViewModel
 ) {
-    // Reload init data when token is refreshed
-    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
-    LaunchedEffect(refreshTokenState) {
-        if (refreshTokenState?.isSuccess == true) {
-            chatViewModel.connectToSignalR()
-            chatViewModel.getLatestChats()
-        }
-    }
-
     // State for search query
     var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
+        chatViewModel.connectToSignalR()
         chatViewModel.getLatestChats()
     }
 
@@ -81,9 +77,9 @@ fun ChatScreen(
     val profile = profileViewModel.profile.collectAsState().value?.getOrNull()
 
     LaunchedEffect(latestChats.toList()) { // Convert to list to trigger on changes
-        if(latestChats.isNotEmpty()) {
+        if (latestChats.isNotEmpty()) {
             val friendIds = latestChats.map { chat ->
-                if(chat.latestMessage.senderName == profile?.displayName)
+                if (chat.latestMessage.senderName == profile?.displayName)
                     chat.latestMessage.receiverId
                 else
                     chat.latestMessage.senderId
@@ -96,7 +92,7 @@ fun ChatScreen(
     val chatsWithAvatars = remember(latestChats, friendAvatars) {
         latestChats.map { chat ->
             val friendId =
-                if(chat.latestMessage.senderName == profile?.displayName)
+                if (chat.latestMessage.senderName == profile?.displayName)
                     chat.latestMessage.receiverId
                 else
                     chat.latestMessage.senderId
@@ -107,17 +103,17 @@ fun ChatScreen(
 
     // Filter chats based on search query
     val filteredChats = remember(chatsWithAvatars, searchQuery) {
-        if(searchQuery.isEmpty()) {
+        if (searchQuery.isEmpty()) {
             chatsWithAvatars
         } else {
             chatsWithAvatars.filter { chat ->
                 val friendName =
-                    if(chat.latestMessage.senderName == profile?.displayName)
+                    if (chat.latestMessage.senderName == profile?.displayName)
                         chat.latestMessage.receiverName
                     else
                         chat.latestMessage.senderName
                 friendName.contains(searchQuery, ignoreCase = true) ||
-                chat.latestMessage.content.contains(searchQuery, ignoreCase = true)
+                        chat.latestMessage.content.contains(searchQuery, ignoreCase = true)
             }
         }
     }
@@ -131,7 +127,12 @@ fun ChatScreen(
             .background(Color(0xFF53dba9))
             .padding(16.dp),
     ) {
-        Text(stringResource(R.string.messages), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(
+            stringResource(R.string.messages),
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
         Spacer(modifier = Modifier.height(16.dp))
         SearchBar(
             query = searchQuery,
@@ -139,14 +140,14 @@ fun ChatScreen(
             onClearQuery = { searchQuery = "" }
         )
         Spacer(modifier = Modifier.height(16.dp))
-        if(chatsWithAvatars.isEmpty()) {
+        if (chatsWithAvatars.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(stringResource(R.string.no_conversations), fontSize = 16.sp)
             }
-        } else if(filteredChats.isEmpty() && searchQuery.isNotEmpty()) {
+        } else if (filteredChats.isEmpty() && searchQuery.isNotEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -174,17 +175,20 @@ fun ChatScreen(
                     MessageItem(
                         navController = navController,
                         title =
-                            if(filteredChats[index].latestMessage.senderName == profile?.displayName)
+                            if (filteredChats[index].latestMessage.senderName == profile?.displayName)
                                 filteredChats[index].latestMessage.receiverName
                             else filteredChats[index].latestMessage.senderName,
                         message =
-                            if(filteredChats[index].latestMessage.senderName == profile?.displayName)
-                                stringResource(R.string.you_prefix, filteredChats[index].latestMessage.content)
+                            if (filteredChats[index].latestMessage.senderName == profile?.displayName)
+                                stringResource(
+                                    R.string.you_prefix,
+                                    filteredChats[index].latestMessage.content
+                                )
                             else filteredChats[index].latestMessage.content,
                         time = filteredChats[index].latestMessage.sentAt,
                         count = filteredChats[index].unreadCount,
                         friendId =
-                            if(filteredChats[index].latestMessage.senderName == profile?.displayName)
+                            if (filteredChats[index].latestMessage.senderName == profile?.displayName)
                                 filteredChats[index].latestMessage.receiverId
                             else filteredChats[index].latestMessage.senderId,
                         friendAvatarUrl = filteredChats[index].avatarUrl ?: "",
@@ -215,7 +219,9 @@ fun SearchBar(
         contentAlignment = Alignment.CenterStart
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -233,7 +239,7 @@ fun SearchBar(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 8.dp)
-            ) { innerTextField ->  
+            ) { innerTextField ->
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.CenterStart
@@ -300,7 +306,7 @@ fun MessageItem(
             modifier = Modifier.size(40.dp),
             contentAlignment = Alignment.BottomEnd
         ) {
-            if(isLoadingAvatar) {
+            if (isLoadingAvatar) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MainColor,

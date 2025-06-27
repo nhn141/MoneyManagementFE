@@ -18,6 +18,7 @@ val LocalMainNavBackStackEntry = compositionLocalOf<NavBackStackEntry> {
     error("No parent NavBackStackEntry provided")
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavHost(authViewModel: AuthViewModel = hiltViewModel()) {
 

@@ -60,7 +60,8 @@ class CategoryViewModel @Inject constructor(
                     UiEvent.ShowMessage(
                         stringProvider.getString(
                             R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                            result.exceptionOrNull()?.message
+                                ?: stringProvider.getString(R.string.unknown_error)
                         )
                     )
                 )
@@ -86,7 +87,8 @@ class CategoryViewModel @Inject constructor(
                     UiEvent.ShowMessage(
                         stringProvider.getString(
                             R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                            result.exceptionOrNull()?.message
+                                ?: stringProvider.getString(R.string.unknown_error)
                         )
                     )
                 )
@@ -105,7 +107,8 @@ class CategoryViewModel @Inject constructor(
                     UiEvent.ShowMessage(
                         stringProvider.getString(
                             R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                            result.exceptionOrNull()?.message
+                                ?: stringProvider.getString(R.string.unknown_error)
                         )
                     )
                 )

@@ -1,8 +1,10 @@
 package DI.Composables.AnalysisSection
 
+import DI.Composables.HomeSection.MoneyAppColors
 import DI.Navigation.Routes
+import DI.Utils.CurrencyUtils
 import DI.ViewModels.AnalysisViewModel
-import ViewModels.AuthViewModel
+import DI.ViewModels.CurrencyConverterViewModel
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -50,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import ir.ehsannarmani.compose_charts.ColumnChart
@@ -59,8 +62,7 @@ import ir.ehsannarmani.compose_charts.models.HorizontalIndicatorProperties
 import ir.ehsannarmani.compose_charts.models.IndicatorCount
 import ir.ehsannarmani.compose_charts.models.IndicatorPosition
 import ir.ehsannarmani.compose_charts.models.LabelProperties
-import java.time.LocalDate
-import java.util.Locale
+import ir.ehsannarmani.compose_charts.models.PopupProperties
 
 @Composable
 fun handleSelectedPeriodTitle(selectedPeriod: String): String {
@@ -74,22 +76,15 @@ fun handleSelectedPeriodTitle(selectedPeriod: String): String {
 }
 
 @Composable
-fun AnalysisBody(
+fun AnalysisScreen(
     navController: NavController,
-    authViewModel: AuthViewModel,
-    analysisViewModel: AnalysisViewModel
+    analysisViewModel: AnalysisViewModel,
+    currencyConverterViewModel: CurrencyConverterViewModel
 ) {
-    // Reload init data when token is refreshed
-    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
-    LaunchedEffect(refreshTokenState) {
-        if (refreshTokenState?.isSuccess == true) {
-            val today = LocalDate.now()
-            analysisViewModel.getDailySummary(today.toString())
-            analysisViewModel.getWeeklySummary(today.toString())
-            analysisViewModel.getMonthlySummary(today.year.toString(), today.monthValue.toString())
-            analysisViewModel.getYearlySummary(today.year.toString())
-        }
-    }
+    // Collect currency state
+    val isVND by currencyConverterViewModel.isVND.collectAsStateWithLifecycle()
+    val exchangeRate by currencyConverterViewModel.exchangeRate.collectAsStateWithLifecycle()
+
     val periodGraphResult = analysisViewModel.periodGraph.collectAsState()
 
     // Keep English strings for API calls
@@ -114,42 +109,57 @@ fun AnalysisBody(
             }
         }
 
-    fun formatCompactCurrency(value: Double): String {
-        return when {
-            value >= 1_000_000_000 -> "$${String.format(Locale.US, "%.2fB", value / 1_000_000_000)}"
-            value >= 1_000_000 -> "$${String.format(Locale.US, "%.2fM", value / 1_000_000)}"
-            value >= 1_000 -> "$${String.format(Locale.US, "%.2fK", value / 1_000)}"
-            else -> "$${String.format(Locale.US, "%.2f", value)}"
-        }
-    }
-
     val labels = selectedData?.labels ?: emptyList()
     val incomeList = selectedData?.income ?: emptyList()
     val expenseList = selectedData?.expenses ?: emptyList()
-    val totalIncome = selectedData?.totalIncome?.let { formatCompactCurrency(it) } ?: "--"
+    // Convert amounts based on currency preference and format compactly
+    val convertedTotalIncome = selectedData?.totalIncome?.let { vndAmount ->
+        if (isVND) {
+            vndAmount
+        } else {
+            exchangeRate?.let { rate -> CurrencyUtils.vndToUsd(vndAmount, rate) } ?: vndAmount
+        }
+    }
 
-    val totalExpenses = selectedData?.totalExpenses?.let { formatCompactCurrency(it) } ?: "--"
+    val convertedTotalExpenses = selectedData?.totalExpenses?.let { vndAmount ->
+        if (isVND) {
+            vndAmount
+        } else {
+            exchangeRate?.let { rate -> CurrencyUtils.vndToUsd(vndAmount, rate) } ?: vndAmount
+        }
+    }
+    val totalIncome =
+        convertedTotalIncome?.let { "+${CurrencyUtils.formatCompactAmount(it, isVND)}" } ?: "--"
+    val totalExpenses =
+        convertedTotalExpenses?.let { "-${CurrencyUtils.formatCompactAmount(it, isVND)}" } ?: "--"
 
     // Clean background matching profile screen
     Box(
         modifier =
-        Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F7FA)) // Light grayish background
+            Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MoneyAppColors.Background,
+                            Color(0xFFECFDF5)
+                        )
+                    )
+                )
     ) {
         Column(
             modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 10.dp, vertical = 16.dp)
-                .verticalScroll(rememberScrollState()),
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 10.dp, vertical = 16.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header with clean card design
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MoneyAppColors.Primary),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
@@ -163,13 +173,13 @@ fun AnalysisBody(
                         text = stringResource(R.string.financial_analysis),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2E3A59) // Dark blue-gray
+                        color = MoneyAppColors.OnPrimary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = stringResource(R.string.track_income_expenses),
                         fontSize = 16.sp,
-                        color = Color(0xFF8F9BB3) // Medium gray
+                        color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f)
                     )
                 }
             } // Modern period selector with pill design
@@ -210,14 +220,7 @@ fun AnalysisBody(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
-                        LegendItem(
-                            color = Color(0xFF4CAF50),
-                            label = stringResource(R.string.income)
-                        )
-                        LegendItem(
-                            color = Color(0xFF2196F3),
-                            label = stringResource(R.string.expenses)
-                        )
+                        // Legend removed - notation legend added below chart instead
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -225,11 +228,11 @@ fun AnalysisBody(
                     // Chart container
                     Box(
                         modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(280.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF8F9FA)) // Very light gray
+                            Modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFF8F9FA)) // Very light gray
                     ) {
                         IncomeExpensesBarChart(
                             incomeValues = incomeList,
@@ -237,8 +240,91 @@ fun AnalysisBody(
                             labels = labels,
                             isMonthly = selectedPeriod == 2,
                             incomeLabel = stringResource(R.string.income),
-                            expenseLabel = stringResource(R.string.expenses)
+                            expenseLabel = stringResource(R.string.expenses),
+                            isVND = isVND, exchangeRate = exchangeRate
                         )
+                    }
+
+                    // Add notation legend
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Compact notation legend
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                        shape = RoundedCornerShape(8.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp)
+                        ) {
+                            Text(
+                                text = "Number Notation",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF2E3A59),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                // K notation
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "k",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2196F3)
+                                    )
+                                    Text(
+                                        text = "Thousand",
+                                        fontSize = 10.sp,
+                                        color = Color(0xFF8F9BB3)
+                                    )
+                                }
+
+                                // M notation
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "M",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2196F3)
+                                    )
+                                    Text(
+                                        text = "Million",
+                                        fontSize = 10.sp,
+                                        color = Color(0xFF8F9BB3)
+                                    )
+                                }
+
+                                // B notation
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "B",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2196F3)
+                                    )
+                                    Text(
+                                        text = "Billion",
+                                        fontSize = 10.sp,
+                                        color = Color(0xFF8F9BB3)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -293,44 +379,41 @@ fun ModernPeriodSelector(
                 animateFloatAsState(
                     targetValue = if (isSelected) 1.05f else 1f,
                     animationSpec =
-                    spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
-                    )
+                        spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
                 )
 
                 Box(
                     modifier =
-                    Modifier
-                        .weight(1f)
-                        .scale(scale)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            if (isSelected) {
-                                Brush.horizontalGradient(
-                                    colors =
-                                    listOf(
-                                        Color(
-                                            0xFF667EEA
-                                        ), // Main theme color
-                                        Color(
-                                            0xFF764BA2
-                                        ) // Complementary
-                                        // purple
+                        Modifier
+                            .weight(1f)
+                            .scale(scale)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                if (isSelected) {
+                                    Brush.horizontalGradient(
+                                        colors =
+                                            listOf(
+                                                Color(
+                                                    0xFF2196F3
+                                                ), // Main theme color
+                                                MoneyAppColors.Primary
+                                            )
                                     )
-                                )
-                            } else {
-                                Brush.horizontalGradient(
-                                    colors =
-                                    listOf(
-                                        Color.Transparent,
-                                        Color.Transparent
+                                } else {
+                                    Brush.horizontalGradient(
+                                        colors =
+                                            listOf(
+                                                Color.Transparent,
+                                                Color.Transparent
+                                            )
                                     )
-                                )
-                            }
-                        )
-                        .clickable { onPeriodSelected(index) }
-                        .padding(vertical = 14.dp, horizontal = 8.dp),
+                                }
+                            )
+                            .clickable { onPeriodSelected(index) }
+                            .padding(vertical = 14.dp, horizontal = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -359,25 +442,25 @@ fun ModernCalendarButton(onClick: () -> Unit) {
 
     Box(
         modifier =
-        Modifier
-            .size(48.dp)
-            .scale(scale)
-            .clip(CircleShape)
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+            Modifier
+                .size(48.dp)
+                .scale(scale)
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(Color(0xFF2196F3), MoneyAppColors.Primary)
+                    )
                 )
-            )
-            .clickable {
-                isPressed = true
-                onClick()
-                isPressed = false
-            }
-            .border(
-                width = 1.dp,
-                color = Color.White.copy(alpha = 0.4f),
-                shape = CircleShape
-            ),
+                .clickable {
+                    isPressed = true
+                    onClick()
+                    isPressed = false
+                }
+                .border(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = 0.4f),
+                    shape = CircleShape
+                ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -385,27 +468,6 @@ fun ModernCalendarButton(onClick: () -> Unit) {
             contentDescription = stringResource(R.string.calendar),
             tint = Color.White,
             modifier = Modifier.size(24.dp)
-        )
-    }
-}
-
-@Composable
-fun LegendItem(color: Color, label: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(12.dp)
-                .clip(CircleShape)
-                .background(color)
-        )
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            color = Color(0xFF2E3A59),
-            fontWeight = FontWeight.Medium
         )
     }
 }
@@ -444,23 +506,23 @@ fun ModernTotalCard(
             // Icon with gradient background
             Box(
                 modifier =
-                Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            colors =
-                            listOf(
-                                tintColor.copy(alpha = 0.3f),
-                                tintColor.copy(alpha = 0.1f)
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors =
+                                    listOf(
+                                        tintColor.copy(alpha = 0.3f),
+                                        tintColor.copy(alpha = 0.1f)
+                                    )
                             )
                         )
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = tintColor.copy(alpha = 0.4f),
-                        shape = CircleShape
-                    ),
+                        .border(
+                            width = 1.dp,
+                            color = tintColor.copy(alpha = 0.4f),
+                            shape = CircleShape
+                        ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -499,7 +561,9 @@ fun IncomeExpensesBarChart(
     labels: List<String>,
     isMonthly: Boolean,
     incomeLabel: String,
-    expenseLabel: String
+    expenseLabel: String,
+    isVND: Boolean = false,
+    exchangeRate: Double? = null
 ) {
     val size = listOf(incomeValues.size, expenseValues.size, labels.size).minOrNull() ?: 0
 
@@ -507,8 +571,7 @@ fun IncomeExpensesBarChart(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp),
-            contentAlignment = Alignment.Center
+                .height(200.dp), contentAlignment = Alignment.Center
         ) {
             Text(
                 text = stringResource(R.string.no_data_to_display),
@@ -517,68 +580,74 @@ fun IncomeExpensesBarChart(
             )
         }
         return
+    }    // Convert values based on currency preference
+    val convertedIncomeValues = incomeValues.map { vndAmount ->
+        if (isVND) {
+            vndAmount
+        } else {
+            exchangeRate?.let { rate -> CurrencyUtils.vndToUsd(vndAmount, rate) } ?: vndAmount
+        }
+    }
+
+    val convertedExpenseValues = expenseValues.map { vndAmount ->
+        if (isVND) {
+            vndAmount
+        } else {
+            exchangeRate?.let { rate -> CurrencyUtils.vndToUsd(vndAmount, rate) } ?: vndAmount
+        }
     }
 
     val chartData =
-        remember(incomeValues, expenseValues, labels) {
+        remember(convertedIncomeValues, convertedExpenseValues, labels) {
             (0 until size).map { index ->
                 Bars(
                     label = labels[index],
                     values =
-                    listOf(
-                        Bars.Data(
-                            label = incomeLabel,
-                            value = incomeValues[index],
-                            color =
-                            Brush.verticalGradient(
-                                colors =
-                                listOf(
-                                    Color(
-                                        0xFF4CAF50
-                                    ),
-                                    Color(
-                                        0xFF81C784
-                                    ),
-                                    Color(
-                                        0xFFA5D6A7
+                        listOf(
+                            Bars.Data(
+                                label = incomeLabel,
+                                value = convertedIncomeValues[index],
+                                color =
+                                    Brush.verticalGradient(
+                                        colors =
+                                            listOf(
+                                                Color(
+                                                    0xFF4CAF50
+                                                ),
+                                                Color(
+                                                    0xFF81C784
+                                                ),
+                                                Color(
+                                                    0xFFA5D6A7
+                                                )
+                                            )
                                     )
-                                )
-                            )
-                        ),
-                        Bars.Data(
-                            label = expenseLabel,
-                            value = expenseValues[index],
-                            color =
-                            Brush.verticalGradient(
-                                colors =
-                                listOf(
-                                    Color(
-                                        0xFF2196F3
-                                    ),
-                                    Color(
-                                        0xFF64B5F6
-                                    ),
-                                    Color(
-                                        0xFF90CAF9
+                            ), Bars.Data(
+                                label = expenseLabel,
+                                value = convertedExpenseValues[index],
+                                color =
+                                    Brush.verticalGradient(
+                                        colors =
+                                            listOf(
+                                                Color(
+                                                    0xFF2196F3
+                                                ),
+                                                Color(
+                                                    0xFF64B5F6
+                                                ),
+                                                Color(
+                                                    0xFF90CAF9
+                                                )
+                                            )
                                     )
-                                )
                             )
                         )
-                    )
                 )
             }
         }
 
-    fun formatLargeNumber(value: Double): String {
-        return when {
-            value >= 1_000_000_000 -> String.format(Locale.US, "%.1fb", value / 1_000_000_000)
-            value >= 1_000_000 -> String.format(Locale.US, "%.1fm", value / 1_000_000)
-            value >= 1_000 -> String.format(Locale.US, "%.1fk", value / 1_000)
-            else -> String.format(Locale.US, "%.0f", value)
-        }
-    }
-
-    val maxValue = maxOf(incomeValues.maxOrNull() ?: 0.0, expenseValues.maxOrNull() ?: 0.0)
+    val maxValue =
+        maxOf(convertedIncomeValues.maxOrNull() ?: 0.0, convertedExpenseValues.maxOrNull() ?: 0.0)
     val indicatorStep = maxValue / 4
     val indicatorValues = List(5) { it * indicatorStep }.reversed()
     ColumnChart(
@@ -588,50 +657,56 @@ fun IncomeExpensesBarChart(
         ), // Reduced horizontal padding to give more space for indicators
         data = chartData,
         barProperties =
-        BarProperties(
-            cornerRadius =
-            Bars.Data.Radius.Rectangle(
-                topLeft = 8.dp,
-                topRight = 8.dp,
-                bottomLeft = 2.dp,
-                bottomRight = 2.dp
+            BarProperties(
+                cornerRadius =
+                    Bars.Data.Radius.Rectangle(
+                        topLeft = 8.dp,
+                        topRight = 8.dp,
+                        bottomLeft = 2.dp,
+                        bottomRight = 2.dp
+                    ),
+                spacing = if (isMonthly) 1.dp else 3.dp,
+                thickness = if (isMonthly) 6.dp else 8.dp,
             ),
-            spacing = if (isMonthly) 1.dp else 3.dp,
-            thickness = if (isMonthly) 6.dp else 8.dp,
-        ),
 
         animationSpec =
-        spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            ),
 
         labelProperties =
-        LabelProperties(
-            enabled = true,
-            rotation = LabelProperties.Rotation(degree = 0f),
-            textStyle =
-            TextStyle(
-                color = Color(0xFF8F9BB3),
-                fontSize = if (isMonthly) 8.sp else 12.sp,
-                fontWeight = FontWeight.Medium
+            LabelProperties(
+                enabled = true,
+                rotation = LabelProperties.Rotation(degree = 0f),
+                textStyle =
+                    TextStyle(
+                        color = Color(0xFF8F9BB3),
+                        fontSize = if (isMonthly) 8.sp else 12.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                padding = if (isMonthly) 8.dp else 4.dp
+            ), indicatorProperties =
+            HorizontalIndicatorProperties(
+                enabled = true,
+                textStyle =
+                    TextStyle(
+                        color = Color(0xFF8F9BB3),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Normal
+                    ),
+                count = IndicatorCount.CountBased(count = 5),
+                position = IndicatorPosition.Horizontal.Start,
+                padding = 36.dp,
+                // Increased from 12dp to 24dp for better spacing
+                contentBuilder = { value -> CurrencyUtils.formatCompactAmount(value, isVND) },
+                indicators = indicatorValues
             ),
-            padding = if (isMonthly) 8.dp else 4.dp
-        ),
-        indicatorProperties =
-        HorizontalIndicatorProperties(
+        popupProperties = PopupProperties(
             enabled = true,
-            textStyle =
-            TextStyle(
-                color = Color(0xFF8F9BB3),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Normal
-            ),
-            count = IndicatorCount.CountBased(count = 5),
-            position = IndicatorPosition.Horizontal.Start,
-            padding = 36.dp, // Increased from 12dp to 24dp for better spacing
-            contentBuilder = { value -> formatLargeNumber(value) },
-            indicators = indicatorValues
+            contentBuilder = { value -> CurrencyUtils.formatAmount(value, isVND) },
+            containerColor = Color.White,
         )
     )
 }
+
