@@ -3,14 +3,15 @@ package DI.ViewModels
 import DI.Composables.TransactionSection.GeneralTransactionItem
 import DI.Composables.TransactionSection.toGeneralTransactionItem
 import DI.Models.Category.Category
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.State
 import DI.Models.Category.Transaction
+import DI.Models.Transaction.CashFlow
 import DI.Models.Transaction.TransactionSearchRequest
 import DI.Repositories.CategoryRepository
 import DI.Repositories.TransactionRepository
 import android.util.Log
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,6 +37,9 @@ class TransactionViewModel @Inject constructor(
     private val _searchParams = mutableStateOf<TransactionSearchRequest?>(null)
     val searchParams: State<TransactionSearchRequest?> = _searchParams
 
+    private val _cashFlow = mutableStateOf<CashFlow?>(null)
+    val cashFlow: State<CashFlow?> = _cashFlow
+
     val filteredTransactions: State<List<GeneralTransactionItem>> = derivedStateOf {
         when (_selectedType.value) {
             "Income" -> allTransactions.filter { it.isIncome }
@@ -50,7 +54,10 @@ class TransactionViewModel @Inject constructor(
     val selectedTransaction: State<Transaction?> = _selectedTransaction
 
     init {
-        Log.d("TransactionScreenViewModel", "ViewModel initialized")
+        refreshData()
+    }
+
+    fun refreshData() {
         loadCategories()
     }
 
@@ -61,7 +68,10 @@ class TransactionViewModel @Inject constructor(
                 _categories.value = result.getOrThrow()
                 fetchTransactions()
             } else {
-                Log.e("TransactionScreenVM", "Load categories failed: ${result.exceptionOrNull()?.message}")
+                Log.e(
+                    "TransactionScreenVM",
+                    "Load categories failed: ${result.exceptionOrNull()?.message}"
+                )
             }
         }
     }
@@ -72,10 +82,30 @@ class TransactionViewModel @Inject constructor(
             val result = transactionRepository.getTransactions()
             if (result.isSuccess) {
                 val transactions = result.getOrThrow().map { it.toGeneralTransactionItem() }
+                    .sortedByDescending { it.timestamp }
                 _allTransactions.value = transactions
                 _originalTransactions.value = transactions
+                calculateCashFlow(result.getOrNull() ?: emptyList())
             }
         }
+    }
+
+    private fun calculateCashFlow(allTransactions: List<Transaction>) {
+        if (allTransactions.isEmpty()) {
+            return
+        }
+        val totalIncome = allTransactions.filter { it.type.equals("Income", ignoreCase = true) }
+            .sumOf { it.amount }
+        val totalExpense = allTransactions.filter { it.type.equals("Expense", ignoreCase = true) }
+            .sumOf { it.amount }
+        val netCashFlow = totalIncome - totalExpense
+
+        val newCashFlow = CashFlow(
+            totalIncome = totalIncome,
+            totalExpense = totalExpense,
+            netCashFlow = netCashFlow
+        )
+        _cashFlow.value = newCashFlow
     }
 
     fun onTypeSelected(type: String) {
@@ -116,7 +146,10 @@ class TransactionViewModel @Inject constructor(
                 _selectedTransaction.value = result.getOrThrow()
                 onResult(true)
             } else {
-                Log.e("TransactionVM", "Failed to load transaction by ID: ${result.exceptionOrNull()?.message}")
+                Log.e(
+                    "TransactionVM",
+                    "Failed to load transaction by ID: ${result.exceptionOrNull()?.message}"
+                )
                 _selectedTransaction.value = null
                 onResult(false)
             }

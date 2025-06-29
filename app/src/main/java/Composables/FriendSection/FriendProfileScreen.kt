@@ -1,23 +1,39 @@
 package DI.Composables.FriendSection
-import DI.Composables.ProfileSection.CardColor
+
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Composables.ProfileSection.MainColor
-import DI.Models.UserInfo.Profile
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
 import android.widget.Toast
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PersonRemove
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,26 +41,24 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +77,7 @@ fun FriendProfileScreen(
     val isLoadingAvatar = profileViewModel.isLoadingAvatar.collectAsState()
 
     val friends = friendViewModel.friends.collectAsState().value?.getOrNull()
-    val isOnline = friends?.find { it.userId == friendId }?.isOnline ?: false
+    val isOnline = friends?.find { it.userId == friendId }?.isOnline == true
 
     val isFriend = false
 
@@ -72,12 +86,14 @@ fun FriendProfileScreen(
             .fillMaxSize()
             .background(Color(0xFF53dba9))
     ) {
-        IconButton(onClick = {  }) {
+        IconButton(onClick = { }) {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
                 tint = Color.White,
-                modifier = Modifier.size(30.dp).offset(x = 10.dp, y = 10.dp)
+                modifier = Modifier
+                    .size(30.dp)
+                    .offset(x = 10.dp, y = 10.dp)
             )
         }
 
@@ -110,7 +126,7 @@ fun FriendProfileScreen(
                             modifier = Modifier.size(120.dp),
                             contentAlignment = Alignment.BottomEnd
                         ) {
-                            if(isLoadingAvatar.value) {
+                            if (isLoadingAvatar.value) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(24.dp),
                                     color = MainColor,
@@ -134,7 +150,7 @@ fun FriendProfileScreen(
 
                     // Display name
                     Text(
-                        text = friendProfile?.displayName ?: "No full name",
+                        text = friendProfile?.displayName ?: stringResource(R.string.no_full_name),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -142,7 +158,7 @@ fun FriendProfileScreen(
 
                     // Username
                     Text(
-                        text = "@${friendProfile?.userName ?: "No username"}",
+                        text = friendProfile?.userName ?: stringResource(R.string.no_email),
                         fontSize = 16.sp,
                         color = Color.White.copy(alpha = 0.8f)
                     )
@@ -151,7 +167,7 @@ fun FriendProfileScreen(
 
                     // Online status text
                     Text(
-                        text = if (isOnline) "Online" else "Offline",
+                        text = if (isOnline) stringResource(R.string.online) else stringResource(R.string.offline),
                         fontSize = 14.sp,
                         color = if (isOnline) Color(0xFF4CAF50) else Color.Gray,
                         modifier = Modifier
@@ -175,19 +191,19 @@ fun FriendProfileScreen(
             ) {
                 ActionButton(
                     icon = Icons.Default.ChatBubble,
-                    label = "Message",
+                    label = stringResource(R.string.message),
                     onClick = { navController.navigate("chat_message/$friendId") }
                 )
 
                 ActionButton(
                     icon = if (isFriend) Icons.Default.PersonRemove else Icons.Default.PersonAdd,
-                    label = if (isFriend) "Unfriend" else "Add Friend",
+                    label = if (isFriend) stringResource(R.string.unfriend) else stringResource(R.string.add_friend),
                     onClick = { friendViewModel.deleteFriend(friendId) }
                 )
 
                 ActionButton(
                     icon = Icons.Default.MoreVert,
-                    label = "More",
+                    label = stringResource(R.string.more_options),
                     onClick = { /* Show more options */ }
                 )
             }
@@ -207,7 +223,7 @@ fun FriendProfileScreen(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Profile Info",
+                        text = stringResource(R.string.profile_info),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF333333)
@@ -217,19 +233,19 @@ fun FriendProfileScreen(
 
                     ProfileInfoItem(
                         icon = Icons.Default.Person,
-                        label = "Full Name",
+                        label = stringResource(R.string.full_name),
                         value = "${friendProfile?.firstName ?: ""} ${friendProfile?.lastName ?: ""}"
                     )
 
                     ProfileInfoItem(
                         icon = Icons.Default.Email,
-                        label = "Email",
+                        label = stringResource(R.string.email),
                         value = friendProfile?.email ?: ""
                     )
 
                     ProfileInfoItem(
                         icon = Icons.Default.Tag,
-                        label = "User ID",
+                        label = stringResource(R.string.user_id),
                         value = friendProfile?.id ?: ""
                     )
                 }
@@ -282,6 +298,7 @@ fun ProfileInfoItem(
 
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
+    val copiedText = stringResource(R.string.id_copied)
 
     Row(
         modifier = Modifier
@@ -317,11 +334,11 @@ fun ProfileInfoItem(
             )
         }
 
-        if(label == "User ID") {
+        if (label == stringResource(R.string.user_id)) {
             IconButton(
                 onClick = {
                     clipboardManager.setText(AnnotatedString(value))
-                    Toast.makeText(context, "ID copied to clipboard", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, copiedText, Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier.size(24.dp)
             ) {

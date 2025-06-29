@@ -23,6 +23,10 @@ import DI.Models.Friend.DeleteFriendResponse
 import DI.Models.Friend.Friend
 import DI.Models.Friend.FriendRequest
 import DI.Models.Friend.RejectFriendRequestResponse
+import DI.Models.GroupFund.CreateGroupFundDto
+import DI.Models.GroupFund.DeleteResponse
+import DI.Models.GroupFund.GroupFundDto
+import DI.Models.GroupFund.UpdateGroupFundDto
 import DI.Models.NewsFeed.Comment
 import DI.Models.NewsFeed.CreateCommentRequest
 import DI.Models.NewsFeed.NewsFeedResponse
@@ -39,19 +43,18 @@ import DI.Models.UserInfo.UpdatedProfile
 import DI.Models.Wallet.AddWalletRequest
 import DI.Models.Wallet.Wallet
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
-import retrofit2.http.PATCH
 
 interface ApiService {
 
@@ -84,7 +87,6 @@ interface ApiService {
     suspend fun deleteCategory(@Path("id") id: String): Response<ResponseBody>
 
 
-
     // Wallets
     @GET("Wallets")
     suspend fun getWallets(): List<Wallet>
@@ -102,7 +104,6 @@ interface ApiService {
     suspend fun deleteWallet(@Path("id") id: String): Response<ResponseBody>
 
 
-
     @GET("Transactions")
     suspend fun getTransactions(): List<Transaction>
 
@@ -110,7 +111,7 @@ interface ApiService {
     suspend fun updateTransaction(@Body transaction: Transaction): Response<Transaction>
 
     @POST("Transactions")
-    suspend fun createTransaction(@Body transaction : Transaction): Response<Transaction>
+    suspend fun createTransaction(@Body transaction: Transaction): Response<Transaction>
 
     @GET("Transactions/{id}")
     suspend fun getTransactionById(@Path("id") id: String): Response<Transaction>
@@ -137,7 +138,10 @@ interface ApiService {
     ): Response<List<Transaction>>
 
     @GET("Statistics/category-breakdown")
-    suspend fun getCategoryBreakdown(@Query("startDate") startDate: String, @Query("endDate") endDate: String): List<CategoryBreakdown>
+    suspend fun getCategoryBreakdown(
+        @Query("startDate") startDate: String,
+        @Query("endDate") endDate: String
+    ): List<CategoryBreakdown>
 
     // Ocr
 
@@ -201,10 +205,29 @@ interface ApiService {
     suspend fun getWeeklySummary(@Query("startDate") startDate: String): WeeklySummary
 
     @GET("Calendar/monthly")
-    suspend fun getMonthlySummary(@Query("year") year: String, @Query("month") month: String): MonthlySummary
+    suspend fun getMonthlySummary(
+        @Query("year") year: String,
+        @Query("month") month: String
+    ): MonthlySummary
 
     @GET("Calendar/yearly")
     suspend fun getYearlySummary(@Query("year") year: String): YearlySummary
+
+    // Group Fund
+    @GET("GroupFunds/{groupId}")
+    suspend fun getGroupFundsByGroupId(@Path("groupId") groupId: String): Response<List<GroupFundDto>>
+
+    @POST("GroupFunds")
+    suspend fun createGroupFund(@Body request: CreateGroupFundDto): Response<GroupFundDto>
+
+    @PUT("GroupFunds/{id}")
+    suspend fun updateGroupFund(
+        @Path("id") id: String,
+        @Body request: UpdateGroupFundDto
+    ): Response<GroupFundDto>
+
+    @DELETE("GroupFunds/{id}")
+    suspend fun deleteGroupFund(@Path("id") id: String): Response<DeleteResponse>
 
     //NewsFeed
     @GET("NewsFeed")

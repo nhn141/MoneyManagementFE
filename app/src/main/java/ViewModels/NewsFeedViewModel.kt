@@ -2,16 +2,19 @@ package DI.ViewModels
 
 import DI.Models.NewsFeed.Comment
 import DI.Models.NewsFeed.CreateCommentRequest
-import DI.Models.NewsFeed.ResultState
+import DI.Models.NewsFeed.LatestSocialNotification
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
 import DI.Models.NewsFeed.ReplyCommentRequest
 import DI.Models.NewsFeed.ReplyCommentResponse
+import DI.Models.NewsFeed.ResultState
 import DI.Repositories.NewsFeedRepository
+import Utils.StringResourceProvider
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.moneymanagement_frontend.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +25,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NewsFeedViewModel @Inject constructor(
-    private val repository: NewsFeedRepository
+    private val repository: NewsFeedRepository,
+    private val stringProvider: StringResourceProvider
 ) : ViewModel() {
 
     private val _posts = MutableStateFlow<List<Post>>(emptyList())
@@ -59,12 +63,32 @@ class NewsFeedViewModel @Inject constructor(
     val deleteReplyState: StateFlow<ResultState<Unit>?> = _deleteReplyState.asStateFlow()
 
 
-
     private var currentPage = 1
     private val pageSize = 1
 
     init {
         loadNextPost()
+    }
+
+    fun getLatestSocialInfo(): LatestSocialNotification {
+        val latestPost = _posts.value.firstOrNull()
+        if (latestPost == null) {
+            return LatestSocialNotification(
+                latestPost = stringProvider.getString(R.string.no_posts_available)
+            )
+        }
+
+        val latestPostContent =
+            "\"${latestPost.content}\""
+        val latestPostAuthor =
+            latestPost.authorName ?: stringProvider.getString(R.string.unknown_author)
+        return LatestSocialNotification(
+            latestPost = stringProvider.getString(
+                R.string.latest_post_format,
+                latestPostAuthor,
+                latestPostContent
+            )
+        )
     }
 
     fun loadNextPost() {
@@ -81,9 +105,11 @@ class NewsFeedViewModel @Inject constructor(
                     _hasMorePosts.value = data.hasMorePosts
                     currentPage++
                 }
+
                 is ResultState.Error -> {
                     _error.value = result.message
                 }
+
                 ResultState.Loading -> {
                     // Không cần xử lý
                 }
@@ -113,7 +139,8 @@ class NewsFeedViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _postCreationState.value = ResultState.Loading
-            val result = repository.createPost(content, category, fileUri, targetType, targetGroupIds)
+            val result =
+                repository.createPost(content, category, fileUri, targetType, targetGroupIds)
             _postCreationState.value = result
 
             if (result is ResultState.Success) {
@@ -121,7 +148,6 @@ class NewsFeedViewModel @Inject constructor(
             }
         }
     }
-
 
 
     fun loadPostDetail(postId: String) {
@@ -146,16 +172,21 @@ class NewsFeedViewModel @Inject constructor(
                     _posts.update { posts ->
                         posts.map { post ->
                             if (post.postId == postId) {
-                                post.copy(isLikedByCurrentUser = true, likesCount = post.likesCount + 1)
+                                post.copy(
+                                    isLikedByCurrentUser = true,
+                                    likesCount = post.likesCount + 1
+                                )
                             } else {
                                 post
                             }
                         }
                     }
                 }
+
                 is ResultState.Error -> {
                     _likeState.value = result
                 }
+
                 ResultState.Loading -> {
                     // Không cần xử lý
                 }
@@ -176,16 +207,21 @@ class NewsFeedViewModel @Inject constructor(
                     _posts.update { posts ->
                         posts.map { post ->
                             if (post.postId == postId) {
-                                post.copy(isLikedByCurrentUser = false, likesCount = (post.likesCount - 1).coerceAtLeast(0))
+                                post.copy(
+                                    isLikedByCurrentUser = false,
+                                    likesCount = (post.likesCount - 1).coerceAtLeast(0)
+                                )
                             } else {
                                 post
                             }
                         }
                     }
                 }
+
                 is ResultState.Error -> {
                     _likeState.value = result
                 }
+
                 ResultState.Loading -> {
                     // Không cần xử lý
                 }
@@ -246,9 +282,11 @@ class NewsFeedViewModel @Inject constructor(
                 is ResultState.Success -> {
                     _commentState.value = ResultState.Success(result.data.comments)
                 }
+
                 is ResultState.Error -> {
                     _commentState.value = ResultState.Error(result.message)
                 }
+
                 else -> Unit
             }
         }
@@ -261,6 +299,7 @@ class NewsFeedViewModel @Inject constructor(
             _updateTargetState.value = result
         }
     }
+
     fun clearUpdateTargetState() {
         _updateTargetState.value = null
     }
