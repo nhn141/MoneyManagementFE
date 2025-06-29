@@ -100,6 +100,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -135,6 +136,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.net.toUri
+import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -146,6 +148,7 @@ import java.net.URL
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsFeedScreen(
+    navController: NavController,
     viewModel: NewsFeedViewModel,
     profileViewModel: ProfileViewModel,
     chatViewModel: ChatViewModel,
@@ -497,6 +500,26 @@ fun NewsFeedScreen(
                 )
             }
         }
+
+        // Nút back
+        IconButton(
+            onClick = { navController.popBackStack() },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .size(40.dp)
+                .background(
+                    color = Color(0xFF1A1A1A).copy(alpha = 0.7f),
+                    shape = CircleShape
+                )
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White
+            )
+        }
+
 
         SnackbarHost(
             hostState = snackbarHostState,

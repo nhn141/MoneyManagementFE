@@ -216,6 +216,7 @@ private fun InnerNavHost(
 
         composable(BottomNavItem.NewsFeed.route) {
             NewsFeedScreen(
+                navController = navController,
                 viewModel = newsFeedViewModel,
                 profileViewModel = profileViewModel,
                 chatViewModel = chatViewModel,
@@ -235,6 +236,7 @@ private fun InnerNavHost(
         ) { backStackEntry ->
             val postIdToFocus = backStackEntry.arguments?.getString("postIdToFocus")
             NewsFeedScreen(
+                navController = navController,
                 viewModel = newsFeedViewModel,
                 profileViewModel = profileViewModel,
                 chatViewModel = chatViewModel,
