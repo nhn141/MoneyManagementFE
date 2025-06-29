@@ -459,7 +459,32 @@
     <!-- ================== GROUP FUND ================== -->
     <string name="group_fund_created_success">Tạo quỹ nhóm thành công</string>
     <string name="group_fund_updated_success">Cập nhật quỹ nhóm thành công</string>
-    <string name="group_fund_deleted_success">Xoóa quỹ nhóm thành công</string>
+    <string name="group_fund_deleted_success">Xóa quỹ nhóm thành công</string>
+    <string name="group_fund">Quỹ Nhóm</string>
+    <string name="add_group_fund">Thêm Quỹ Nhóm</string>
+    <string name="no_group_funds_found">Không Tìm Thấy Qũy Nhóm</string>
+    <string name="recent_group_funds">Qũy Nhóm Gần Đây</string>
+
+    <!-- ================== GROUP TRANSACTION ================== -->
+    <string name="group_transaction_created_success">Tạo giao dịch nhóm thành công</string>
+    <string name="group_transaction_updated_success">Cập nhật giao dịch nhóm thành công</string>
+    <string name="group_transaction_deleted_success">Xóa giao dịch nhóm thành công</string>
+    <string name="group_transaction">Giao dịch nhóm</string>
+
+    <!-- ================== GROUP CHAT ================== -->
+    <string name="members">Thành viên</string>
+    <string name="Member">Thành viên</string>
+    <string name="Collaborator">Cộng tác viên</string>
+    <string name="Admin">Quản trị viên</string>
+    <string name="group_member">Thành viên nhóm</string>
+    <string name="joined_at">Tham gia vào</string>
+    <string name="role">Vai trò\n</string>
+
+    <!-- ================== GROUP TRANSACTION COMMENT ================== -->
+    <string name="comment_added">Đã thêm bình luận</string>
+    <string name="comment_updated">Đã cập nhật bình luận</string>
+    <string name="comment_deleted">Đã xóa bình luận</string>
+    <string name="no_comments">Chưa có bình luận nào, hãy là người đầu tiên bình luận</string>
 
     <!-- ================== CURRENCY SETTINGS ================== -->
     <string name="currency_settings">Cài đặt tiền tệ</string>

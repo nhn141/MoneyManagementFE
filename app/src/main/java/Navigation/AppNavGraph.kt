@@ -9,6 +9,10 @@ import DI.Composables.ChatSection.ChatMessageScreen
 import DI.Composables.ChatSection.ChatScreen
 import DI.Composables.ExportReports.ReportScreen
 import DI.Composables.FriendSection.FriendProfileScreen
+import DI.Composables.GroupChat.GroupChatMessageScreen
+import DI.Composables.GroupChat.GroupChatScreen
+import DI.Composables.GroupChat.GroupProfileScreen
+import DI.Composables.GroupTransactionScreen.GroupTransactionScreen
 import DI.Composables.HomeSection.HomeScreen
 import DI.Composables.NewsFeedSection.NewsFeedScreen
 import DI.Composables.ProfileSection.EditProfileScreen
@@ -23,7 +27,10 @@ import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.FriendViewModel
+import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.GroupFundViewModel
+import DI.ViewModels.GroupTransactionCommentViewModel
+import DI.ViewModels.GroupTransactionViewModel
 import DI.ViewModels.NewsFeedViewModel
 import DI.ViewModels.OcrViewModel
 import DI.ViewModels.ProfileViewModel
@@ -119,6 +126,10 @@ private fun InnerNavHost(
     val ocrViewModel = hiltViewModel<OcrViewModel>(parentEntry)
     val currencyViewModel = hiltViewModel<CurrencyConverterViewModel>(parentEntry)
     val groupFundViewModel = hiltViewModel<GroupFundViewModel>(parentEntry)
+    val groupTransactionViewModel = hiltViewModel<GroupTransactionViewModel>(parentEntry)
+    val groupChatViewModel = hiltViewModel<GroupChatViewModel>(parentEntry)
+    val groupTransactionCommentViewModel =
+        hiltViewModel<GroupTransactionCommentViewModel>(parentEntry)
     val newsFeedViewModel = hiltViewModel<NewsFeedViewModel>(parentEntry)
     val reportViewModel = hiltViewModel<ReportViewModel>(parentEntry)
 
@@ -199,12 +210,8 @@ private fun InnerNavHost(
             )
         }
 
-        composable(Routes.GroupFund) {
-            GroupFundScreen(
-                navController = navController,
-                groupFundViewModel = groupFundViewModel,
-                groupId = "12"
-            )
+        composable(Routes.GroupChat) {
+            GroupChatScreen(navController, groupChatViewModel, profileViewModel)
         }
 
         composable(BottomNavItem.NewsFeed.route) {
@@ -326,6 +333,52 @@ private fun InnerNavHost(
                 categoryViewModel = categoryViewModel,
                 walletViewModel = walletViewModel,
                 currencyViewModel = currencyViewModel
+            )
+        }
+
+        composable("group_transaction/{groupFundId}") { backStackEntry ->
+            val groupFundId = backStackEntry.arguments?.getString("groupFundId")
+            if (groupFundId != null) {
+                GroupTransactionScreen(
+                    navController,
+                    groupTransactionViewModel,
+                    walletViewModel,
+                    categoryViewModel,
+                    currencyViewModel,
+                    groupFundId = groupFundId
+                )
+            }
+        }
+
+        composable(
+            route = Routes.GroupChatMessage,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            GroupChatMessageScreen(
+                navController = navController,
+                groupId = groupId,
+                groupChatViewModel = groupChatViewModel,
+                groupTransactionCommentViewModel = groupTransactionCommentViewModel,
+                profileViewModel = profileViewModel
+            )
+        }
+
+        composable("group_profile_screen/{groupId}") { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            GroupProfileScreen(
+                groupId = groupId,
+                navController = navController,
+                groupChatViewModel = groupChatViewModel,
+            )
+        }
+
+        composable("group_fund_screen/{groupId}") { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            GroupFundScreen(
+                navController = navController,
+                groupFundViewModel = hiltViewModel(),
+                groupId = groupId
             )
         }
     }

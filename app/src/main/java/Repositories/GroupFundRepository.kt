@@ -13,6 +13,7 @@ class GroupFundRepository @Inject constructor(private val apiService: ApiService
 
     suspend fun getGroupFundsByGroupId(groupId: String): Result<List<GroupFundDto>> {
         return try {
+            Log.d("GroupFundRepository", "Calling fetchGroupFunds with id: $groupId")
             val response = apiService.getGroupFundsByGroupId(groupId)
             if (response.isSuccessful) {
                 Result.success(response.body() ?: emptyList())

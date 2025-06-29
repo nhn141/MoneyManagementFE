@@ -460,6 +460,31 @@
     <string name="group_fund_created_success">Group fund created successfully</string>
     <string name="group_fund_updated_success">Group fund updated successfully</string>
     <string name="group_fund_deleted_success">Group fund deleted successfully</string>
+    <string name="group_fund">Group Fund</string>
+    <string name="add_group_fund">Add Group Fund</string>
+    <string name="no_group_funds_found">No Group Funds Found</string>
+    <string name="recent_group_funds">Recent Group Funds</string>
+
+    <!-- ================== GROUP TRANSACTION ================== -->
+    <string name="group_transaction_created_success">Group transaction created successfully</string>
+    <string name="group_transaction_updated_success">Group transaction updated successfully</string>
+    <string name="group_transaction_deleted_success">Group transaction deleted successfully</string>
+    <string name="group_transaction">Group Transaction</string>
+
+    <!-- ================== GROUP CHAT ================== -->
+    <string name="members">members</string>
+    <string name="Member">Member</string>
+    <string name="Collaborator">Collaborator</string>
+    <string name="Admin">Admin</string>
+    <string name="group_member">Group Member</string>
+    <string name="joined_at">Joined At: %1$s</string>
+    <string name="role">Role: %1$s</string>
+
+    <!-- ================== GROUP TRANSACTION COMMENT ================== -->
+    <string name="comment_added">Comment Added</string>
+    <string name="comment_updated">Comment Updated</string>
+    <string name="comment_deleted">Comment Deleted</string>
+    <string name="no_comments">There are no comments yet, be the first to comment!</string>
 
     <!-- ================== CURRENCY SETTINGS ================== -->
     <string name="currency_settings">Currency Settings</string>
