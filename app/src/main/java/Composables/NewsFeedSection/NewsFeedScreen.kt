@@ -1459,7 +1459,7 @@ fun CommentSection(
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
-
+    var replyingTo by remember { mutableStateOf<ReplyCommentResponse?>(null) }
     // Xử lý trạng thái reply
     LaunchedEffect(replyState) {
         when (replyState) {
@@ -1622,11 +1622,14 @@ fun CommentSection(
 
                                 // Nút "Trả lời"
                                 TextButton(
-                                    onClick = { showReplyInput = !showReplyInput },
+                                    onClick = {
+                                        showReplyInput = !showReplyInput
+                                        replyingTo = null // Reset khi trả lời trực tiếp comment
+                                    },
                                     modifier = Modifier.align(Alignment.Start)
                                 ) {
                                     Text(
-                                        text = if (showReplyInput) "Hủy" else "Trả lời",
+                                        text = if (showReplyInput && replyingTo == null) "Hủy" else "Trả lời",
                                         color = Color(0xFF00D09E),
                                         fontSize = 12.sp
                                     )
@@ -1639,7 +1642,10 @@ fun CommentSection(
                                         value = replyText,
                                         onValueChange = { replyText = it },
                                         label = {
-                                            Text("Nhập phản hồi...", color = Color.White.copy(alpha = 0.6f))
+                                            Text(
+                                                text = if (replyingTo != null) "Trả lời ${replyingTo!!.authorName}..." else "Nhập phản hồi...",
+                                                color = Color.White.copy(alpha = 0.6f)
+                                            )
                                         },
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = OutlinedTextFieldDefaults.colors(
@@ -1663,12 +1669,13 @@ fun CommentSection(
                                                     ReplyCommentRequest(
                                                         commentId = comment.commentId,
                                                         content = replyText,
-                                                        parentReplyId = null
+                                                        parentReplyId = replyingTo?.replyId
                                                     ),
                                                     post.postId
                                                 )
                                                 replyText = ""
                                                 showReplyInput = false
+                                                replyingTo = null
                                             }
                                         },
                                         modifier = Modifier.align(Alignment.End),
@@ -1697,17 +1704,24 @@ fun CommentSection(
                                 }
 
                                 // Hiển thị danh sách reply
+                                // Trong CommentSection, thay phần hiển thị reply
                                 if (comment.replies.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Column(
-                                        modifier = Modifier.padding(start = 16.dp) // Thụt lề để phân biệt reply
+                                        modifier = Modifier.padding(start = 0.dp)
                                     ) {
-                                        comment.replies.forEach { reply ->
+                                        val flattenedReplies = flattenReplies(comment.replies)
+                                        flattenedReplies.forEach { reply ->
                                             ReplyItem(
                                                 reply = reply,
                                                 currentUserId = currentUserId,
                                                 onDelete = { replyId ->
-                                                    viewModel.deleteReply(replyId)
+                                                    viewModel.deleteReply(replyId, post.postId)
+                                                },
+                                                onReply = { replyToReply ->
+                                                    showReplyInput = true
+                                                    replyingTo = replyToReply // Lưu reply đang trả lời
+                                                    replyText = ""
                                                 }
                                             )
                                             Spacer(modifier = Modifier.height(8.dp))
@@ -1800,87 +1814,120 @@ fun CommentSection(
 fun ReplyItem(
     reply: ReplyCommentResponse,
     currentUserId: String,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    onReply: (ReplyCommentResponse) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     ) {
-        AsyncImage(
-            model = reply.authorAvatarUrl,
-            contentDescription = "Avatar",
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
+        if (reply.parentReplyName.isNotBlank()) {
+            Text(
+                text = "Trả lời bình luận của ${reply.parentReplyName}",
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+        }
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Row {
+            AsyncImage(
+                model = reply.authorAvatarUrl,
+                contentDescription = "Avatar",
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = reply.authorName,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = reply.createdAt,
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 10.sp
-                )
+            Spacer(modifier = Modifier.width(8.dp))
 
-                Spacer(modifier = Modifier.weight(1f))
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = reply.authorName,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = reply.createdAt,
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 10.sp
+                    )
 
-                if (reply.authorId == currentUserId) {
-                    Box {
-                        IconButton(
-                            onClick = { expanded = true },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Menu",
-                                tint = Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
+                    Spacer(modifier = Modifier.weight(1f))
 
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "Xóa",
-                                        color = Color(0xFFFF6B6B),
-                                        fontSize = 12.sp
-                                    )
-                                },
-                                onClick = {
-                                    expanded = false
-                                    onDelete(reply.replyId)
-                                }
-                            )
+                    if (reply.authorId == currentUserId) {
+                        Box {
+                            IconButton(
+                                onClick = { expanded = true },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "Menu",
+                                    tint = Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Xóa",
+                                            color = Color(0xFFFF6B6B),
+                                            fontSize = 12.sp
+                                        )
+                                    },
+                                    onClick = {
+                                        expanded = false
+                                        onDelete(reply.replyId)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            Text(
-                text = reply.content,
-                color = Color.White,
-                fontSize = 12.sp,
-                lineHeight = 18.sp
-            )
+                Text(
+                    text = reply.content,
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp
+                )
+
+                // "Trả lời" button for the reply
+                TextButton(
+                    onClick = { onReply(reply) },
+                    modifier = Modifier.align(Alignment.Start)
+                ) {
+                    Text(
+                        text = "Trả lời",
+                        color = Color(0xFF00D09E),
+                        fontSize = 12.sp
+                    )
+                }
+            }
         }
     }
+}
+
+fun flattenReplies(replies: List<ReplyCommentResponse>): List<ReplyCommentResponse> {
+    val result = mutableListOf<ReplyCommentResponse>()
+    replies.forEach { reply ->
+        result.add(reply)
+        result.addAll(flattenReplies(reply.replies)) // Thêm các reply lồng nhau
+    }
+    return result
 }
 
 @Composable

@@ -15,6 +15,7 @@ data class ReplyCommentResponse(
     val authorAvatarUrl: String,
     val commentId: String,
     val parentReplyId: String?,
+    val parentReplyName: String,
     val replies: List<ReplyCommentResponse>
 )
 

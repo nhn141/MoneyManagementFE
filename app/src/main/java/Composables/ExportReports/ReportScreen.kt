@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.vanpra.composematerialdialogs.MaterialDialog
@@ -55,6 +56,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.example.moneymanagement_frontend.R
 
 @Composable
 fun ReportScreen(viewModel: ReportViewModel) {
@@ -64,12 +66,12 @@ fun ReportScreen(viewModel: ReportViewModel) {
     val dateFormatter = DateTimeFormatter.ISO_DATE_TIME
 
     val typeOptions = listOf(
-        "Báo cáo thu chi" to "cash-flow",
-        "Phân loại chi tiêu" to "category-breakdown",
-        "Tổng kết ngày" to "daily-summary",
-        "Tổng kết tuần" to "weekly-summary",
-        "Tổng kết tháng" to "monthly-summary",
-        "Tổng kết năm" to "yearly-summary"
+        stringResource(R.string.cash_flow) to "cash-flow",
+        stringResource(R.string.category_breakdown) to "category-breakdown",
+        stringResource(R.string.daily_summary) to "daily-summary",
+        stringResource(R.string.weekly_summary) to "weekly-summary",
+        stringResource(R.string.monthly_summary) to "monthly-summary",
+        stringResource(R.string.yearly_summary) to "yearly-summary"
     )
 
     val currencyOptions = listOf(
@@ -106,14 +108,14 @@ fun ReportScreen(viewModel: ReportViewModel) {
                         )
                         Toast.makeText(
                             context,
-                            if (saved) "Đã lưu báo cáo vào thư mục Downloads" else "Lưu báo cáo thất bại",
+                            if (saved) "Save to Downloads" else "Fail to save file",
                             Toast.LENGTH_LONG
                         ).show()
                     }
                 } else {
                     Toast.makeText(
                         context,
-                        "Tạo báo cáo thất bại",
+                        "Fail to generate report",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -162,7 +164,7 @@ fun ReportScreen(viewModel: ReportViewModel) {
                 ) {
                     // Date Section
                     SectionHeader(
-                        title = "Thời gian báo cáo",
+                        title = stringResource(R.string.report_time_period),
                         icon = Icons.Default.CalendarToday,
                         color = primaryGreen
                     )
@@ -172,16 +174,16 @@ fun ReportScreen(viewModel: ReportViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
-                            ModernDateTimePicker(
-                                label = "Ngày bắt đầu",
+                            DateTimePicker(
+                                label = stringResource(R.string.start_date),
                                 dateTime = startDate,
                                 onDateTimeChange = { startDate = it },
                                 primaryColor = primaryGreen
                             )
                         }
                         Box(modifier = Modifier.weight(1f)) {
-                            ModernDateTimePicker(
-                                label = "Ngày kết thúc",
+                            DateTimePicker(
+                                label = stringResource(R.string.end_date),
                                 dateTime = endDate,
                                 onDateTimeChange = { endDate = it },
                                 primaryColor = primaryGreen
@@ -196,21 +198,21 @@ fun ReportScreen(viewModel: ReportViewModel) {
 
                     // Report Configuration Section
                     SectionHeader(
-                        title = "Cấu hình báo cáo",
+                        title = stringResource(R.string.report_configuration),
                         icon = Icons.Default.Assessment,
                         color = primaryGreen
                     )
 
-                    ModernDropdownSelector(
-                        label = "Loại báo cáo",
+                    DropdownSelector(
+                        label = stringResource(R.string.report_type),
                         options = typeOptions,
                         selected = selectedType,
                         onSelectedChange = { selectedType = it },
                         primaryColor = primaryGreen
                     )
 
-                    ModernDropdownSelector(
-                        label = "Tiền tệ",
+                    DropdownSelector(
+                        label = stringResource(R.string.currency),
                         options = currencyOptions,
                         selected = selectedCurrency,
                         onSelectedChange = { selectedCurrency = it },
@@ -220,7 +222,7 @@ fun ReportScreen(viewModel: ReportViewModel) {
             }
 
             // Generate Button
-            ModernGenerateButton(
+            GenerateButton(
                 isLoading = isLoading,
                 primaryColor = primaryGreen,
                 lightColor = lightGreen,
@@ -351,7 +353,7 @@ private fun SectionHeader(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModernDateTimePicker(
+fun DateTimePicker(
     label: String,
     dateTime: LocalDateTime,
     onDateTimeChange: (LocalDateTime) -> Unit,
@@ -460,7 +462,7 @@ fun ModernDateTimePicker(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModernDropdownSelector(
+fun DropdownSelector(
     label: String,
     options: List<Pair<String, String>>,
     selected: String,
@@ -536,7 +538,7 @@ fun ModernDropdownSelector(
 }
 
 @Composable
-private fun ModernGenerateButton(
+private fun GenerateButton(
     isLoading: Boolean,
     primaryColor: Color,
     lightColor: Color,

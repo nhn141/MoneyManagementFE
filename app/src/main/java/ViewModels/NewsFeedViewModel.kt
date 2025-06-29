@@ -230,7 +230,7 @@ class NewsFeedViewModel @Inject constructor(
                     }
                 }
 
-                // Gọi lại để lấy danh sách comment mới
+                // Gọi lại
                 fetchComments(postId)
             } else if (result is ResultState.Error) {
                 _commentState.value = ResultState.Error(result.message ?: "Delete comment failed")
@@ -273,7 +273,16 @@ class NewsFeedViewModel @Inject constructor(
 
             _replyState.value = result.fold(
                 onSuccess = {
-                    // Sau khi reply thành công thì gọi lại fetch comment
+                    // Cập nhật commentsCount
+                    _posts.update { posts ->
+                        posts.map { post ->
+                            if (post.postId == postId) {
+                                post.copy(commentsCount = post.commentsCount + 1)
+                            } else post
+                        }
+                    }
+
+                    // gọi lại fetch comment
                     fetchComments(postId)
                     ResultState.Success(it)
                 },
@@ -282,17 +291,30 @@ class NewsFeedViewModel @Inject constructor(
                 }
             )
         }
-        Log.d("NewsFeedViewModel", "replyToComment: ${request.content} - ${request.commentId}")
     }
 
 
-    fun deleteReply(replyId: String) {
+    fun deleteReply(replyId: String, postId: String) {
         viewModelScope.launch {
             _deleteReplyState.value = ResultState.Loading
             val result = repository.deleteReply(replyId)
             _deleteReplyState.value = result.fold(
-                onSuccess = { ResultState.Success(Unit) },
-                onFailure = { ResultState.Error(it.message ?: "Unknown error") }
+                onSuccess = {
+                    // Cập nhật số lượng comment
+                    _posts.update { posts ->
+                        posts.map { post ->
+                            if (post.postId == postId) {
+                                post.copy(commentsCount = (post.commentsCount - 1).coerceAtLeast(0))
+                            } else post
+                        }
+                    }
+                    // Gọi lại fetch comments
+                    fetchComments(postId)
+                    ResultState.Success(Unit)
+                },
+                onFailure = {
+                    ResultState.Error(it.message ?: "Unknown error")
+                }
             )
         }
     }

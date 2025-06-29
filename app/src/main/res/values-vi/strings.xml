@@ -418,4 +418,22 @@
     <!-- ================== MISCELLANEOUS ================== -->
     <string name="language">Ngôn ngữ</string>
 
+    <!-- ================== REPORTS ================== -->
+    <string name="cash_flow">Báo cáo thu chi</string>
+    <string name="category_breakdown">Phân loại danh mục</string>
+    <string name="daily_summary">Tổng kết ngày</string>
+    <string name="weekly_summary">Tổng kết tuần</string>
+    <string name="monthly_summary">Tổng kết tháng</string>
+    <string name="yearly_summary">Tổng kết năm</string>
+    <string name="report_time_period">Thời gian báo cáo</string>
+    <string name="report_configuration">Cấu hình báo cáo</string>
+    <string name="report_type">Loại báo cáo</string>
+    <string name="currency">Tiền tệ</string>
+    <string name="generate_financial_report">Tạo báo cáo tài chính</string>
+    <string name="export_detailed_report_and_analyze_data">Xuất báo cáo chi tiết và phân tích dữ liệu</string>
+    <string name="generating_report">Đang tạo báo cáo...</string>
+    <string name="download_report">Tải báo cáo</string>
+    <string name="save_to_downloads">Save to Downloads</string>
+    <string name="fail_to_save_file">Fail to save file</string>
+    <string name="fail_to_generate_report">Fail to generate report</string>
 </resources>

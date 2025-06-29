@@ -420,5 +420,23 @@
     
     <!-- ================== MISCELLANEOUS ================== -->
     <string name="language">Language</string>
-    
+
+    <!-- ================== REPORTS ================== -->
+    <string name="cash_flow">Cash flow</string>
+    <string name="category_breakdown">Category breakdown</string>
+    <string name="daily_summary">Daily summary</string>
+    <string name="weekly_summary">Weekly summary</string>
+    <string name="monthly_summary">Monthly summary</string>
+    <string name="yearly_summary">Yearly summary</string>
+    <string name="report_time_period">Report Time Period</string>
+    <string name="report_configuration">Report Configuration</string>
+    <string name="report_type">Report Type</string>
+    <string name="currency">Currency</string>
+    <string name="generate_financial_report">Generate Financial Report</string>
+    <string name="export_detailed_report_and_analyze_data">Export detailed reports and analyze data</string>
+    <string name="generating_report">Generating report...</string>
+    <string name="download_report">Download Report</string>
+    <string name="save_to_downloads">Save to Downloads</string>
+    <string name="fail_to_save_file">Fail to save file</string>
+    <string name="fail_to_generate_report">Fail to generate report</string>
 </resources>
