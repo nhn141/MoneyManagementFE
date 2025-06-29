@@ -13,5 +13,5 @@ data class Post(
     val mediaUrl: String?,
     val mediaType: String?,
     val targetType: Int,
-    val targetGroupIds: String?,
+    val targetGroupIds: List<String>?
 )

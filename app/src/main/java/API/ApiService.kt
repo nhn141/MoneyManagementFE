@@ -253,7 +253,7 @@ interface ApiService {
     suspend fun createPost(
         @Query("content") content: String,
         @Query("category") category: String = "general",
-        @Query("targetType") targetType: Int? = null,
+        @Query("targetType") targetType: Int?,
         @Query("targetGroupIds") targetGroupIds: String? = null,
         @Part file: MultipartBody.Part? = null
     ): Response<Post>

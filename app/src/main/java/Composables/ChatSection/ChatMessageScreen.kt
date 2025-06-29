@@ -8,12 +8,15 @@ import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -27,10 +30,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withAnnotation
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -76,7 +89,7 @@ fun ChatMessageScreen(
         topBar = {
             ChatTopBar(
                 userName = friendName,
-                isOnline = friends.firstOrNull { it.userId == friendId}?.isOnline ?: false,
+                isOnline = friends.firstOrNull { it.userId == friendId }?.isOnline ?: false,
                 friendAvatarUrl = friendAvatar.avatarUrl,
                 isLoadingAvatar = isLoadingAvatar.value,
                 onBackClick = { navController.popBackStack() },
@@ -112,19 +125,22 @@ fun ChatMessageScreen(
                     message = message,
                     isSentByCurrentUser = message.senderId == currentUserId,
                     friendAvatarUrl = friendAvatar.avatarUrl,
-                    isLoadingAvatar = isLoadingAvatar.value
+                    isLoadingAvatar = isLoadingAvatar.value,
+                    navController = navController // Truyền NavController
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 fun MessageBubble(
     message: ChatMessage,
     isSentByCurrentUser: Boolean,
     friendAvatarUrl: String,
     isLoadingAvatar: Boolean,
+    navController: NavController // Thêm NavController để điều hướng
 ) {
     val bubbleShape = RoundedCornerShape(
         topStart = 20.dp,
@@ -142,6 +158,9 @@ fun MessageBubble(
     val textColor = if (isSentByCurrentUser) Color.White else Color.Black
     val alignment = if (isSentByCurrentUser) Arrangement.End else Arrangement.Start
 
+    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -157,7 +176,7 @@ fun MessageBubble(
                     .shadow(4.dp, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                if(isLoadingAvatar) {
+                if (isLoadingAvatar) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         color = PrimaryColor,
@@ -184,11 +203,66 @@ fun MessageBubble(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = message.content,
-                        color = textColor,
-                        fontSize = 16.sp
-                    )
+                    // Phân tích và hiển thị tin nhắn với liên kết
+                    val annotatedString = buildAnnotatedString {
+                        val content = message.content
+                        val postMatch = Regex("\\[post:([a-zA-Z0-9-]+)\\]").find(content)
+                        if (postMatch != null) {
+                            val postId = postMatch.groupValues[1]
+                            val startIndex = postMatch.range.first
+                            val endIndex = postMatch.range.last + 1
+                            append(content.substring(0, startIndex))
+                            withAnnotation("postId", postId) {
+                                withStyle(style = SpanStyle(color = Color.Blue, textDecoration = TextDecoration.Underline)) {
+                                    append("[Xem bài viết]") // Văn bản thân thiện hơn
+                                }
+                            }
+                            append(content.substring(endIndex))
+                        } else {
+                            append(content)
+                        }
+                    }
+
+                    Box {
+                        // Kiểm tra xem annotatedString có chứa annotation "postId" không
+                        val hasPostId = annotatedString.getStringAnnotations("postId", 0, annotatedString.length).isNotEmpty()
+
+                        if (hasPostId) {
+                            // Sử dụng BasicText thay vì ClickableText
+                            BasicText(
+                                text = annotatedString,
+                                modifier = Modifier
+                                    .pointerInput(Unit) {
+                                        detectTapGestures { offset ->
+                                            // Hiển thị annotation tại vị trí click
+                                            textLayoutResult?.let { layout ->
+                                                val position = layout.getOffsetForPosition(offset)
+                                                annotatedString.getStringAnnotations("postId", position, position)
+                                                    .firstOrNull()?.let { annotation ->
+                                                        navController.navigate("newsfeed?postIdToFocus=${annotation.item}")
+                                                    }
+                                            }
+                                        }
+                                    }
+                                    .onGloballyPositioned { coordinates ->
+                                        // Đảm bảo text layout có sẵn khi click
+                                    },
+                                style = TextStyle(color = textColor),
+                                onTextLayout = { layoutResult ->
+                                    textLayoutResult = layoutResult
+                                }
+                            )
+                        } else {
+                            // Hiển thị văn bản thường nếu không có annotation
+                            Text(
+                                text = message.content,
+                                color = textColor,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+
+
                     Text(
                         text = ChatTimeFormatter.formatTimestamp(message.sentAt),
                         fontSize = 11.sp,

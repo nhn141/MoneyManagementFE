@@ -134,8 +134,8 @@ class NewsFeedViewModel @Inject constructor(
         content: String,
         category: String = "general",
         fileUri: Uri?,
-        targetType: Int? = null,
-        targetGroupIds: String? = null
+        targetType: Int?,
+        targetGroupIds: String?
     ) {
         viewModelScope.launch {
             _postCreationState.value = ResultState.Loading
@@ -146,6 +146,7 @@ class NewsFeedViewModel @Inject constructor(
             if (result is ResultState.Success) {
                 _posts.update { listOf(result.data) + it }
             }
+            Log.d("NewsFeedViewModel", "createPost: $result content: $content category: $category fileUri: $fileUri targetType: $targetType targetGroupIds: $targetGroupIds")
         }
     }
 
@@ -292,7 +293,7 @@ class NewsFeedViewModel @Inject constructor(
         }
     }
 
-    fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: List<String>) {
+    fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: String?) {
         viewModelScope.launch {
             _updateTargetState.value = ResultState.Loading
             val result = repository.updatePostTarget(postId, targetType, targetGroupIds)

@@ -4,7 +4,6 @@ data class Chat(
     val chatId: String,
     val otherUserId: String,
     val otherUserName: String,
-    val messages: List<ChatMessage>, // Trả về all chats thì ko cần trả lịch sử tin nhắn -> Bỏ được
-
+    val messages: List<ChatMessage>,
     val avatarUrl: String? = null
 )

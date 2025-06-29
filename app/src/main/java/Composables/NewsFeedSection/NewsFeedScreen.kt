@@ -1,11 +1,17 @@
 package DI.Composables.NewsFeedSection
 
 import DI.Composables.ProfileSection.uriToFile
+import DI.Models.Chat.Chat
+import DI.Models.Chat.ChatMessage
+import DI.Models.Chat.LatestChat
+import DI.Models.Group.Group
 import DI.Models.NewsFeed.Comment
 import DI.Models.NewsFeed.ResultState
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.ReplyCommentRequest
 import DI.Models.NewsFeed.ReplyCommentResponse
+import DI.ViewModels.ChatViewModel
+import DI.ViewModels.GroupChatViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.VerticalPager
@@ -83,6 +89,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -114,7 +121,10 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -137,7 +147,10 @@ import java.net.URL
 @Composable
 fun NewsFeedScreen(
     viewModel: NewsFeedViewModel,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    chatViewModel: ChatViewModel,
+    groupChatViewModel: GroupChatViewModel,
+    postIdToFocus: String? = null
 ) {
     val posts by viewModel.posts.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -160,17 +173,15 @@ fun NewsFeedScreen(
     // Thêm state để theo dõi việc hiển thị hướng dẫn
     var showPullGuide by remember { mutableStateOf(true) }
 
-// Theo dõi việc kéo sheet một cách an toàn
+    // Theo dõi việc kéo sheet một cách an toàn
     LaunchedEffect(sheetState.targetValue) {
-        // Ẩn hướng dẫn khi sheet được expand hoặc khi user tương tác
         if (sheetState.targetValue == SheetValue.Expanded && showPullGuide) {
             showPullGuide = false
         }
     }
+
     // Animation states
     val infiniteTransition = rememberInfiniteTransition()
-
-// Animation cho việc di chuyển mũi tên lên xuống
     val arrowOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = -8f,
@@ -179,8 +190,6 @@ fun NewsFeedScreen(
             repeatMode = RepeatMode.Reverse
         )
     )
-
-// Animation cho độ mờ đục của mũi tên (nhấp nháy)
     val arrowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.4f,
         targetValue = 1f,
@@ -189,8 +198,6 @@ fun NewsFeedScreen(
             repeatMode = RepeatMode.Reverse
         )
     )
-
-// Animation cho scale của mũi tên
     val arrowScale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.2f,
@@ -226,21 +233,32 @@ fun NewsFeedScreen(
         }
     }
 
+    // Cuộn đến bài post khi postIdToFocus có giá trị
+    LaunchedEffect(postIdToFocus) {
+        if (postIdToFocus != null) {
+            val postIndex = posts.indexOfFirst { it.postId == postIdToFocus }
+            if (postIndex >= 0) {
+                coroutineScope.launch {
+                    pagerState.animateScrollToPage(postIndex)
+                }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFF001A17), // Dark green base
-                        Color(0xFF000808), // Almost black
-                        Color(0xFF000000)  // Pure black
+                        Color(0xFF001A17),
+                        Color(0xFF000808),
+                        Color(0xFF000000)
                     ),
                     radius = 1200f
                 )
             )
     ) {
-        // Hiển thị danh sách bài đăng
         if (posts.isEmpty() && isLoading) {
             Box(
                 modifier = Modifier
@@ -352,12 +370,13 @@ fun NewsFeedScreen(
                         viewModel.fetchComments(clickedPost.postId)
                         showCommentSheet = true
                     },
-                    profileViewModel = profileViewModel
+                    profileViewModel = profileViewModel,
+                    chatViewModel = chatViewModel,
+                    groupChatViewModel = groupChatViewModel
                 )
             }
         }
 
-        // Hiển thị lỗi chung
         if (error != null) {
             Card(
                 modifier = Modifier
@@ -395,7 +414,6 @@ fun NewsFeedScreen(
             }
         }
 
-        // Hiển thị loading khi tải thêm bài đăng
         if (isLoading && posts.isNotEmpty()) {
             Card(
                 modifier = Modifier
@@ -435,11 +453,11 @@ fun NewsFeedScreen(
         if (showDialog) {
             CreatePostDialog(
                 onDismiss = { showDialog = false },
-                viewModel = viewModel
+                viewModel = viewModel,
+                groupChatViewModel = groupChatViewModel
             )
         }
 
-        // button add post
         FloatingActionButton(
             onClick = { showDialog = true },
             modifier = Modifier
@@ -480,7 +498,6 @@ fun NewsFeedScreen(
             }
         }
 
-        // Custom Snackbar
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
@@ -512,7 +529,7 @@ fun NewsFeedScreen(
         ModalBottomSheet(
             onDismissRequest = {
                 showCommentSheet = false
-                showPullGuide = true // Reset lại hướng dẫn khi đóng sheet
+                showPullGuide = true
             },
             sheetState = sheetState,
             containerColor = Color(0xFF1A1A1A),
@@ -521,7 +538,6 @@ fun NewsFeedScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(vertical = 12.dp)
                 ) {
-                    // Hướng dẫn kéo lên với mũi tên có animation
                     AnimatedVisibility(
                         visible = showPullGuide,
                         enter = fadeIn(animationSpec = tween(600)) + slideInVertically(
@@ -537,7 +553,6 @@ fun NewsFeedScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.padding(bottom = 8.dp)
                         ) {
-                            // Mũi tên chỉ lên với animation
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowUp,
                                 contentDescription = null,
@@ -547,12 +562,9 @@ fun NewsFeedScreen(
                                     .offset(y = arrowOffset.dp)
                                     .scale(arrowScale)
                                     .graphicsLayer {
-                                        // Thêm hiệu ứng glow nhẹ
                                         shadowElevation = 4.dp.toPx()
                                     }
                             )
-
-                            // Text hướng dẫn với animation fade
                             Text(
                                 text = "Kéo lên để nhập bình luận",
                                 color = Color(0xFF00D09E).copy(alpha = 0.8f * arrowAlpha),
@@ -564,8 +576,6 @@ fun NewsFeedScreen(
                             )
                         }
                     }
-
-                    // Drag handle gốc với animation nhẹ
                     Box(
                         modifier = Modifier
                             .width(48.dp)
@@ -574,7 +584,7 @@ fun NewsFeedScreen(
                                 Color(0xFF00D09E).copy(alpha = 0.6f),
                                 RoundedCornerShape(2.dp)
                             )
-                            .animateContentSize() // Smooth transition khi thay đổi
+                            .animateContentSize()
                     )
                 }
             }
@@ -594,7 +604,9 @@ fun PostItem(
     post: Post,
     onCommentClick: (Post) -> Unit,
     viewModel: NewsFeedViewModel,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    chatViewModel: ChatViewModel,
+    groupChatViewModel: GroupChatViewModel
 ) {
     val postDetailState by viewModel.postDetail.collectAsState()
     val updateTargetState by viewModel.updateTargetState.collectAsState()
@@ -633,7 +645,9 @@ fun PostItem(
             imageUri = imageUri,
             onCommentClick = onCommentClick,
             viewModel = viewModel,
-            profileViewModel = profileViewModel
+            profileViewModel = profileViewModel,
+            chatViewModel = chatViewModel,
+            groupChatViewModel = groupChatViewModel
         )
     } else {
         PostItemTextOnly(
@@ -641,7 +655,9 @@ fun PostItem(
             imageUri = imageUri,
             onCommentClick = onCommentClick,
             viewModel = viewModel,
-            profileViewModel = profileViewModel
+            profileViewModel = profileViewModel,
+            chatViewModel = chatViewModel,
+            groupChatViewModel = groupChatViewModel
         )
     }
 }
@@ -650,9 +666,12 @@ fun PostItem(
 fun PrivacyDropdown(
     selectedPrivacy: Int,
     onPrivacyChanged: (Int) -> Unit,
+    groups: List<Group>,
+    selectedGroupIds: SnapshotStateList<String>,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+
     val privacyOptions = mapOf(
         "Bạn bè" to 0,
         "Riêng tư" to 1,
@@ -667,24 +686,18 @@ fun PrivacyDropdown(
         3 to Icons.Default.Group
     )
 
-    Box(modifier = modifier) {
+    Column(modifier = modifier) {
+        // Button Dropdown Header
         Card(
             modifier = Modifier
-                .clickable { expanded = true }
-                .shadow(
-                    elevation = 4.dp,
-                    shape = RoundedCornerShape(8.dp),
-                    ambientColor = Color(0xFF00D09E).copy(alpha = 0.1f)
-                ),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2A2A2A)
-            ),
+                .clickable { expanded = !expanded }
+                .shadow(4.dp, RoundedCornerShape(8.dp)),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
             shape = RoundedCornerShape(8.dp)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = privacyIcons[selectedPrivacy] ?: Icons.Default.People,
@@ -694,43 +707,36 @@ fun PrivacyDropdown(
                 )
 
                 Text(
-                    text = privacyOptions.entries.find { it.value == selectedPrivacy }?.key ?: "Bạn bè",
+                    text = privacyOptions.entries.find { it.value == selectedPrivacy }?.key
+                        ?: "Bạn bè",
                     color = Color.White,
                     fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(start = 6.dp)
                 )
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = "Mở rộng",
+                    contentDescription = null,
                     tint = Color(0xFF00D09E),
                     modifier = Modifier.size(12.dp)
                 )
             }
         }
 
-        AnimatedVisibility(
-            visible = expanded,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
+        // Dropdown nội dung
+        AnimatedVisibility(visible = expanded) {
             Card(
                 modifier = Modifier
-                    .width(120.dp)
-                    .offset(y = 2.dp)
-                    .shadow(
-                        elevation = 12.dp,
-                        shape = RoundedCornerShape(8.dp),
-                        ambientColor = Color(0xFF00D09E).copy(alpha = 0.2f)
-                    ),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF2A2A2A)
-                ),
+                    .width(200.dp)
+                    .padding(top = 4.dp)
+                    .shadow(12.dp, RoundedCornerShape(8.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(4.dp)
-                ) {
+                Column(modifier = Modifier.padding(4.dp)) {
                     privacyOptions.forEach { (label, value) ->
                         val isSelected = value == selectedPrivacy
 
@@ -740,7 +746,7 @@ fun PrivacyDropdown(
                                 .padding(vertical = 1.dp)
                                 .clickable {
                                     onPrivacyChanged(value)
-                                    expanded = false
+                                    expanded = true // vẫn mở nếu là nhóm
                                 },
                             colors = CardDefaults.cardColors(
                                 containerColor = if (isSelected)
@@ -754,8 +760,7 @@ fun PrivacyDropdown(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = privacyIcons[value] ?: Icons.Default.People,
@@ -768,7 +773,8 @@ fun PrivacyDropdown(
                                     text = label,
                                     color = if (isSelected) Color(0xFF00D09E) else Color.White,
                                     fontSize = 10.sp,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                                    modifier = Modifier.padding(start = 6.dp)
                                 )
 
                                 Spacer(modifier = Modifier.weight(1f))
@@ -776,11 +782,52 @@ fun PrivacyDropdown(
                                 if (isSelected) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
-                                        contentDescription = "Đã chọn",
+                                        contentDescription = null,
                                         tint = Color(0xFF00D09E),
                                         modifier = Modifier.size(10.dp)
                                     )
                                 }
+                            }
+                        }
+                    }
+
+                    //hiển thị danh sách group
+                    if (selectedPrivacy == 3 && groups.isNotEmpty()) {
+                        Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray.copy(alpha = 0.3f))
+                        Text(
+                            text = "Chọn nhóm:",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(6.dp)
+                        )
+
+                        groups.forEach { group ->
+                            val isChecked = selectedGroupIds.contains(group.groupId)
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        if (isChecked) selectedGroupIds.remove(group.groupId)
+                                        else selectedGroupIds.add(group.groupId)
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = isChecked,
+                                    onCheckedChange = {
+                                        if (isChecked) selectedGroupIds.remove(group.groupId)
+                                        else selectedGroupIds.add(group.groupId)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = group.name,
+                                    color = Color.White,
+                                    fontSize = 10.sp
+                                )
                             }
                         }
                     }
@@ -790,6 +837,7 @@ fun PrivacyDropdown(
     }
 }
 
+
 @Composable
 fun PostItemWithImage(
     post: Post,
@@ -797,17 +845,37 @@ fun PostItemWithImage(
     imageUri: Uri?,
     onCommentClick: (Post) -> Unit,
     viewModel: NewsFeedViewModel,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    groupChatViewModel: GroupChatViewModel,
+    chatViewModel: ChatViewModel // Thêm ChatViewModel để lấy danh sách bạn bè
 ) {
     var isImagePreviewOpen by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
-    var isExpanded by remember { mutableStateOf(false) } // Trạng thái mở rộng/rút gọn
+    var isExpanded by remember { mutableStateOf(false) }
+    var showShareDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog chia sẻ
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var selectedPrivacy by remember { mutableStateOf(post.targetType) }
+    val selectedGroupIds = remember {
+        mutableStateListOf<String>().apply {
+            if (post.targetType == 3 && !post.targetGroupIds.isNullOrEmpty()) {
+                addAll(post.targetGroupIds)
+            }
+        }
+    }
+
+    val groups by groupChatViewModel.groups.collectAsState(initial = emptyList())
+    val latestChats by chatViewModel.latestChats.collectAsState(initial = null) // Lấy danh sách bạn bè
+
+    LaunchedEffect(Unit) {
+        groupChatViewModel.loadUserGroups() // Tải danh sách nhóm
+        chatViewModel.getLatestChats() // Tải danh sách bạn bè
+    }
 
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
     val isAuthor = post.authorId == currentUserId
+
+    val shareMessage = "Shared post: ${post.content} [post:${post.postId}]"
 
     Box(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(
@@ -890,17 +958,19 @@ fun PostItemWithImage(
                                         selectedPrivacy = selectedPrivacy,
                                         onPrivacyChanged = { newPrivacy ->
                                             selectedPrivacy = newPrivacy
-                                            val groupIds = if (newPrivacy == 3 && !post.targetGroupIds.isNullOrEmpty()) {
-                                                post.targetGroupIds.split(",").map { it.trim() }
-                                            } else {
-                                                emptyList()
-                                            }
                                             viewModel.updatePostTarget(
                                                 postId = post.postId,
                                                 targetType = newPrivacy,
-                                                targetGroupIds = groupIds
+                                                targetGroupIds = if (newPrivacy == 3 && selectedGroupIds.isNotEmpty()) {
+                                                    selectedGroupIds.joinToString(",")
+                                                } else {
+                                                    null
+                                                }
                                             )
-                                        }
+                                        },
+                                        groups = groups,
+                                        selectedGroupIds = selectedGroupIds,
+                                        modifier = Modifier.width(IntrinsicSize.Min)
                                     )
                                 }
                             }
@@ -939,7 +1009,8 @@ fun PostItemWithImage(
                             ActionButtons(
                                 post = post,
                                 viewModel = viewModel,
-                                onCommentClick = onCommentClick
+                                onCommentClick = onCommentClick,
+                                onShareClick = { showShareDialog = true } // Thêm sự kiện chia sẻ
                             )
                         }
                     }
@@ -1041,6 +1112,24 @@ fun PostItemWithImage(
                 }
             )
         }
+
+        if (showShareDialog) {
+            ShareDialog(
+                onDismiss = { showShareDialog = false },
+                friends = latestChats?.getOrNull() ?: emptyList(),
+                groups = groups,
+                currentUserId = currentUserId,
+                onShareToFriend = { friendId ->
+                    chatViewModel.sendMessage(friendId, shareMessage)
+                    showShareDialog = false
+                },
+                onShareToGroup = { groupId ->
+                    groupChatViewModel.sendGroupMessage(groupId, shareMessage)
+                    showShareDialog = false
+                },
+                post = post // Truyền post
+            )
+        }
     }
 }
 
@@ -1050,13 +1139,32 @@ fun PostItemTextOnly(
     imageUri: Uri?,
     onCommentClick: (Post) -> Unit,
     viewModel: NewsFeedViewModel,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    groupChatViewModel: GroupChatViewModel,
+    chatViewModel: ChatViewModel // Thêm ChatViewModel để lấy danh sách bạn bè
 ) {
     var selectedPrivacy by remember { mutableStateOf(post.targetType) }
-    var isExpanded by remember { mutableStateOf(false) } // Trạng thái mở rộng/rút gọn
+    var isExpanded by remember { mutableStateOf(false) }
+    var showShareDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog chia sẻ
+    val selectedGroupIds = remember {
+        mutableStateListOf<String>().apply {
+            if (post.targetType == 3 && !post.targetGroupIds.isNullOrEmpty()) {
+                addAll(post.targetGroupIds)
+            }
+        }
+    }
+    val groups by groupChatViewModel.groups.collectAsState(initial = emptyList())
+    val latestChats by chatViewModel.latestChats.collectAsState(initial = null) // Lấy danh sách bạn bè
+
+    LaunchedEffect(Unit) {
+        groupChatViewModel.loadUserGroups() // Tải danh sách nhóm
+        chatViewModel.getLatestChats() // Tải danh sách bạn bè
+    }
 
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
     val isAuthor = post.authorId == currentUserId
+
+    val shareMessage = "Shared post: ${post.content} [post:${post.postId}]"
 
     Box(
         modifier = Modifier
@@ -1161,17 +1269,19 @@ fun PostItemTextOnly(
                                 selectedPrivacy = selectedPrivacy,
                                 onPrivacyChanged = { newPrivacy ->
                                     selectedPrivacy = newPrivacy
-                                    val groupIds = if (newPrivacy == 3 && !post.targetGroupIds.isNullOrEmpty()) {
-                                        post.targetGroupIds.split(",").map { it.trim() }
-                                    } else {
-                                        emptyList()
-                                    }
                                     viewModel.updatePostTarget(
                                         postId = post.postId,
                                         targetType = newPrivacy,
-                                        targetGroupIds = groupIds
+                                        targetGroupIds = if (newPrivacy == 3 && selectedGroupIds.isNotEmpty()) {
+                                            selectedGroupIds.joinToString(",")
+                                        } else {
+                                            null
+                                        }
                                     )
-                                }
+                                },
+                                groups = groups,
+                                selectedGroupIds = selectedGroupIds,
+                                modifier = Modifier.width(IntrinsicSize.Min)
                             )
                         }
                     }
@@ -1224,12 +1334,16 @@ fun PostItemTextOnly(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    ActionButtons(post = post, viewModel = viewModel, onCommentClick = onCommentClick)
+                    ActionButtons(
+                        post = post,
+                        viewModel = viewModel,
+                        onCommentClick = onCommentClick,
+                        onShareClick = { showShareDialog = true } // Thêm sự kiện chia sẻ
+                    )
                 }
             }
         }
 
-        // Decorative elements
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -1261,6 +1375,24 @@ fun PostItemTextOnly(
                 .align(Alignment.BottomEnd)
                 .offset(40.dp, 40.dp)
         )
+
+        if (showShareDialog) {
+            ShareDialog(
+                onDismiss = { showShareDialog = false },
+                friends = latestChats?.getOrNull() ?: emptyList(),
+                groups = groups,
+                currentUserId = currentUserId,
+                onShareToFriend = { friendId ->
+                    chatViewModel.sendMessage(friendId, shareMessage)
+                    showShareDialog = false
+                },
+                onShareToGroup = { groupId ->
+                    groupChatViewModel.sendGroupMessage(groupId, shareMessage)
+                    showShareDialog = false
+                },
+                post = post // Truyền post
+            )
+        }
     }
 }
 
@@ -1308,11 +1440,13 @@ suspend fun saveImageToGallery(context: Context, imageUrl: String) {
         }
     }
 }
+
 @Composable
 fun ActionButtons(
     post: Post,
     viewModel: NewsFeedViewModel,
-    onCommentClick: (Post) -> Unit
+    onCommentClick: (Post) -> Unit,
+    onShareClick: () -> Unit // Thêm tham số cho sự kiện chia sẻ
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1439,7 +1573,172 @@ fun ActionButtons(
                 )
             }
         }
+
+        // Share Button
+        Card(
+            modifier = Modifier
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(20.dp),
+                    ambientColor = Color(0xFF00B4D8).copy(alpha = 0.2f)
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF2A2A2A)
+            ),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clickable { onShareClick() }
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFF00B4D8).copy(alpha = 0.2f),
+                                    Color.Transparent
+                                )
+                            ),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = "Share",
+                        tint = Color(0xFF00B4D8),
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Chia sẻ",
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
     }
+}
+
+@Composable
+fun ShareDialog(
+    onDismiss: () -> Unit,
+    friends: List<LatestChat>,
+    groups: List<Group>,
+    currentUserId: String,
+    onShareToFriend: (String) -> Unit,
+    onShareToGroup: (String) -> Unit,
+    post: Post // Thêm post để lấy postId
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Chia sẻ bài viết") },
+        text = {
+            Column {
+                Text(
+                    text = "Chia sẻ với bạn bè",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .heightIn(max = 150.dp)
+                        .fillMaxWidth()
+                ) {
+                    items(friends) { friend ->
+                        val latestMessage = friend.latestMessage
+                        val friendId = if (latestMessage.senderId == currentUserId) {
+                            latestMessage.receiverId
+                        } else {
+                            latestMessage.senderId
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onShareToFriend(friendId) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = friend.avatarUrl,
+                                contentDescription = "Friend Avatar",
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Gray),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (latestMessage.senderId == currentUserId) {
+                                    latestMessage.receiverName ?: "Unknown"
+                                } else {
+                                    latestMessage.senderName ?: "Unknown"
+                                },
+                                color = Color.White,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Chia sẻ với nhóm",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .heightIn(max = 150.dp)
+                        .fillMaxWidth()
+                ) {
+                    items(groups) { group ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onShareToGroup(group.groupId) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = group.imageUrl,
+                                contentDescription = "Group Avatar",
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Gray),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = group.name,
+                                color = Color.White,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Hủy")
+            }
+        },
+        dismissButton = {}
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1933,22 +2232,25 @@ fun flattenReplies(replies: List<ReplyCommentResponse>): List<ReplyCommentRespon
 @Composable
 fun CreatePostDialog(
     onDismiss: () -> Unit,
-    viewModel: NewsFeedViewModel
+    viewModel: NewsFeedViewModel,
+    groupChatViewModel: GroupChatViewModel
 ) {
     var content by remember { mutableStateOf("") }
     var selectedPrivacy by remember { mutableStateOf(0) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        selectedImageUri = uri
-    }
-
+    val selectedGroupIds = remember { mutableStateListOf<String>() }
+    val groups by groupChatViewModel.groups.collectAsState(initial = emptyList())
     val postCreationState by viewModel.postCreationState.collectAsState()
     val isPosting = postCreationState is ResultState.Loading
 
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? -> selectedImageUri = uri }
 
-    // Đóng dialog khi đăng thành công
+    LaunchedEffect(Unit) {
+        groupChatViewModel.loadUserGroups()
+    }
+
     LaunchedEffect(postCreationState) {
         if (postCreationState is ResultState.Success) {
             viewModel.clearPostCreationState()
@@ -1977,7 +2279,6 @@ fun CreatePostDialog(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Header với gradient background
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2038,13 +2339,15 @@ fun CreatePostDialog(
                     ) {
                         PrivacyDropdown(
                             selectedPrivacy = selectedPrivacy,
-                            onPrivacyChanged = { selectedPrivacy = it }
+                            onPrivacyChanged = { selectedPrivacy = it },
+                            groups = groups,
+                            selectedGroupIds = selectedGroupIds,
+                            modifier = Modifier.width(IntrinsicSize.Min)
                         )
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Content input với gradient border
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -2096,7 +2399,6 @@ fun CreatePostDialog(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Image selection button với gradient
                     Button(
                         onClick = { imagePickerLauncher.launch("image/*") },
                         enabled = !isPosting,
@@ -2159,7 +2461,6 @@ fun CreatePostDialog(
                         }
                     }
 
-                    // Image preview với animation
                     selectedImageUri?.let { uri ->
                         Spacer(modifier = Modifier.height(20.dp))
                         Card(
@@ -2183,7 +2484,6 @@ fun CreatePostDialog(
                                     contentScale = ContentScale.Crop
                                 )
 
-                                // Remove image button
                                 IconButton(
                                     onClick = { selectedImageUri = null },
                                     modifier = Modifier
@@ -2208,17 +2508,19 @@ fun CreatePostDialog(
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    // Post button với gradient đẹp
                     Button(
                         onClick = {
                             if (content.isNotBlank()) {
-                                Log.d("CreatePost", "Content length: ${content.length}, content: '$content'")
                                 viewModel.createPost(
                                     content = content,
                                     category = "general",
                                     fileUri = selectedImageUri,
                                     targetType = selectedPrivacy,
-                                    targetGroupIds = null
+                                    targetGroupIds = if (selectedPrivacy == 3 && selectedGroupIds.isNotEmpty()) {
+                                        selectedGroupIds.joinToString(",")
+                                    } else {
+                                        null
+                                    }
                                 )
                             }
                         },
@@ -2288,4 +2590,5 @@ fun CreatePostDialog(
         }
     }
 }
+
 

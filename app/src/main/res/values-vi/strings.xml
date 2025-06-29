@@ -448,7 +448,6 @@
     <string name="report_time_period">Thời gian báo cáo</string>
     <string name="report_configuration">Cấu hình báo cáo</string>
     <string name="report_type">Loại báo cáo</string>
-    <string name="currency">Tiền tệ</string>
     <string name="generate_financial_report">Tạo báo cáo tài chính</string>
     <string name="export_detailed_report_and_analyze_data">Xuất báo cáo chi tiết và phân tích dữ liệu</string>
     <string name="generating_report">Đang tạo báo cáo...</string>

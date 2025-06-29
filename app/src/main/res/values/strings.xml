@@ -448,7 +448,6 @@
     <string name="report_time_period">Report Time Period</string>
     <string name="report_configuration">Report Configuration</string>
     <string name="report_type">Report Type</string>
-    <string name="currency">Currency</string>
     <string name="generate_financial_report">Generate Financial Report</string>
     <string name="export_detailed_report_and_analyze_data">Export detailed reports and analyze data</string>
     <string name="generating_report">Generating report...</string>

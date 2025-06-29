@@ -184,7 +184,7 @@ private fun InnerNavHost(
             }
         }
 
-        composable(Routes.Chat) {
+        composable(BottomNavItem.Chat.route) {
             ChatScreen(
                 chatViewModel = chatViewModel,
                 profileViewModel = profileViewModel,
@@ -210,20 +210,36 @@ private fun InnerNavHost(
             )
         }
 
-        composable(Routes.GroupChat) {
+        composable(BottomNavItem.GroupChat.route) {
             GroupChatScreen(navController, groupChatViewModel, profileViewModel)
         }
 
         composable(BottomNavItem.NewsFeed.route) {
             NewsFeedScreen(
                 viewModel = newsFeedViewModel,
-                profileViewModel = profileViewModel
+                profileViewModel = profileViewModel,
+                chatViewModel = chatViewModel,
+                groupChatViewModel = groupChatViewModel
             )
         }
 
         composable(Routes.Report) {
             ReportScreen(
                 viewModel = reportViewModel
+            )
+        }
+
+        composable(
+            route = "${BottomNavItem.NewsFeed.route}?postIdToFocus={postIdToFocus}",
+            arguments = listOf(navArgument("postIdToFocus") { defaultValue = null; nullable = true })
+        ) { backStackEntry ->
+            val postIdToFocus = backStackEntry.arguments?.getString("postIdToFocus")
+            NewsFeedScreen(
+                viewModel = newsFeedViewModel,
+                profileViewModel = profileViewModel,
+                chatViewModel = chatViewModel,
+                groupChatViewModel = groupChatViewModel,
+                postIdToFocus = postIdToFocus
             )
         }
 

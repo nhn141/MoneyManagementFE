@@ -49,13 +49,17 @@ class NewsFeedRepository @Inject constructor(
         content: String,
         category: String = "general",
         fileUri: Uri?,
-        targetType: Int? = null,
-        targetGroupIds: String? = null
+        targetType: Int?,
+        targetGroupIds: String?
     ): ResultState<Post> {
         return try {
             val filePart = fileUri?.let { uri ->
                 newsFeedHelper.createMultipartFromUri(uri)
-            }
+            } ?: MultipartBody.Part.createFormData(
+                name = "file",
+                filename = "",
+                body = "".toRequestBody("application/octet-stream".toMediaTypeOrNull())
+            )
 
             val response = apiService.createPost(
                 content = content,
@@ -160,7 +164,7 @@ class NewsFeedRepository @Inject constructor(
         }
     }
 
-    suspend fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: List<String>): ResultState<Unit> {
+    suspend fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: String?): ResultState<Unit> {
         return try {
             val request = UpdatePostTargetRequest(
                 targetType = targetType,
