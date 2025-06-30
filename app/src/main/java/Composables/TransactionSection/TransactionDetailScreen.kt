@@ -1,15 +1,23 @@
 package DI.Composables.TransactionSection
 
+import DI.API.TokenHandler.AuthStorage
 import DI.Composables.CategorySection.getCategoryIcon
+import DI.Models.Chat.LatestChat
+import DI.Models.Group.Group
+import DI.Models.NewsFeed.Post
 import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
+import DI.ViewModels.ChatViewModel
 import DI.ViewModels.CurrencyConverterViewModel
+import DI.ViewModels.GroupChatViewModel
+import DI.ViewModels.ProfileViewModel
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,11 +29,13 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,6 +46,7 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -50,6 +61,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -59,8 +71,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +82,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.moneymanagement_frontend.R
 
 @Composable
@@ -77,7 +92,10 @@ fun TransactionDetailScreen(
     viewModel: TransactionViewModel,
     categoryViewModel: CategoryViewModel,
     walletViewModel: WalletViewModel,
-    currencyViewModel: CurrencyConverterViewModel
+    currencyViewModel: CurrencyConverterViewModel,
+    chatViewModel: ChatViewModel,
+    groupChatViewModel: GroupChatViewModel,
+    profileViewModel: ProfileViewModel
 ) {
     val selectedTransaction by viewModel.selectedTransaction
     val categories by categoryViewModel.categories.collectAsState()
@@ -132,14 +150,15 @@ fun TransactionDetailScreen(
                 amount = generalTransaction.amount,
                 walletName = wallet?.walletName ?: stringResource(R.string.unknown),
                 date = generalTransaction.timestamp ?: stringResource(R.string.unknown),
-                type = if (generalTransaction.isIncome) stringResource(R.string.income) else stringResource(
-                    R.string.expense
-                ),
+                type = if (generalTransaction.isIncome) stringResource(R.string.income) else stringResource(R.string.expense),
                 transactionId = transactionId,
                 viewModel = viewModel,
                 context = context,
                 isVND = isVND, // Truyền isVND
-                exchangeRate = exchangeRate // Truyền exchangeRate
+                exchangeRate = exchangeRate,
+                chatViewModel = chatViewModel, // Truyền chatViewModel
+                groupChatViewModel = groupChatViewModel, // Truyền groupChatViewModel
+                profileViewModel = profileViewModel // Truyền profileViewModel
             )
         } else {
             Box(
@@ -237,6 +256,9 @@ fun TransactionDetailBody(
     type: String,
     transactionId: String,
     viewModel: TransactionViewModel,
+    chatViewModel: ChatViewModel,
+    groupChatViewModel: GroupChatViewModel,
+    profileViewModel: ProfileViewModel,
     context: Context,
     isVND: Boolean,
     exchangeRate: Double?
@@ -246,7 +268,29 @@ fun TransactionDetailBody(
     val typeIcon = if (type.equals("Income", ignoreCase = true))
         Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
 
+    val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
+
+    val shareMessage = """
+        Shared:
+        Title: $title
+        Type: $type
+        Amount: $amount
+        Date: $date
+        Category: $categoryName
+        Wallet: $walletName
+        [transaction:$transactionId]
+    """.trimIndent()
+
+    var showShareDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog chia sẻ
     var showDeleteDialog by remember { mutableStateOf(false) }
+
+    val latestChats by chatViewModel.latestChats.collectAsState(initial = null)
+    val groups by groupChatViewModel.groups.collectAsState(initial = emptyList())
+
+    LaunchedEffect(Unit) {
+        groupChatViewModel.loadUserGroups()
+        chatViewModel.getLatestChats()
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -317,62 +361,82 @@ fun TransactionDetailBody(
             }
 
             item {
-                // Transaction Details Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White.copy(alpha = 0.95f)
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
-                    Column(
+                // Transaction Details Card with Share Button
+                Box {
+                    Card(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White.copy(alpha = 0.95f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                     ) {
-                        Text(
-                            text = stringResource(R.string.transaction_details),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2D3748),
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.transaction_details),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2D3748),
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
 
-                        ModernDetailItem(
-                            icon = Icons.Default.Title,
-                            label = stringResource(R.string.title),
-                            value = title,
-                            iconTint = Color(0xFF667eea)
-                        )
+                            DetailItem(
+                                icon = Icons.Default.Title,
+                                label = stringResource(R.string.title),
+                                value = title,
+                                iconTint = Color(0xFF667eea)
+                            )
 
-                        ModernDetailItem(
-                            icon = getCategoryIcon(categoryName),
-                            label = stringResource(R.string.category),
-                            value = categoryName,
-                            iconTint = Color(0xFF9F7AEA)
-                        )
+                            DetailItem(
+                                icon = getCategoryIcon(categoryName),
+                                label = stringResource(R.string.category),
+                                value = categoryName,
+                                iconTint = Color(0xFF9F7AEA)
+                            )
 
-                        ModernDetailItem(
-                            icon = Icons.Default.AccountBalanceWallet,
-                            label = stringResource(R.string.wallet),
-                            value = walletName,
-                            iconTint = Color(0xFF38B2AC)
-                        )
+                            DetailItem(
+                                icon = Icons.Default.AccountBalanceWallet,
+                                label = stringResource(R.string.wallet),
+                                value = walletName,
+                                iconTint = Color(0xFF38B2AC)
+                            )
 
-                        ModernDetailItem(
-                            icon = Icons.Default.DateRange,
-                            label = stringResource(R.string.date),
-                            value = date,
-                            iconTint = Color(0xFFED8936)
+                            DetailItem(
+                                icon = Icons.Default.DateRange,
+                                label = stringResource(R.string.date),
+                                value = date,
+                                iconTint = Color(0xFFED8936)
+                            )
+                        }
+                    }
+
+                    // Share Button
+                    IconButton(
+                        onClick = { showShareDialog = true },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(17.dp)
+                            .background(Color(0xFF667EEA), CircleShape)
+                            .size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
             }
         }
 
-        // Modern Delete FAB
+        // Delete FAB
         FloatingActionButton(
             onClick = { showDeleteDialog = true },
             containerColor = Color(0xFFE53E3E),
@@ -394,9 +458,9 @@ fun TransactionDetailBody(
             )
         }
 
-        // Modern Delete Dialog
+        // Delete Dialog
         if (showDeleteDialog) {
-            ModernDeleteDialog(
+            DeleteDialog(
                 onDismiss = { showDeleteDialog = false },
                 onConfirm = {
                     showDeleteDialog = false
@@ -411,11 +475,30 @@ fun TransactionDetailBody(
                 }
             )
         }
+
+        // Share Dialog
+        if (showShareDialog) {
+            ShareDialog(
+                onDismiss = { showShareDialog = false },
+                friends = latestChats?.getOrNull() ?: emptyList(),
+                groups = groups,
+                currentUserId = currentUserId,
+                onShareToFriend = { friendId ->
+                    chatViewModel.sendMessage(friendId, shareMessage)
+                    showShareDialog = false
+                },
+                onShareToGroup = { groupId ->
+                    groupChatViewModel.sendGroupMessage(groupId, shareMessage)
+                    showShareDialog = false
+                },
+                transactionId = transactionId // Truyền transactionId để sử dụng nếu cần
+            )
+        }
     }
 }
 
 @Composable
-fun ModernDetailItem(
+fun DetailItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     value: String,
@@ -465,7 +548,122 @@ fun ModernDetailItem(
 }
 
 @Composable
-fun ModernDeleteDialog(
+fun ShareDialog(
+    onDismiss: () -> Unit,
+    friends: List<LatestChat>,
+    groups: List<Group>,
+    currentUserId: String,
+    onShareToFriend: (String) -> Unit,
+    onShareToGroup: (String) -> Unit,
+    transactionId: String // Giữ tham số này để tham chiếu
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Chia sẻ giao dịch") }, // Cập nhật tiêu đề cho phù hợp
+        text = {
+            Column {
+                Text(
+                    text = "Chia sẻ với bạn bè",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .heightIn(max = 150.dp)
+                        .fillMaxWidth()
+                ) {
+                    items(friends) { friend ->
+                        val latestMessage = friend.latestMessage
+                        val friendId = if (latestMessage.senderId == currentUserId) {
+                            latestMessage.receiverId
+                        } else {
+                            latestMessage.senderId
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onShareToFriend(friendId) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = friend.avatarUrl,
+                                contentDescription = "Friend Avatar",
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Gray),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (latestMessage.senderId == currentUserId) {
+                                    latestMessage.receiverName ?: "Unknown"
+                                } else {
+                                    latestMessage.senderName ?: "Unknown"
+                                },
+                                color = Color.White,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Chia sẻ với nhóm",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .heightIn(max = 150.dp)
+                        .fillMaxWidth()
+                ) {
+                    items(groups) { group ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onShareToGroup(group.groupId) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = group.imageUrl,
+                                contentDescription = "Group Avatar",
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Gray),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = group.name,
+                                color = Color.White,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Hủy")
+            }
+        },
+        dismissButton = {}
+    )
+}
+
+@Composable
+fun DeleteDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {

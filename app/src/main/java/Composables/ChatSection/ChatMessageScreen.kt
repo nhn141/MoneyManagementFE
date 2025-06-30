@@ -140,7 +140,7 @@ fun MessageBubble(
     isSentByCurrentUser: Boolean,
     friendAvatarUrl: String,
     isLoadingAvatar: Boolean,
-    navController: NavController // Thêm NavController để điều hướng
+    navController: NavController
 ) {
     val bubbleShape = RoundedCornerShape(
         topStart = 20.dp,
@@ -159,7 +159,37 @@ fun MessageBubble(
     val alignment = if (isSentByCurrentUser) Arrangement.End else Arrangement.Start
 
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val annotatedString = buildAnnotatedString {
+        val content = message.content
+        val postMatch = Regex("\\[post:([a-zA-Z0-9-]+)\\]").find(content)
+        val transactionMatch = Regex("\\[transaction:([a-zA-Z0-9-]+)\\]").find(content)
 
+        if (postMatch != null) {
+            val postId = postMatch.groupValues[1]
+            val startIndex = postMatch.range.first
+            val endIndex = postMatch.range.last + 1
+            append(content.substring(0, startIndex))
+            withAnnotation("postId", postId) {
+                withStyle(style = SpanStyle(color = Color(0xFF667EEA), textDecoration = TextDecoration.Underline)) {
+                    append("[Xem bài viết]")
+                }
+            }
+            append(content.substring(endIndex))
+        } else if (transactionMatch != null) {
+            val transactionId = transactionMatch.groupValues[1]
+            val startIndex = transactionMatch.range.first
+            val endIndex = transactionMatch.range.last + 1
+            val transactionContent = content.substring(0, startIndex).trim() // Lấy nội dung trước [transaction]
+            append(transactionContent)
+            withAnnotation("transactionId", transactionId) {
+                withStyle(style = SpanStyle(color = Color(0xFF667EEA), textDecoration = TextDecoration.Underline)) {
+                    append("[Xem giao dịch]")
+                }
+            }
+        } else {
+            append(content)
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -203,65 +233,42 @@ fun MessageBubble(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Phân tích và hiển thị tin nhắn với liên kết
-                    val annotatedString = buildAnnotatedString {
-                        val content = message.content
-                        val postMatch = Regex("\\[post:([a-zA-Z0-9-]+)\\]").find(content)
-                        if (postMatch != null) {
-                            val postId = postMatch.groupValues[1]
-                            val startIndex = postMatch.range.first
-                            val endIndex = postMatch.range.last + 1
-                            append(content.substring(0, startIndex))
-                            withAnnotation("postId", postId) {
-                                withStyle(style = SpanStyle(color = Color.Blue, textDecoration = TextDecoration.Underline)) {
-                                    append("[Xem bài viết]") // Văn bản thân thiện hơn
-                                }
-                            }
-                            append(content.substring(endIndex))
-                        } else {
-                            append(content)
-                        }
-                    }
+                    val hasAnnotation = annotatedString.getStringAnnotations("postId", 0, annotatedString.length).isNotEmpty() ||
+                            annotatedString.getStringAnnotations("transactionId", 0, annotatedString.length).isNotEmpty()
 
-                    Box {
-                        // Kiểm tra xem annotatedString có chứa annotation "postId" không
-                        val hasPostId = annotatedString.getStringAnnotations("postId", 0, annotatedString.length).isNotEmpty()
-
-                        if (hasPostId) {
-                            // Sử dụng BasicText thay vì ClickableText
-                            BasicText(
-                                text = annotatedString,
-                                modifier = Modifier
-                                    .pointerInput(Unit) {
-                                        detectTapGestures { offset ->
-                                            // Hiển thị annotation tại vị trí click
-                                            textLayoutResult?.let { layout ->
-                                                val position = layout.getOffsetForPosition(offset)
-                                                annotatedString.getStringAnnotations("postId", position, position)
-                                                    .firstOrNull()?.let { annotation ->
-                                                        navController.navigate("newsfeed?postIdToFocus=${annotation.item}")
-                                                    }
-                                            }
+                    if (hasAnnotation) {
+                        BasicText(
+                            text = annotatedString,
+                            modifier = Modifier
+                                .pointerInput(Unit) {
+                                    detectTapGestures { offset ->
+                                        textLayoutResult?.let { layout ->
+                                            val position = layout.getOffsetForPosition(offset)
+                                            annotatedString.getStringAnnotations("postId", position, position)
+                                                .firstOrNull()?.let { annotation ->
+                                                    navController.navigate("newsfeed?postIdToFocus=${annotation.item}")
+                                                } ?: annotatedString.getStringAnnotations("transactionId", position, position)
+                                                .firstOrNull()?.let { annotation ->
+                                                    navController.navigate("temporary_transaction?content=${message.content}")
+                                                }
                                         }
                                     }
-                                    .onGloballyPositioned { coordinates ->
-                                        // Đảm bảo text layout có sẵn khi click
-                                    },
-                                style = TextStyle(color = textColor),
-                                onTextLayout = { layoutResult ->
-                                    textLayoutResult = layoutResult
                                 }
-                            )
-                        } else {
-                            // Hiển thị văn bản thường nếu không có annotation
-                            Text(
-                                text = message.content,
-                                color = textColor,
-                                fontSize = 16.sp
-                            )
-                        }
+                                .onGloballyPositioned { coordinates ->
+                                    // Đảm bảo text layout có sẵn khi click
+                                },
+                            style = TextStyle(color = textColor),
+                            onTextLayout = { layoutResult ->
+                                textLayoutResult = layoutResult
+                            }
+                        )
+                    } else {
+                        Text(
+                            text = message.content,
+                            color = textColor,
+                            fontSize = 16.sp
+                        )
                     }
-
 
                     Text(
                         text = ChatTimeFormatter.formatTimestamp(message.sentAt),

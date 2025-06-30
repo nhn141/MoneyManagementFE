@@ -898,7 +898,17 @@ fun PostItemWithImage(
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
     val isAuthor = post.authorId == currentUserId
 
-    val shareMessage = "Shared post: ${post.content} [post:${post.postId}]"
+
+    val truncatedContent = post.content?.let {
+        if (it.length > 15) it.take(15) + "..." else it
+    } ?: ""
+
+    val shareMessage = """
+        Shared Post:
+        From: ${post.authorName ?: "Unknown Author"}
+        $truncatedContent
+        [post:${post.postId}]
+    """.trimIndent()
 
     Box(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(
@@ -1033,7 +1043,7 @@ fun PostItemWithImage(
                                 post = post,
                                 viewModel = viewModel,
                                 onCommentClick = onCommentClick,
-                                onShareClick = { showShareDialog = true } // Thêm sự kiện chia sẻ
+                                onShareClick = { showShareDialog = true }
                             )
                         }
                     }
@@ -1150,7 +1160,7 @@ fun PostItemWithImage(
                     groupChatViewModel.sendGroupMessage(groupId, shareMessage)
                     showShareDialog = false
                 },
-                post = post // Truyền post
+                post = post
             )
         }
     }
@@ -1164,7 +1174,7 @@ fun PostItemTextOnly(
     viewModel: NewsFeedViewModel,
     profileViewModel: ProfileViewModel,
     groupChatViewModel: GroupChatViewModel,
-    chatViewModel: ChatViewModel // Thêm ChatViewModel để lấy danh sách bạn bè
+    chatViewModel: ChatViewModel
 ) {
     var selectedPrivacy by remember { mutableStateOf(post.targetType) }
     var isExpanded by remember { mutableStateOf(false) }
@@ -1180,14 +1190,23 @@ fun PostItemTextOnly(
     val latestChats by chatViewModel.latestChats.collectAsState(initial = null) // Lấy danh sách bạn bè
 
     LaunchedEffect(Unit) {
-        groupChatViewModel.loadUserGroups() // Tải danh sách nhóm
-        chatViewModel.getLatestChats() // Tải danh sách bạn bè
+        groupChatViewModel.loadUserGroups()
+        chatViewModel.getLatestChats()
     }
 
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
     val isAuthor = post.authorId == currentUserId
 
-    val shareMessage = "Shared post: ${post.content} [post:${post.postId}]"
+    val truncatedContent = post.content?.let {
+        if (it.length > 15) it.take(15) + "..." else it
+    } ?: ""
+
+    val shareMessage = """
+        Shared:
+        From: ${post.authorName ?: "Unknown Author"}
+        $truncatedContent
+        [post:${post.postId}]
+    """.trimIndent()
 
     Box(
         modifier = Modifier
@@ -1469,7 +1488,7 @@ fun ActionButtons(
     post: Post,
     viewModel: NewsFeedViewModel,
     onCommentClick: (Post) -> Unit,
-    onShareClick: () -> Unit // Thêm tham số cho sự kiện chia sẻ
+    onShareClick: () -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,

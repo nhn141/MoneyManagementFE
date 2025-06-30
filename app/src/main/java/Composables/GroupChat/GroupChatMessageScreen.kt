@@ -184,7 +184,7 @@ fun MessageBubble(
     message: GroupMessage,
     isSentByCurrentUser: Boolean,
     onCommentClick: (transactionId: String) -> Unit,
-    navController: NavController // Thêm NavController
+    navController: NavController
 ) {
     val bubbleShape = RoundedCornerShape(
         topStart = 20.dp,
@@ -201,9 +201,10 @@ fun MessageBubble(
     val annotatedString = buildAnnotatedString {
         val content = message.content
         val postMatch = Regex("\\[post:([a-zA-Z0-9-]+)\\]").find(content)
-        val hasPostId = postMatch != null
-        if (hasPostId) {
-            val postId = postMatch!!.groupValues[1]
+        val transactionMatch = Regex("\\[transaction:([a-zA-Z0-9-]+)\\]").find(content)
+
+        if (postMatch != null) {
+            val postId = postMatch.groupValues[1]
             val startIndex = postMatch.range.first
             val endIndex = postMatch.range.last + 1
             append(content.substring(0, startIndex))
@@ -213,6 +214,17 @@ fun MessageBubble(
                 }
             }
             append(content.substring(endIndex))
+        } else if (transactionMatch != null) {
+            val transactionId = transactionMatch.groupValues[1]
+            val startIndex = transactionMatch.range.first
+            val endIndex = transactionMatch.range.last + 1
+            val transactionContent = content.substring(0, startIndex).trim() // Lấy nội dung trước [transaction]
+            append(transactionContent)
+            withAnnotation("transactionId", transactionId) {
+                withStyle(style = SpanStyle(color = Color.Green, textDecoration = TextDecoration.Underline)) {
+                    append("[Xem giao dịch]")
+                }
+            }
         } else {
             append(content)
         }
@@ -255,9 +267,10 @@ fun MessageBubble(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    val hasPostId = annotatedString.getStringAnnotations("postId", 0, annotatedString.length).isNotEmpty()
+                    val hasAnnotation = annotatedString.getStringAnnotations("postId", 0, annotatedString.length).isNotEmpty() ||
+                            annotatedString.getStringAnnotations("transactionId", 0, annotatedString.length).isNotEmpty()
 
-                    if (hasPostId) {
+                    if (hasAnnotation) {
                         BasicText(
                             text = annotatedString,
                             modifier = Modifier
@@ -268,6 +281,9 @@ fun MessageBubble(
                                             annotatedString.getStringAnnotations("postId", position, position)
                                                 .firstOrNull()?.let { annotation ->
                                                     navController.navigate("newsfeed?postIdToFocus=${annotation.item}")
+                                                } ?: annotatedString.getStringAnnotations("transactionId", position, position)
+                                                .firstOrNull()?.let { annotation ->
+                                                    navController.navigate("temporary_transaction?content=${message.content}")
                                                 }
                                         }
                                     }

@@ -17,6 +17,7 @@ import DI.Composables.HomeSection.HomeScreen
 import DI.Composables.NewsFeedSection.NewsFeedScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.AddTransactionScreen
+import DI.Composables.TransactionSection.TemporaryTransactionViewScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
 import DI.Composables.TransactionSection.TransactionScreen
@@ -246,6 +247,19 @@ private fun InnerNavHost(
         }
 
         composable(
+            route = "temporary_transaction?content={content}",
+            arguments = listOf(navArgument("content") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val content = backStackEntry.arguments?.getString("content")
+            if (content != null) {
+                TemporaryTransactionViewScreen(
+                    navController = navController,
+                    messageContent = content
+                )
+            }
+        }
+
+        composable(
             route = Routes.ChatMessage,
             arguments = listOf(navArgument("friendId") { type = NavType.StringType })
         ) { backStackEntry ->
@@ -334,7 +348,10 @@ private fun InnerNavHost(
                 viewModel = transactionViewModel,
                 categoryViewModel = categoryViewModel,
                 walletViewModel = walletViewModel,
-                currencyViewModel = currencyViewModel
+                currencyViewModel = currencyViewModel,
+                chatViewModel = chatViewModel,
+                groupChatViewModel = groupChatViewModel,
+                profileViewModel = profileViewModel
             )
         }
 
