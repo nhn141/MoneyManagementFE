@@ -115,3 +115,18 @@ data class GroupChatItemDto(
 data class AvatarDTO(
     val avatarUrl: String
 )
+
+data class MemberWithStatus(
+    val userId: String,
+    val displayName: String,
+    val avatarUrl: String?,
+    val role: Int,
+    val joinedAt: String,
+    val isMuted: Boolean,
+    val isBanned: Boolean,
+    val mutedAt: String?,
+    val mutedUntil: String?,
+    val muteReason: String?,
+    val banReason: String?,
+    val lastModerationUpdate: String?
+)
