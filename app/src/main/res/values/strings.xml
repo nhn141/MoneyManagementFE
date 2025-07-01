@@ -446,6 +446,15 @@
     <string name="add_group_fund">Add Group Fund</string>
     <string name="no_group_funds_found">No Group Funds Found</string>
     <string name="recent_group_funds">Recent Group Funds</string>
+    <string name="description_label">Description</string>
+    <string name="saving_goal_label">Saving Goal</string>
+    <string name="income_label">Income</string>
+    <string name="expense_label">Expense</string>
+    <string name="balance_label">Balance</string>
+    <string name="created_at_label">Created At</string>
+    <string name="view_group_transaction">View Group Transaction</string>
+    <string name="delete_fund">Delete Fund</string>
+    <string name="are_you_sure_you_want_delete_this_group_fund">Are You Sure You Want Delete This Group Fund?</string>
 
     <!-- ================== GROUP TRANSACTION ================== -->
     <string name="group_transaction_created_success">Group transaction created successfully</string>
@@ -461,6 +470,7 @@
     <string name="group_member">Group Member</string>
     <string name="joined_at">Joined At: %1$s</string>
     <string name="role">Role: %1$s</string>
+    <string name="group_chat">Group Chat</string>
 
     <!-- ================== GROUP TRANSACTION COMMENT ================== -->
     <string name="comment_added">Comment Added</string>

@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -30,10 +31,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
+import com.example.moneymanagement_frontend.R
 
 
 @Composable
@@ -43,16 +46,12 @@ fun GroupChatScreen(
     profileViewModel: ProfileViewModel
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val profile by profileViewModel.profile.collectAsState()
     val groupChats by groupChatViewModel.simulatedGroupChats.collectAsState()
-    val error by groupChatViewModel.error.collectAsState()
-    val groups by groupChatViewModel.groups.collectAsState()
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var groupName by remember { mutableStateOf("") }
     var groupDescription by remember { mutableStateOf("") }
 
-    val transactionMessages by groupChatViewModel.transactionMessages.collectAsState()
 
     val context = LocalContext.current
 
@@ -81,6 +80,21 @@ fun GroupChatScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .clickable(onClick = { navController.popBackStack() }),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.group_chat),
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
             Text("Group Messages", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             IconButton(
                 onClick = { showCreateDialog = true },
@@ -121,6 +135,7 @@ fun GroupChatScreen(
                         message = group.latestMessageContent ?: "",
                         count = group.unreadCount,
                         time = group.sendAt,
+                        image = group.groupImageUrl ?: "",
                         color = Color(0xFF5C6BC0),
                         onClick = {
                             navController.navigate("group_chat_message/${group.groupId}")
@@ -253,6 +268,7 @@ fun GroupMessageItem(
     message: String,
     count: Int,
     time: String,
+    image: String,
     color: Color,
     onClick: () -> Unit
 ) {
@@ -270,7 +286,7 @@ fun GroupMessageItem(
             modifier = Modifier.size(40.dp),
             contentAlignment = Alignment.Center
         ) {
-            FriendAvatar("")
+            FriendAvatar(image)
         }
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -283,7 +299,7 @@ fun GroupMessageItem(
         }
         Spacer(modifier = Modifier.width(4.dp))
         Column(horizontalAlignment = Alignment.End) {
-            if (!time.isNullOrBlank()) {
+            if (time.isNotBlank()) {
                 Text(ChatTimeFormatter.formatTimestamp(time), fontSize = 12.sp)
             } else {
                 Text("No Massage Found", fontSize = 12.sp)

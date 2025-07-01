@@ -1,9 +1,11 @@
 import DI.Composables.GroupFundSection.AddGroupFundDialog
 import DI.Composables.GroupFundSection.EditGroupFundDialog
+import DI.Composables.TransactionSection.formatAmount
 import DI.Models.GroupFund.CreateGroupFundDto
 import DI.Models.GroupFund.GroupFundDto
 import DI.Models.GroupFund.UpdateGroupFundDto
 import DI.Models.UiEvent.UiEvent
+import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.GroupFundViewModel
 import android.util.Log
 import android.widget.Toast
@@ -33,12 +35,15 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 @Composable
 fun GroupFundScreen(
     navController: NavController,
     groupFundViewModel: GroupFundViewModel,
+    currencyViewModel: CurrencyConverterViewModel,
     groupId: String
 ) {
     Log.d("GroupFundScreen", "Composable started")
@@ -52,6 +57,9 @@ fun GroupFundScreen(
 
     var selectedFund by remember { mutableStateOf<GroupFundDto?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
+
+    val isVND by currencyViewModel.isVND.collectAsState() // Lấy trạng thái isVND
+    val exchangeRate by currencyViewModel.exchangeRate.collectAsState() // Lấy tỷ giá
 
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -228,7 +236,7 @@ fun GroupFundScreen(
                                         .padding(start = 16.dp)
                                 ) {
                                     Text(
-                                        text = "Description: ${fund.description}",
+                                        text = "${stringResource(id = R.string.description_label)}: ${fund.description}",
                                         style = MaterialTheme.typography.titleMedium,
                                         color = Color(0xFF0D1F2D),
                                         fontWeight = FontWeight.SemiBold,
@@ -236,20 +244,21 @@ fun GroupFundScreen(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
+                                    val savingGoalAmount = fund.savingGoal.toDoubleOrNull() ?: 0.0
                                     Text(
-                                        text = "Saving Goal: ${fund.savingGoal}",
+                                        text = "${stringResource(id = R.string.saving_goal_label)}: ${formatAmount(amount = savingGoalAmount, isVND = isVND, exchangeRate = exchangeRate)}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color(0xFF666666)
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Balance: ${fund.balance}",
+                                        text = "${stringResource(id = R.string.balance_label)}: ${formatAmount(amount = fund.balance, isVND = isVND, exchangeRate = exchangeRate)}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color(0xFF666666)
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Create At: ${fund.createdAt}",
+                                        text = "${stringResource(id = R.string.created_at_label)}: ${formatDateTime(fund.createdAt)}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color(0xFF666666)
                                     )
@@ -311,15 +320,17 @@ fun GroupFundScreen(
 
                     HorizontalDivider(color = Color(0xFFE0E0E0))
 
+                    val savingGoal = selectedFund!!.savingGoal.toDoubleOrNull() ?: 0.0
+
                     // Detailed Info
-                    InfoText(label = "Description", value = selectedFund!!.description)
-                    InfoText(label = "Saving Goal", value = selectedFund!!.savingGoal)
-                    InfoText(label = "Income", value = "${selectedFund!!.totalFundsIn}")
-                    InfoText(label = "Expense", value = "${selectedFund!!.totalFundsOut}")
-                    InfoText(label = "Balance", value = "${selectedFund!!.balance}")
+                    InfoText(label = stringResource(id = R.string.description_label), value = selectedFund!!.description)
+                    InfoText(label = stringResource(id = R.string.saving_goal_label), value = formatAmount(amount = savingGoal, isVND = isVND, exchangeRate = exchangeRate))
+                    InfoText(label = stringResource(id = R.string.income_label), value = formatAmount(amount = selectedFund!!.totalFundsIn, isVND = isVND, exchangeRate = exchangeRate))
+                    InfoText(label = stringResource(id = R.string.expense_label), value = formatAmount(amount = selectedFund!!.totalFundsOut, isVND = isVND, exchangeRate = exchangeRate))
+                    InfoText(label = stringResource(id = R.string.balance_label), value = formatAmount(amount = selectedFund!!.balance, isVND = isVND, exchangeRate = exchangeRate))
                     InfoText(
-                        label = "Created At",
-                        value = selectedFund!!.createdAt,
+                        label = stringResource(id = R.string.created_at_label),
+                        value = formatDateTime(selectedFund!!.createdAt),
                         maxLines = 2
                     )
 
@@ -378,7 +389,7 @@ fun GroupFundScreen(
                                     )
                                 )
                             ) {
-                                Text("View Group Transaction", color = Color.White)
+                                Text(stringResource(id = R.string.view_group_transaction), color = Color.White)
                             }
                         }
                     }
@@ -414,8 +425,8 @@ fun GroupFundScreen(
     if (showDeleteDialog && selectedFund != null) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Fund") },
-            text = { Text("Are you sure you want to delete this group fund?") },
+            title = { Text(stringResource(id = R.string.delete_fund)) },
+            text = { Text(stringResource(id = R.string.are_you_sure_you_want_delete_this_group_fund)) },
             confirmButton = {
                 TextButton(onClick = {
                     groupFundViewModel.deleteGroupFund(
@@ -509,5 +520,16 @@ fun InfoText(label: String, value: String, maxLines: Int = Int.MAX_VALUE) {
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
+
+fun formatDateTime(input: String): String {
+    return try {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        val dateTime = LocalDateTime.parse(input, formatter)
+        val outputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+        dateTime.format(outputFormatter)
+    } catch (e: Exception) {
+        input
     }
 }
