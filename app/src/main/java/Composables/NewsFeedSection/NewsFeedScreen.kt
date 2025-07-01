@@ -123,6 +123,7 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -714,6 +715,7 @@ fun PrivacyDropdown(
         Card(
             modifier = Modifier
                 .clickable { expanded = !expanded }
+                .defaultMinSize(minWidth = 100.dp)
                 .shadow(4.dp, RoundedCornerShape(8.dp)),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
             shape = RoundedCornerShape(8.dp)
@@ -816,7 +818,11 @@ fun PrivacyDropdown(
 
                     //hiển thị danh sách group
                     if (selectedPrivacy == 3 && groups.isNotEmpty()) {
-                        Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray.copy(alpha = 0.3f))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            thickness = 1.dp,
+                            color = Color.Gray.copy(alpha = 0.3f)
+                        )
                         Text(
                             text = "Chọn nhóm:",
                             fontSize = 10.sp,
@@ -859,7 +865,6 @@ fun PrivacyDropdown(
         }
     }
 }
-
 
 @Composable
 fun PostItemWithImage(
@@ -954,6 +959,7 @@ fun PostItemWithImage(
                         elevation = CardDefaults.cardElevation(16.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
+                            // Phần thông tin tác giả
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.fillMaxWidth()
@@ -985,27 +991,33 @@ fun PostItemWithImage(
                                         fontSize = 12.sp
                                     )
                                 }
+                            }
 
-                                if (isAuthor) {
-                                    PrivacyDropdown(
-                                        selectedPrivacy = selectedPrivacy,
-                                        onPrivacyChanged = { newPrivacy ->
-                                            selectedPrivacy = newPrivacy
+                            // PrivacyDropdown
+                            if (isAuthor) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                PrivacyDropdown(
+                                    selectedPrivacy = selectedPrivacy,
+                                    onPrivacyChanged = { newPrivacy ->
+                                        selectedPrivacy = newPrivacy
+                                        if (newPrivacy == 3 && selectedGroupIds.isEmpty()) {
+                                            Toast.makeText(context, "Vui lòng chọn ít nhất một nhóm", Toast.LENGTH_SHORT).show()
+                                        } else {
                                             viewModel.updatePostTarget(
                                                 postId = post.postId,
                                                 targetType = newPrivacy,
                                                 targetGroupIds = if (newPrivacy == 3 && selectedGroupIds.isNotEmpty()) {
-                                                    selectedGroupIds.joinToString(",")
+                                                    selectedGroupIds.toList() // Gửi List<String>
                                                 } else {
                                                     null
                                                 }
                                             )
-                                        },
-                                        groups = groups,
-                                        selectedGroupIds = selectedGroupIds,
-                                        modifier = Modifier.width(IntrinsicSize.Min)
-                                    )
-                                }
+                                        }
+                                    },
+                                    groups = groups,
+                                    selectedGroupIds = selectedGroupIds,
+                                    modifier = Modifier.width(IntrinsicSize.Min)
+                                )
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
@@ -1186,6 +1198,7 @@ fun PostItemTextOnly(
             }
         }
     }
+    val context = LocalContext.current
     val groups by groupChatViewModel.groups.collectAsState(initial = emptyList())
     val latestChats by chatViewModel.latestChats.collectAsState(initial = null) // Lấy danh sách bạn bè
 
@@ -1305,27 +1318,34 @@ fun PostItemTextOnly(
                                 fontWeight = FontWeight.Medium
                             )
                         }
+                    }
 
-                        if (isAuthor) {
-                            PrivacyDropdown(
-                                selectedPrivacy = selectedPrivacy,
-                                onPrivacyChanged = { newPrivacy ->
-                                    selectedPrivacy = newPrivacy
+                    if (isAuthor) {
+                        PrivacyDropdown(
+                            selectedPrivacy = selectedPrivacy,
+                            onPrivacyChanged = { newPrivacy ->
+                                selectedPrivacy = newPrivacy
+                                if (newPrivacy == 3 && selectedGroupIds.isEmpty()) {
+                                    Toast.makeText(context, "Vui lòng chọn ít nhất một nhóm", Toast.LENGTH_SHORT).show()
+                                } else {
                                     viewModel.updatePostTarget(
                                         postId = post.postId,
                                         targetType = newPrivacy,
                                         targetGroupIds = if (newPrivacy == 3 && selectedGroupIds.isNotEmpty()) {
-                                            selectedGroupIds.joinToString(",")
+                                            selectedGroupIds.toList() // Gửi List<String>
                                         } else {
                                             null
                                         }
                                     )
-                                },
-                                groups = groups,
-                                selectedGroupIds = selectedGroupIds,
-                                modifier = Modifier.width(IntrinsicSize.Min)
-                            )
-                        }
+                                }
+                            },
+                            groups = groups,
+                            selectedGroupIds = selectedGroupIds,
+                            modifier = Modifier
+                                .width(IntrinsicSize.Min)
+                                .align(Alignment.Start)
+                                .padding(top = 12.dp)
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))

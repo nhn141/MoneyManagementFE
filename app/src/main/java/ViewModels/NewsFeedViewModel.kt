@@ -293,11 +293,66 @@ class NewsFeedViewModel @Inject constructor(
         }
     }
 
-    fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: String?) {
+    fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: List<String>?) {
         viewModelScope.launch {
             _updateTargetState.value = ResultState.Loading
             val result = repository.updatePostTarget(postId, targetType, targetGroupIds)
             _updateTargetState.value = result
+            Log.d("NewsFeedViewModel", "updatePostTarget: $result postId: $postId targetType: $targetType targetGroupIds: $targetGroupIds")
+            if (result is ResultState.Success) {
+                // Cập nhật _posts với targetType và targetGroupIds mới
+                _posts.update { posts ->
+                    posts.map { post ->
+                        if (post.postId == postId) {
+                            post.copy(
+                                targetType = targetType,
+                                targetGroupIds = targetGroupIds
+                            )
+                        } else {
+                            post
+                        }
+                    }
+                }
+                // Hoặc làm mới từ backend
+                refreshPost(postId)
+            }
+        }
+    }
+
+    private fun refreshPost(postId: String) {
+        viewModelScope.launch {
+            when (val result = repository.getPostDetail(postId)) {
+                is ResultState.Success -> {
+                    val updatedPost = result.data
+                    _posts.update { posts ->
+                        posts.map { post ->
+                            if (post.postId == postId) {
+                                Post(
+                                    postId = post.postId,
+                                    content = post.content,
+                                    authorId = post.authorId,
+                                    authorName = post.authorName,
+                                    createdAt = post.createdAt,
+                                    commentsCount = post.commentsCount,
+                                    likesCount = post.likesCount,
+                                    isLikedByCurrentUser = post.isLikedByCurrentUser,
+                                    targetType = updatedPost.targetType,
+                                    targetGroupIds = updatedPost.targetGroupIds,
+                                    authorAvatarUrl = post.authorAvatarUrl,
+                                    mediaType = post.mediaType,
+                                    mediaUrl = post.mediaUrl
+                                )
+                            } else {
+                                post
+                            }
+                        }
+                    }
+                }
+                is ResultState.Error -> {
+                    _error.value = result.message
+                }
+                else -> {}
+            }
         }
     }
 

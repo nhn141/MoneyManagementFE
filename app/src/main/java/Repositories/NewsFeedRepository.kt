@@ -164,23 +164,29 @@ class NewsFeedRepository @Inject constructor(
         }
     }
 
-    suspend fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: String?): ResultState<Unit> {
+    suspend fun updatePostTarget(postId: String, targetType: Int, targetGroupIds: List<String>?): ResultState<Unit> {
         return try {
             val request = UpdatePostTargetRequest(
                 targetType = targetType,
                 targetGroupIds = targetGroupIds
             )
+            Log.d("Repository", "Sending request: postId=$postId, targetType=$targetType, targetGroupIds=$targetGroupIds")
             val response = apiService.updatePostTarget(postId, request)
+            Log.d("Repository", "Response code: ${response.code()}, isSuccessful: ${response.isSuccessful}")
             if (response.isSuccessful) {
+                Log.d("Repository", "Update successful for postId=$postId")
                 ResultState.Success(Unit)
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                Log.e("Repository", "Update failed: code=${response.code()}, error=$errorMsg")
                 ResultState.Error("Update target failed: ${response.code()} - $errorMsg")
             }
         } catch (e: IOException) {
-            ResultState.Error("Network error: ${e.message}")
+            Log.e("Repository", "Network error: ${e.message}")
+            ResultState.Error("Không có kết nối mạng: ${e.message}")
         } catch (e: Exception) {
-            ResultState.Error("Unexpected error: ${e.message}")
+            Log.e("Repository", "Unexpected error: ${e.message}")
+            ResultState.Error("Lỗi không xác định: ${e.message}")
         }
     }
 
