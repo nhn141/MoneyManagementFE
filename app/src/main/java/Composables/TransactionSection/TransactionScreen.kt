@@ -1,8 +1,10 @@
 package DI.Composables.TransactionSection
 
-import DI.Models.Category.Category
+import DI.Composables.HomeSection.MoneyAppColors
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.TransactionSearchRequest
+import DI.Utils.CurrencyUtils
+import DI.Utils.DateTimeUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.TransactionViewModel
@@ -11,13 +13,24 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -45,18 +58,32 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-import androidx.compose.ui.window.Dialog
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalTime
@@ -64,25 +91,17 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
 
 @Composable
 fun TransactionScreen(
     navController: NavController,
     transactionViewModel: TransactionViewModel,
     categoryViewModel: CategoryViewModel,
-    currencyViewModel: CurrencyConverterViewModel
+    currencyViewModel: CurrencyConverterViewModel,
 ) {
-    val scrollState = rememberLazyListState()
     val selected = transactionViewModel.selectedType.value
     val transactions = transactionViewModel.filteredTransactions.value
+    val cashFlow = transactionViewModel.cashFlow.value
     val showSearchDialog = remember { mutableStateOf(false) }
     val showDatePickerDialog = remember { mutableStateOf(false) }
     val selectedDate = remember { mutableStateOf<String>("") }
@@ -90,350 +109,313 @@ fun TransactionScreen(
     val context = LocalContext.current
     val isVND by currencyViewModel.isVND.collectAsState() // Lấy trạng thái isVND
     val exchangeRate by currencyViewModel.exchangeRate.collectAsState() // Lấy tỷ giá
-
-    LaunchedEffect(Unit) {
-        categoryViewModel.getCategories()
-        transactionViewModel.fetchTransactions()
-    }
+    var visibleCount by remember { mutableStateOf(5) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
+                brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF00D09E),
-                        Color(0xFFF8FFFE)
+                        MoneyAppColors.Background,
+                        Color(0xFFECFDF5) // Emerald-50
                     )
                 )
             )
     ) {
-        LazyColumn(
-            state = scrollState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 24.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(end = 10.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            // Top Bar
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 24.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(
-                                Color.White.copy(alpha = 0.2f),
-                                CircleShape
-                            )
-                            .clickable { navController.popBackStack() },
-                        contentAlignment = Alignment.Center
-                    ) {                        Icon(
-                            painter = painterResource(R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(R.string.back),
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(R.string.transaction),
-                        color = Color.White,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(
-                                Color.White,
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_notifications),
-                            contentDescription = stringResource(R.string.notifications),
-                            tint = Color(0xFF00D09E),
-                            modifier = Modifier.size(22.dp)
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .background(Color(0xFFFF6B6B), CircleShape)
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-4).dp, y = 4.dp)
-                        )
-                    }
-                }
-            }
+            // Header card
+            TransactionHeader()
 
             // Balance Card
-            item {
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MoneyAppColors.Primary),
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
+                        .padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {                        Text(
-                            text = stringResource(R.string.total_balance),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF666666),
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = formatAmount(7783.0, isVND, exchangeRate), // Cập nhật số tiền
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0D1F2D)
-                        )
-                    }
+                    Text(
+                        text = stringResource(R.string.net_balance),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f),
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = CurrencyUtils.formatAmount(
+                            amount = cashFlow?.netCashFlow ?: 0.0,
+                            isVND = isVND,
+                            exchangeRate = exchangeRate
+                        ),
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MoneyAppColors.OnPrimary
+                    )
                 }
             }
 
             // Income + Expense Cards
-            item {
-                Row(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Income Card
+                Card(
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (selected == "Income")
+                            Color(0xFF4CAF50) else MoneyAppColors.PrimaryVariant
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (selected == "Income") 16.dp else 8.dp
+                    ),
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        .weight(1f)
+                        .height(120.dp)
+                        .clickable { transactionViewModel.onTypeSelected("Income") }
                 ) {
-                    // Income Card
-                    Card(
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (selected == "Income")
-                                Color(0xFF4CAF50) else Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = if (selected == "Income") 16.dp else 8.dp
-                        ),
+                    Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .height(120.dp)
-                            .clickable { transactionViewModel.onTypeSelected("Income") }
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    if (selected == "Income") {
-                                        Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color(0xFF4CAF50),
-                                                Color(0xFF388E3C)
-                                            )
+                            .fillMaxSize()
+                            .background(
+                                if (selected == "Income") {
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color(0xFF4CAF50),
+                                            Color(0xFF388E3C)
                                         )
-                                    } else {
-                                        Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color.White,
-                                                Color(0xFFF8FFF8)
-                                            )
+                                    )
+                                } else {
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            Color(0xFFF8FFF8)
                                         )
-                                    }
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(
-                                            if (selected == "Income")
-                                                Color.White.copy(alpha = 0.2f)
-                                            else Color(0xFF4CAF50).copy(alpha = 0.1f),
-                                            CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {                                    Icon(
-                                        painter = painterResource(R.drawable.ic_income),
-                                        contentDescription = stringResource(R.string.income),
-                                        tint = if (selected == "Income") Color.White else Color(0xFF4CAF50),
-                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = stringResource(R.string.income),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (selected == "Income") Color.White else Color(0xFF666666),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = formatAmount(4120.0, isVND, exchangeRate), // Cập nhật số tiền
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (selected == "Income") Color.White else Color(0xFF4CAF50),
-                                    fontSize = 16.sp
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(
+                                        if (selected == "Income")
+                                            Color.White.copy(alpha = 0.2f)
+                                        else Color(0xFF4CAF50).copy(alpha = 0.1f),
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_income),
+                                    contentDescription = stringResource(R.string.income),
+                                    tint = if (selected == "Income") Color.White else Color(
+                                        0xFF4CAF50
+                                    ),
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.income),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (selected == "Income") Color.White else Color(
+                                    0xFF666666
+                                ),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = CurrencyUtils.formatAmount(
+                                    cashFlow?.totalIncome ?: 0.0,
+                                    isVND,
+                                    exchangeRate
+                                ), // Cập nhật số tiền
+                                fontWeight = FontWeight.Bold,
+                                color = if (selected == "Income") Color.White else Color(
+                                    0xFF4CAF50
+                                ),
+                                fontSize = 16.sp
+                            )
                         }
                     }
+                }
 
-                    // Expense Card
-                    Card(
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (selected == "Expense")
-                                Color(0xFFFF5722) else Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = if (selected == "Expense") 16.dp else 8.dp
-                        ),
+                // Expense Card
+                Card(
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (selected == "Expense")
+                            Color(0xFFFF5722) else MoneyAppColors.PrimaryVariant
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (selected == "Expense") 16.dp else 8.dp
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(120.dp)
+                        .clickable { transactionViewModel.onTypeSelected("Expense") }
+                ) {
+                    Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .height(120.dp)
-                            .clickable { transactionViewModel.onTypeSelected("Expense") }
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    if (selected == "Expense") {
-                                        Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color(0xFFFF5722),
-                                                Color(0xFFD84315)
-                                            )
+                            .fillMaxSize()
+                            .background(
+                                if (selected == "Expense") {
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color(0xFFFF5722),
+                                            Color(0xFFD84315)
                                         )
-                                    } else {
-                                        Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color.White,
-                                                Color(0xFFFFF8F8)
-                                            )
+                                    )
+                                } else {
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            Color(0xFFFFF8F8)
                                         )
-                                    }
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(
-                                            if (selected == "Expense")
-                                                Color.White.copy(alpha = 0.2f)
-                                            else Color(0xFFFF5722).copy(alpha = 0.1f),
-                                            CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {                                    Icon(
-                                        painter = painterResource(R.drawable.ic_expense),
-                                        contentDescription = stringResource(R.string.expense),
-                                        tint = if (selected == "Expense") Color.White else Color(0xFFFF5722),
-                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = stringResource(R.string.expense),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (selected == "Expense") Color.White else Color(0xFF666666),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = formatAmount(1187.40, isVND, exchangeRate), // Cập nhật số tiền
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (selected == "Expense") Color.White else Color(0xFFFF5722),
-                                    fontSize = 16.sp
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(
+                                        if (selected == "Expense")
+                                            Color.White.copy(alpha = 0.2f)
+                                        else Color(0xFFFF5722).copy(alpha = 0.1f),
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_expense),
+                                    contentDescription = stringResource(R.string.expense),
+                                    tint = if (selected == "Expense") Color.White else Color(
+                                        0xFFFF5722
+                                    ),
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.expense),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (selected == "Expense") Color.White else Color(
+                                    0xFF666666
+                                ),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = CurrencyUtils.formatAmount(
+                                    cashFlow?.totalExpense ?: 0.0,
+                                    isVND,
+                                    exchangeRate
+                                ), // Cập nhật số tiền
+                                fontWeight = FontWeight.Bold,
+                                color = if (selected == "Expense") Color.White else Color(
+                                    0xFFFF5722
+                                ),
+                                fontSize = 16.sp
+                            )
                         }
                     }
                 }
             }
 
             // Action Buttons
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (searchParams != null || selectedDate.value.isNotEmpty()) {
-                        ActionButton(
-                            iconRes = R.drawable.ic_refresh,
-                            contentDescription = stringResource(R.string.reset_filters),
-                            onClick = {
-                                transactionViewModel.resetSearch()
-                                selectedDate.value = ""
-                                Toast.makeText(context, context.getString(R.string.filters_reset), Toast.LENGTH_SHORT).show()
-                            }
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                    }
-
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (searchParams != null || selectedDate.value.isNotEmpty()) {
                     ActionButton(
-                        iconRes = R.drawable.ic_search,
-                        contentDescription = stringResource(R.string.search),
-                        onClick = { showSearchDialog.value = true }
+                        iconRes = R.drawable.ic_refresh,
+                        contentDescription = stringResource(R.string.reset_filters),
+                        onClick = {
+                            transactionViewModel.resetSearch()
+                            selectedDate.value = ""
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.filters_reset),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     )
-
                     Spacer(modifier = Modifier.width(12.dp))
+                }
 
-                    ActionButton(
-                        iconRes = R.drawable.ic_calendar,
-                        contentDescription = stringResource(R.string.calendar),
-                        onClick = { showDatePickerDialog.value = true }
-                    )
+                ActionButton(
+                    iconRes = R.drawable.ic_search,
+                    contentDescription = stringResource(R.string.search),
+                    onClick = { showSearchDialog.value = true }
+                )
 
-                    if (selectedDate.value.isNotEmpty()) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = selectedDate.value,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF666666),
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                    }
+                Spacer(modifier = Modifier.width(12.dp))
 
-                    Spacer(modifier = Modifier.width(12.dp))
-                    ActionButton(
-                        iconRes = R.drawable.ic_more,
-                        contentDescription = stringResource(R.string.add_transaction),
-                        onClick = { navController.navigate("add_transaction") },
-                        isPrimary = true
+                ActionButton(
+                    iconRes = R.drawable.ic_calendar,
+                    contentDescription = stringResource(R.string.calendar),
+                    onClick = { showDatePickerDialog.value = true }
+                )
+
+                if (selectedDate.value.isNotEmpty()) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = selectedDate.value,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF666666),
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
                 }
-            }
 
-            // Transactions List Header
-            item {
-                Text(
-                    text = stringResource(R.string.recent_transactions),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF0D1F2D),
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                Spacer(modifier = Modifier.width(12.dp))
+                ActionButton(
+                    iconRes = R.drawable.ic_more,
+                    contentDescription = stringResource(R.string.add_transaction),
+                    onClick = { navController.navigate("add_transaction") },
+                    isPrimary = true
                 )
             }
 
+            // Transactions List Header
+            Text(
+                text = stringResource(R.string.recent_transactions),
+                style = MaterialTheme.typography.titleMedium,
+                color = Color(0xFF0D1F2D),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+            )
+
             // Transactions List
             if (transactions.isNotEmpty()) {
-                itemsIndexed(transactions) { _, transaction ->
+                transactions.take(visibleCount).forEach { transaction ->
                     TransactionRow(
                         navController = navController,
                         transaction = transaction,
@@ -442,10 +424,18 @@ fun TransactionScreen(
                         currencyViewModel = currencyViewModel
                     )
                 }
-            } else {
-                item {
-                    EmptyTransactionState()
+                if (visibleCount < transactions.size) {
+                    Button(
+                        onClick = { visibleCount += 5 },
+                        modifier = Modifier
+                            .padding(20.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Text(text = stringResource(R.string.see_more))
+                    }
                 }
+            } else {
+                EmptyTransactionState()
             }
         }
 
@@ -482,10 +472,13 @@ fun TransactionScreen(
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate()
 
-                        selectedDate.value = localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        selectedDate.value =
+                            localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
-                        val from = localDate.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        val to = localDate.atTime(LocalTime.MAX).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        val from = localDate.atStartOfDay()
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        val to = localDate.atTime(LocalTime.MAX)
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
                         transactionViewModel.fetchTransactionsByDateRange(from, to)
                     }
@@ -531,21 +524,12 @@ private fun ActionButton(
         modifier = Modifier
             .size(44.dp)
             .background(
-                if (isPrimary) {
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFF00D09E),
-                            Color(0xFF00B888)
-                        )
-                    )
-                } else {
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color.White,
-                            Color(0xFFF8F8F8)
-                        )
-                    )
-                },
+                color =
+                    if (isPrimary) {
+                        MoneyAppColors.Primary
+                    } else {
+                        Color.White
+                    },
                 CircleShape
             )
             .clickable { onClick() },
@@ -561,6 +545,53 @@ private fun ActionButton(
 }
 
 @Composable
+fun TransactionHeader() {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MoneyAppColors.Surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 24.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // User Avatar - Replace with AsyncImage for API data
+            Icon(
+                painter = painterResource(R.drawable.ic_transaction),
+                contentDescription = "Transaction Header",
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MoneyAppColors.Primary)
+                    .padding(5.dp),
+                tint = MoneyAppColors.Surface
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                Text(
+                    text = stringResource(R.string.transaction_screen_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MoneyAppColors.OnSurface
+                )
+                Text(
+                    text = stringResource(R.string.transaction_screen_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MoneyAppColors.OnBackground
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun TransactionRow(
     navController: NavController,
     transaction: GeneralTransactionItem,
@@ -568,29 +599,24 @@ fun TransactionRow(
     categoryViewModel: CategoryViewModel,
     currencyViewModel: CurrencyConverterViewModel
 ) {
-    var category by remember { mutableStateOf<Category?>(null) }
+    val categories = categoryViewModel.categories.collectAsState().value?.getOrNull() ?: emptyList()
+    val category = categories.find { it.categoryID == transaction.categoryID }
+
     val isVND by currencyViewModel.isVND.collectAsState()
     val exchangeRate by currencyViewModel.exchangeRate.collectAsState()
 
-    LaunchedEffect(transaction.categoryID) {
-        categoryViewModel.getCategoryById(transaction.categoryID)
-    }
 
-    val selectedCategoryResult = categoryViewModel.selectedCategory.collectAsState()
-
-    LaunchedEffect(selectedCategoryResult.value) {
-        selectedCategoryResult.value?.getOrNull()?.let {
-            category = it
-        }
-    }
+    val dateTime = DateTimeUtils.formatDateTime(transaction.timestamp, LocalContext.current)
 
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = modifier
-            .clickable { navController.navigate("transaction_detail/${transaction.transactionID}")
-            Log.d("TransactionRow", "ID: ${transaction.transactionID}")}
+            .clickable {
+                navController.navigate("transaction_detail/${transaction.transactionID}")
+                Log.d("TransactionRow", "ID: ${transaction.transactionID}")
+            }
     ) {
         Column(
             modifier = Modifier
@@ -632,7 +658,7 @@ fun TransactionRow(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = transaction.timestamp ?: "",
+                        text = dateTime.formattedDate + " " + dateTime.formattedTime,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF666666)
                     )
@@ -640,7 +666,7 @@ fun TransactionRow(
             }
 
             Text(
-                text = formatAmount(
+                text = CurrencyUtils.formatAmount(
                     amount = transaction.amount.toDoubleOrNull() ?: 0.0,
                     isVND = isVND,
                     exchangeRate = exchangeRate
@@ -657,7 +683,6 @@ fun TransactionRow(
 }
 
 
-
 @Composable
 fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String {
     val displayAmount = if (isVND || exchangeRate == null) {
@@ -666,13 +691,20 @@ fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String 
         amount / exchangeRate
     }
 
-    val symbols = DecimalFormatSymbols(Locale.US).apply {
-        groupingSeparator = '.'
-        decimalSeparator = ','
+    val symbols = if (isVND) {
+        DecimalFormatSymbols().apply {
+            groupingSeparator = '.'
+            decimalSeparator = ','
+        }
+    } else {
+        DecimalFormatSymbols().apply {
+            groupingSeparator = ','
+            decimalSeparator = '.'
+        }
     }
 
     val formatter = if (isVND) {
-        DecimalFormat("#,###", symbols)
+        DecimalFormat("#,##0.##", symbols)
     } else {
         DecimalFormat("#,##0.00", symbols)
     }
@@ -680,6 +712,7 @@ fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String 
     val formatted = formatter.format(displayAmount)
     val currencySymbol = if (isVND) "VND" else "USD"
 
+    Log.d("formatAmount", "Exchange Rate: $exchangeRate")
     return "$formatted $currencySymbol"
 }
 
@@ -710,7 +743,7 @@ fun DatePickerModal(
     val datePickerState = rememberDatePickerState()
 
     DatePickerDialog(
-        onDismissRequest = onDismiss,        confirmButton = {
+        onDismissRequest = onDismiss, confirmButton = {
             TextButton(onClick = {
                 onDateSelected(datePickerState.selectedDateMillis)
                 onDismiss()
@@ -777,7 +810,13 @@ fun SearchDialog(
                 "${(500000 / rate).toInt()}-${(1000000 / rate).toInt()}",
                 "${(1000000 / rate).toInt()}+"
             )
-        } ?: listOf("0-50", "50-200", "200-500", "500-1000", "1000+") // Giá trị mặc định nếu exchangeRate null
+        } ?: listOf(
+            "0-50",
+            "50-200",
+            "200-500",
+            "500-1000",
+            "1000+"
+        ) // Giá trị mặc định nếu exchangeRate null
     }
 
     // Define a local object to hold non-composable string constants
@@ -814,26 +853,30 @@ fun SearchDialog(
 
     val timeRangeMap = buildMap {
         put(nonComposableStrings.allOption, "")
-        putAll(mapOf(
-            nonComposableStrings.time0008 to "00:00:00-08:00:00",
-            nonComposableStrings.time0816 to "08:00:00-16:00:00",
-            nonComposableStrings.time1600 to "16:00:00-23:59:59"
-        ))
+        putAll(
+            mapOf(
+                nonComposableStrings.time0008 to "00:00:00-08:00:00",
+                nonComposableStrings.time0816 to "08:00:00-16:00:00",
+                nonComposableStrings.time1600 to "16:00:00-23:59:59"
+            )
+        )
     }
 
     val reverseTimeRangeMap = timeRangeMap.entries.associate { it.value to it.key }
 
     val dayOfWeekMap = buildMap {
         put(nonComposableStrings.allOption, "")
-        putAll(mapOf(
-            nonComposableStrings.monday to "Mon",
-            nonComposableStrings.tuesday to "Tue",
-            nonComposableStrings.wednesday to "Wed",
-            nonComposableStrings.thursday to "Thu",
-            nonComposableStrings.friday to "Fri",
-            nonComposableStrings.saturday to "Sat",
-            nonComposableStrings.sunday to "Sun"
-        ))
+        putAll(
+            mapOf(
+                nonComposableStrings.monday to "Mon",
+                nonComposableStrings.tuesday to "Tue",
+                nonComposableStrings.wednesday to "Wed",
+                nonComposableStrings.thursday to "Thu",
+                nonComposableStrings.friday to "Fri",
+                nonComposableStrings.saturday to "Sat",
+                nonComposableStrings.sunday to "Sun"
+            )
+        )
     }
     val reverseDayOfWeekMap = dayOfWeekMap.entries.associate { it.value to it.key }
     val categoriesResult by viewModel.categories.collectAsState()
@@ -867,7 +910,8 @@ fun SearchDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
-                ) {                    Row(verticalAlignment = Alignment.CenterVertically) {
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = stringResource(R.string.advanced_search),
                             fontWeight = FontWeight.Bold,
@@ -901,9 +945,13 @@ fun SearchDialog(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                ) {                    item {
+                ) {
+                    item {
                         // Date Range Section
-                        SearchSection(title = stringResource(R.string.date_range), icon = Icons.Default.DateRange) {
+                        SearchSection(
+                            title = stringResource(R.string.date_range),
+                            icon = Icons.Default.DateRange
+                        ) {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                                 modifier = Modifier.fillMaxWidth()
@@ -928,7 +976,10 @@ fun SearchDialog(
                     }
                     item {
                         // Transaction Details Section
-                        SearchSection(title = stringResource(R.string.transaction_details_section), icon = Icons.Default.AccountBalanceWallet) {
+                        SearchSection(
+                            title = stringResource(R.string.transaction_details_section),
+                            icon = Icons.Default.AccountBalanceWallet
+                        ) {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -936,11 +987,16 @@ fun SearchDialog(
                                 ) {
                                     SearchDropdownField(
                                         label = stringResource(R.string.type),
-                                        options = listOf(stringResource(R.string.all), stringResource(R.string.expense), stringResource(R.string.income)),
+                                        options = listOf(
+                                            stringResource(R.string.all),
+                                            stringResource(R.string.expense),
+                                            stringResource(R.string.income)
+                                        ),
                                         selectedOption = type.ifEmpty { stringResource(R.string.all) },
                                         onOptionSelected = { selected ->
-                                            type = if (selected == nonComposableStrings.allOption) ""
-                                            else selected
+                                            type =
+                                                if (selected == nonComposableStrings.allOption) ""
+                                                else selected
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
@@ -950,7 +1006,8 @@ fun SearchDialog(
                                         options = categoryNames,
                                         selectedOption = category.ifEmpty { stringResource(R.string.all) },
                                         onOptionSelected = { selected ->
-                                            category = if (selected == nonComposableStrings.allOption) "" else selected
+                                            category =
+                                                if (selected == nonComposableStrings.allOption) "" else selected
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
@@ -959,7 +1016,8 @@ fun SearchDialog(
                                 SearchDropdownField(
                                     label = "Amount Range (${if (isVND) "VND" else "USD"})",
                                     options = amountRangeMap.keys.toList(),
-                                    selectedOption = reverseAmountRangeMap[amountRange] ?: stringResource(R.string.all),
+                                    selectedOption = reverseAmountRangeMap[amountRange]
+                                        ?: stringResource(R.string.all),
                                     onOptionSelected = { selected ->
                                         amountRange = amountRangeMap[selected] ?: ""
                                     }
@@ -976,7 +1034,10 @@ fun SearchDialog(
                     }
                     item {
                         // Time Filters Section
-                        SearchSection(title = stringResource(R.string.time_filters), icon = Icons.Default.AccessTime) {
+                        SearchSection(
+                            title = stringResource(R.string.time_filters),
+                            icon = Icons.Default.AccessTime
+                        ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -984,7 +1045,8 @@ fun SearchDialog(
                                 SearchDropdownField(
                                     label = stringResource(R.string.day_of_week),
                                     options = dayOfWeekMap.keys.toList(),
-                                    selectedOption = reverseDayOfWeekMap[dayOfWeek] ?: stringResource(R.string.all),
+                                    selectedOption = reverseDayOfWeekMap[dayOfWeek]
+                                        ?: stringResource(R.string.all),
                                     onOptionSelected = { selected ->
                                         dayOfWeek = dayOfWeekMap[selected] ?: ""
                                     },
@@ -994,7 +1056,8 @@ fun SearchDialog(
                                 SearchDropdownField(
                                     label = stringResource(R.string.time_range),
                                     options = timeRangeMap.keys.toList(),
-                                    selectedOption = reverseTimeRangeMap[timeRange] ?: stringResource(R.string.all),
+                                    selectedOption = reverseTimeRangeMap[timeRange]
+                                        ?: stringResource(R.string.all),
                                     onOptionSelected = { selected ->
                                         timeRange = timeRangeMap[selected] ?: ""
                                     },
@@ -1032,7 +1095,8 @@ fun SearchDialog(
                             containerColor = Color(0xFFF5F5F5),
                             contentColor = Color(0xFF424242)
                         )
-                    ) {                        Icon(
+                    ) {
+                        Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = stringResource(R.string.reset),
                             modifier = Modifier.size(20.dp)
@@ -1042,7 +1106,11 @@ fun SearchDialog(
                     Button(
                         onClick = {
                             if (startDate.isEmpty() || endDate.isEmpty()) {
-                                Toast.makeText(context, nonComposableStrings.pleaseSelectDates, Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    nonComposableStrings.pleaseSelectDates,
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 return@Button
                             }
 
@@ -1050,14 +1118,19 @@ fun SearchDialog(
                             val endDateMillis = formatter.parse(endDate)?.time ?: 0
 
                             if (startDateMillis > endDateMillis) {
-                                Toast.makeText(context, nonComposableStrings.startDateLaterError, Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    nonComposableStrings.startDateLaterError,
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 return@Button
                             }
 
                             val adjustedAmountRange = if (!isVND && exchangeRate != null) {
                                 amountRange.split("-").joinToString("-") { range ->
                                     val value = range.removeSuffix("+").toDoubleOrNull() ?: 0.0
-                                    ((value * exchangeRate!!).toInt().toString() + (if (range.endsWith("+")) "+" else ""))
+                                    ((value * exchangeRate!!).toInt()
+                                        .toString() + (if (range.endsWith("+")) "+" else ""))
                                 }
                             } else {
                                 amountRange
@@ -1086,7 +1159,11 @@ fun SearchDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.search), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(
+                            stringResource(R.string.search),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
                     }
                 }
             }
@@ -1181,7 +1258,9 @@ fun SearchSearchField(
 
         OutlinedTextField(
             value = value,
-            onValueChange = if (isDateField) { {} } else onChange,
+            onValueChange = if (isDateField) {
+                {}
+            } else onChange,
             readOnly = isDateField,
             placeholder = if (placeholder.isNotEmpty()) {
                 { Text(placeholder, color = Color(0xFFCCCCCC)) }
@@ -1269,7 +1348,9 @@ fun SearchDropdownField(
                         text = {
                             Text(
                                 option,
-                                color = if (option == selectedOption) Color(0xFF00D09E) else Color(0xFF1A1A1A),
+                                color = if (option == selectedOption) Color(0xFF00D09E) else Color(
+                                    0xFF1A1A1A
+                                ),
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1
                             )
@@ -1289,5 +1370,3 @@ fun SearchDropdownField(
         }
     }
 }
-
-

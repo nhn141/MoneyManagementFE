@@ -1,28 +1,70 @@
 import DI.Composables.CategorySection.AddNewCategoryDialog
 import DI.Composables.CategorySection.ModernColors
 import DI.Composables.CategorySection.getCategoryIcon
+import DI.Composables.HomeSection.MoneyAppColors
 import DI.Models.Category.AddCategoryRequest
 import DI.Models.Category.Category
 import DI.Models.Category.UpdateCategoryRequest
 import DI.Models.UiEvent.UiEvent
 import DI.ViewModels.CategoryViewModel
-import ViewModels.AuthViewModel
 import android.widget.Toast
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.launch
@@ -323,11 +366,15 @@ fun ModernCategoryDetailDialog(
                                         onSave(categoryName.trim())
                                     }
                                 },
-                                modifier = Modifier.weight(1f).height(52.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
                                 enabled = isNameValid && categoryName.trim() != category.name,
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = ModernColors.Primary,
-                                    disabledContainerColor = ModernColors.OnSurfaceVariant.copy(alpha = 0.2f)
+                                    disabledContainerColor = ModernColors.OnSurfaceVariant.copy(
+                                        alpha = 0.2f
+                                    )
                                 ),
                                 shape = RoundedCornerShape(16.dp),
                                 elevation = ButtonDefaults.buttonElevation(
@@ -351,7 +398,9 @@ fun ModernCategoryDetailDialog(
                             // Delete button
                             Button(
                                 onClick = { showDeleteConfirmation = true },
-                                modifier = Modifier.weight(1f).height(52.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = ModernColors.Error
                                 ),
@@ -386,7 +435,9 @@ fun ModernCategoryDetailDialog(
                                     onDismiss()
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
@@ -454,17 +505,14 @@ fun ModernCategoryDetailDialog(
 @Composable
 fun ModernCategoriesScreen(
     categoryViewModel: CategoryViewModel,
-    authViewModel: AuthViewModel,
+    navController: NavController
 ) {
-    val context = LocalContext.current
-    
-    // Reload init data when token is refreshed
-    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
-    LaunchedEffect(refreshTokenState) {
-        if (refreshTokenState?.isSuccess == true) {
-            categoryViewModel.getCategories();
-        }
+
+    LaunchedEffect(Unit) {
+        categoryViewModel.getCategories()
     }
+
+    val context = LocalContext.current
 
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -473,7 +521,7 @@ fun ModernCategoriesScreen(
         // Collect events for add, update, and delete actions
         launch {
             categoryViewModel.addCategoryEvent.collect { event ->
-                when(event) {
+                when (event) {
                     is UiEvent.ShowMessage -> {
                         Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                     }
@@ -482,7 +530,7 @@ fun ModernCategoriesScreen(
         }
         launch {
             categoryViewModel.updateCategoryEvent.collect { event ->
-                when(event) {
+                when (event) {
                     is UiEvent.ShowMessage -> {
                         Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                     }
@@ -491,7 +539,7 @@ fun ModernCategoriesScreen(
         }
         launch {
             categoryViewModel.deleteCategoryEvent.collect { event ->
-                when(event) {
+                when (event) {
                     is UiEvent.ShowMessage -> {
                         Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                     }
@@ -515,54 +563,76 @@ fun ModernCategoriesScreen(
                         .fillMaxWidth()
                         .background(ModernColors.SecondaryLight)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 20.dp)
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 24.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 20.dp),
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.2f)),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Apps,
-                                    contentDescription = stringResource(R.string.category),
-                                    tint = Color.White,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Apps,
+                                        contentDescription = stringResource(R.string.category),
+                                        tint = Color.White,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
 
-                            Spacer(modifier = Modifier.width(16.dp))
+                                Spacer(modifier = Modifier.width(16.dp))
 
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.my_categories),
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = stringResource(
-                                        R.string.category_count,
-                                        categories.size,
-                                        stringResource(
-                                            if (categories.size == 1)
-                                                R.string.category_single
-                                            else
-                                                R.string.category_plural
-                                        )
-                                    ),
-                                    fontSize = 16.sp,
-                                    color = Color.White.copy(alpha = 0.9f),
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.my_categories),
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = stringResource(
+                                            R.string.category_count,
+                                            categories.size,
+                                            stringResource(
+                                                if (categories.size == 1)
+                                                    R.string.category_single
+                                                else
+                                                    R.string.category_plural
+                                            )
+                                        ),
+                                        fontSize = 16.sp,
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .clickable(onClick = { navController.popBackStack() }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.category),
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
                         }
                     }
                 }
@@ -591,7 +661,14 @@ fun ModernCategoriesScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(brush = ModernColors.backgroundGradient)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MoneyAppColors.Background,
+                            Color(0xFFECFDF5)
+                        )
+                    )
+                )
         ) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),

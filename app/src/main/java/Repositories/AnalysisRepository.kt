@@ -49,7 +49,10 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
         }
     }
 
-    suspend fun getCategoryBreakdown(startDate: String, endDate: String): Result<List<CategoryBreakdown>> {
+    suspend fun getCategoryBreakdown(
+        startDate: String,
+        endDate: String
+    ): Result<List<CategoryBreakdown>> {
         return try {
             val response = apiService.getCategoryBreakdown(startDate, endDate)
             Log.d("CategoryBreakdownResponse", response.toString())
@@ -58,5 +61,4 @@ class AnalysisRepository @Inject constructor(private val apiService: ApiService)
             Result.failure(e)
         }
     }
-
 }

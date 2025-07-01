@@ -16,7 +16,7 @@ import androidx.core.view.WindowCompat
 // Ultra bright green modern color palette
 private val Primary = Color(0xFF4CAF50)        // Bright Green
 private val Secondary = Color(0xFF81C784)      // Light Green
-private val Background = Color(0xFFF1F8E9)     // Ultra Light Green (almost white)
+private val Background = Color(0xFFECFDF5)     // Ultra Light Green (almost white)
 private val Surface = Color(0xFFFFFFFF)        // Pure White
 private val Error = Color(0xFFFF5252)          // Bright Coral Red
 private val TextPrimary = Color(0xFF2E7D32)    // Dark Green
@@ -88,6 +88,7 @@ fun MoneyManagementTheme(
             // Even with dynamic colors, prefer light schemes
             dynamicLightColorScheme(context)
         }
+
         darkTheme -> BrightAlternativeScheme // Use bright alternative instead of dark
         else -> BrightColorScheme
     }
