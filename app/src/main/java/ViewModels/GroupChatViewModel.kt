@@ -265,6 +265,7 @@ class GroupChatViewModel @Inject constructor(
             repository.addUserToGroup(groupId, userId).onFailure {
                 _error.value = "Failed to add user to group: ${it.localizedMessage}"
             }
+            loadGroupMembers(groupId)
         }
     }
 
@@ -273,6 +274,7 @@ class GroupChatViewModel @Inject constructor(
             repository.removeUserFromGroup(groupId, userId).onFailure {
                 _error.value = "Failed to remove user from group: ${it.localizedMessage}"
             }
+            loadGroupMembers(groupId)
         }
     }
 
@@ -281,6 +283,7 @@ class GroupChatViewModel @Inject constructor(
             repository.assignCollaboratorRole(groupId, userId).onFailure {
                 _error.value = "Failed to assign collaborator role: ${it.localizedMessage}"
             }
+            loadGroupMembers(groupId)
         }
     }
 
@@ -289,6 +292,7 @@ class GroupChatViewModel @Inject constructor(
             repository.leaveGroup(groupId).onFailure {
                 _error.value = "Failed to leave group: ${it.localizedMessage}"
             }
+            loadGroupMembers(groupId)
         }
     }
 
@@ -297,6 +301,7 @@ class GroupChatViewModel @Inject constructor(
             val result = repository.adminLeaveGroup(groupId)
             result.onSuccess {
                 onResult(it)
+                loadGroupMembers(groupId)
             }.onFailure {
                 _error.value = "Admin failed to leave group: ${it.localizedMessage}"
                 onResult(null)
