@@ -122,7 +122,7 @@ fun HomeScreen(
         )
     }
 
-    val recentTransactions = getMostRecentTransactions(currentMonthTransactions, 5)
+    val recentTransactions = getMostRecentTransactions(transactions, 5)
 
     val friendRequests =
         friendViewModel.friendRequests.collectAsStateWithLifecycle().value?.getOrNull()
@@ -272,7 +272,7 @@ fun FinancialOverviewCard(
                 .padding(20.dp)
         ) {
             Text(
-                text = stringResource(R.string.total_balance),
+                text = stringResource(R.string.account_total_balance),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f)
             )
@@ -296,7 +296,7 @@ fun FinancialOverviewCard(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.income),
+                        text = stringResource(R.string.current_month_income),
                         style = MaterialTheme.typography.bodySmall,
                         color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f)
                     )
@@ -314,7 +314,7 @@ fun FinancialOverviewCard(
 
                 Column {
                     Text(
-                        text = stringResource(R.string.expense),
+                        text = stringResource(R.string.current_month_expense),
                         style = MaterialTheme.typography.bodySmall,
                         color = MoneyAppColors.OnPrimary.copy(alpha = 0.8f)
                     )

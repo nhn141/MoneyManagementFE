@@ -387,7 +387,7 @@
     <string name="registration_successful">Registration successful!</string>
     <string name="registration_failed">Registration failed: %1$s</string>
     <string name="login_successful">Login successful!</string>
-    <string name="login_failed">Login failed: %1$s</string>
+    <string name="login_failed">Login failed. Check your email and password.</string>
 
     <!-- ================== FRIENDS & SOCIAL ================== -->
     <string name="my_friends">My Friends</string>
@@ -487,6 +487,9 @@
     <string name="no_posts_available">No posts available</string>
     <string name="unknown_author">Unknown Author</string>
     <string name="latest_post_format">%1$s post: %2$s</string>
+    <string name="account_total_balance">Total account balance</string>
+    <string name="current_month_income">This month’s income</string>
+    <string name="current_month_expense">This month’s expense</string>
 
 </resources>
 

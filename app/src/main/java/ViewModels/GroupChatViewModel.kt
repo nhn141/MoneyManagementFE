@@ -1,7 +1,6 @@
 package DI.ViewModels
 
 import DI.API.TokenHandler.AuthStorage
-
 import DI.Models.Group.AdminLeaveResult
 import DI.Models.Group.CreateGroupRequest
 import DI.Models.Group.Group
@@ -26,7 +25,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.Disposable
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -121,7 +123,8 @@ class GroupChatViewModel @Inject constructor(
     private val _memberProfile = MutableStateFlow<GroupMemberProfile?>(null)
     val memberProfile: StateFlow<GroupMemberProfile?> = _memberProfile
 
-    private val _simulatedGroupChats = MutableStateFlow<List<SimulatedLatestGroupChatDto>>(emptyList())
+    private val _simulatedGroupChats =
+        MutableStateFlow<List<SimulatedLatestGroupChatDto>>(emptyList())
     val simulatedGroupChats: StateFlow<List<SimulatedLatestGroupChatDto>> = _simulatedGroupChats
 
     private val _error = MutableStateFlow<String?>(null)
@@ -136,8 +139,10 @@ class GroupChatViewModel @Inject constructor(
     private val _transactionMessages = MutableStateFlow<List<TransactionMessageInfo>>(emptyList())
     val transactionMessages: StateFlow<List<TransactionMessageInfo>> = _transactionMessages
 
-    private val _groupTransactionComments = MutableStateFlow<Map<String, List<GroupTransactionCommentDto>>>(emptyMap())
-    val groupTransactionComments: StateFlow<Map<String, List<GroupTransactionCommentDto>>> = _groupTransactionComments
+    private val _groupTransactionComments =
+        MutableStateFlow<Map<String, List<GroupTransactionCommentDto>>>(emptyMap())
+    val groupTransactionComments: StateFlow<Map<String, List<GroupTransactionCommentDto>>> =
+        _groupTransactionComments
 
     private val _groupAvatarUrl = MutableStateFlow<String?>(null)
     val groupAvatarUrl: StateFlow<String?> = _groupAvatarUrl
@@ -192,6 +197,7 @@ class GroupChatViewModel @Inject constructor(
             joinGroup(groupId)
 
             val dto = SendGroupMessageRequest(groupId, content)
+            loadGroupMessages(groupId)
 
             hubConnection?.invoke("SendMessageToGroup", dto)
 
@@ -219,7 +225,7 @@ class GroupChatViewModel @Inject constructor(
                 }
                 .onFailure {
                     _createGroupEvent.emit("Failed to create group: ${it.localizedMessage}")
-            }
+                }
         }
     }
 
@@ -371,7 +377,8 @@ class GroupChatViewModel @Inject constructor(
                 _groupAvatarUrl.value = avatarUrl  // Cập nhật URL avatar
                 _isAvatarLoading.value = false
             }.onFailure { exception ->
-                _error.value = "Error uploading avatar: ${exception.localizedMessage}"  // Thông báo lỗi
+                _error.value =
+                    "Error uploading avatar: ${exception.localizedMessage}"  // Thông báo lỗi
                 _isAvatarLoading.value = false
             }
         }

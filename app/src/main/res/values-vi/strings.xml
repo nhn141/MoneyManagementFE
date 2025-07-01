@@ -386,7 +386,7 @@
     <string name="registration_successful">Đăng ký thành công!</string>
     <string name="registration_failed">Đăng ký thất bại: %1$s</string>
     <string name="login_successful">Đăng nhập thành công!</string>
-    <string name="login_failed">Đăng nhập thất bại: %1$s</string>
+    <string name="login_failed">Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.</string>
 
     <!-- ================== FRIENDS & SOCIAL ================== -->
     <string name="my_friends">Bạn bè của tôi</string>
@@ -487,5 +487,9 @@
     <string name="no_posts_available">Chưa có bài viết nào</string>
     <string name="unknown_author">Tác giả không xác định</string>
     <string name="latest_post_format">%1$s đã đăng: %2$s</string>
+    <string name="account_total_balance">Tổng số dư tài khoản</string>
+    <string name="current_month_income">Thu nhập của tháng này</string>
+    <string name="current_month_expense">Chi tiêu của tháng này</string>
+
 
 </resources>
