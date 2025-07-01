@@ -132,6 +132,8 @@ private fun InnerNavHost(
         hiltViewModel<GroupTransactionCommentViewModel>(parentEntry)
     val newsFeedViewModel = hiltViewModel<NewsFeedViewModel>(parentEntry)
     val reportViewModel = hiltViewModel<ReportViewModel>(parentEntry)
+    val groupModerationViewModel =
+        hiltViewModel<DI.ViewModels.GroupModerationViewModel>(parentEntry)
 
     val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
 
@@ -360,7 +362,8 @@ private fun InnerNavHost(
                 groupId = groupId,
                 groupChatViewModel = groupChatViewModel,
                 groupTransactionCommentViewModel = groupTransactionCommentViewModel,
-                profileViewModel = profileViewModel
+                profileViewModel = profileViewModel,
+                groupModerationViewModel = groupModerationViewModel
             )
         }
 
@@ -370,6 +373,8 @@ private fun InnerNavHost(
                 groupId = groupId,
                 navController = navController,
                 groupChatViewModel = groupChatViewModel,
+                profileViewModel = profileViewModel,
+                groupModerationViewModel = groupModerationViewModel
             )
         }
 
