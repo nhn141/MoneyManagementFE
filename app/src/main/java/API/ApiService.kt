@@ -1,5 +1,13 @@
 package API
 
+import DI.Composables.GroupModeration.BanKickUserRequest
+import DI.Composables.GroupModeration.DeleteMessageRequest
+import DI.Composables.GroupModeration.GrantRoleRequest
+import DI.Composables.GroupModeration.GroupUserActionRequest
+import DI.Composables.GroupModeration.ModerationLogResponse
+import DI.Composables.GroupModeration.MuteUserRequest
+import DI.Composables.GroupModeration.UnmuteUserRequest
+import DI.Composables.GroupModeration.UserGroupStatusDTO
 import DI.Models.Analysis.BarChart.DailySummary
 import DI.Models.Analysis.BarChart.MonthlySummary
 import DI.Models.Analysis.BarChart.WeeklySummary
@@ -325,4 +333,43 @@ interface ApiService {
     @DELETE("groups/{groupId}/avatar")
     suspend fun deleteGroupAvatar(@Path("groupId") groupId: String): Response<Unit>
 
+    // Group Moderation
+    @POST("GroupModeration/mute")
+    suspend fun muteUser(@Body request: MuteUserRequest): Response<Unit>
+
+    @POST("GroupModeration/unmute")
+    suspend fun unmuteUser(@Body request: GroupUserActionRequest): Response<Unit>
+
+
+    @POST("GroupModeration/ban")
+    suspend fun banUser(@Body request: BanKickUserRequest): Response<Unit>
+
+
+    @POST("GroupModeration/unban")
+    suspend fun unbanUser(@Body request: GroupUserActionRequest): Response<Unit>
+
+    @POST("GroupModeration/kick")
+    suspend fun kickUser(@Body request: BanKickUserRequest): Response<Unit>
+
+    @POST("GroupModeration/delete-message")
+    suspend fun deleteMessage(@Body request: DeleteMessageRequest): Response<Unit>
+
+    @POST("GroupModeration/grant-mod-role")
+    suspend fun grantModRole(@Body request: GroupUserActionRequest): Response<Unit>
+
+    @POST("GroupModeration/revoke-mod-role")
+    suspend fun revokeModRole(@Body request: GroupUserActionRequest): Response<Unit>
+
+    @GET("GroupModeration/logs")
+    suspend fun getModerationLogs(
+        @Path("groupId") groupId: String,
+        @Query("page") page: Int,
+        @Query("pageSize") pageSize: Int
+    ): Response<ModerationLogResponse>
+
+    @GET("GroupModeration/status/{groupId}")
+    suspend fun getUserGroupStatus(@Path("groupId") groupId: String): Response<UserGroupStatusDTO>
+
+    @GET("GroupModeration/members/{groupId}")
+    suspend fun getAllGroupMemberStatuses(@Path("groupId") groupId: String): Response<List<UserGroupStatusDTO>>
 }

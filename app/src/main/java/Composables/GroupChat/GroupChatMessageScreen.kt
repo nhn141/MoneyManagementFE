@@ -9,6 +9,7 @@ import DI.Models.GroupTransactionComment.GroupTransactionCommentDto
 import DI.Models.GroupTransactionComment.UpdateGroupTransactionCommentDto
 import DI.Models.UserInfo.Profile
 import DI.ViewModels.GroupChatViewModel
+import DI.ViewModels.GroupModerationViewModel
 import DI.ViewModels.GroupTransactionCommentViewModel
 import DI.ViewModels.ProfileViewModel
 import android.util.Log
@@ -46,6 +47,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.bumptech.glide.Glide
 import com.example.moneymanagement_frontend.R
+import java.time.LocalDateTime
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 private val PrimaryColor = Color(0xFF00C853)
 private val BackgroundColor = Color(0xFFF5F9F6)
@@ -59,7 +63,8 @@ fun GroupChatMessageScreen(
     groupId: String,
     groupChatViewModel: GroupChatViewModel,
     groupTransactionCommentViewModel: GroupTransactionCommentViewModel,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    groupModerationViewModel: GroupModerationViewModel
 ) {
     val currentUserId = AuthStorage.getUserIdFromToken(LocalContext.current)
     var messageContent by remember { mutableStateOf("") }
@@ -67,6 +72,14 @@ fun GroupChatMessageScreen(
     var activeTransactionId by remember { mutableStateOf<String?>(null) }
     val comments by groupTransactionCommentViewModel.comments.collectAsState()
 
+    val userGroupStatus = groupModerationViewModel.userGroupStatus.collectAsState().value
+
+    currentUserId?.let {
+        groupModerationViewModel.getUserGroupStatus(groupId, it)
+    } ?: run {
+        // Handle the case when currentUserId is null, e.g., show an error or handle gracefully
+        Log.e("GroupProfile", "User ID is null")
+    }
 
     LaunchedEffect(Unit) {
         groupChatViewModel.joinGroup(groupId)
@@ -102,16 +115,36 @@ fun GroupChatMessageScreen(
             )
         },
         bottomBar = {
-            MessageInputBar(
-                messageText = messageContent,
-                onMessageChange = { messageContent = it },
-                onSendClick = {
-                    if (messageContent.isNotBlank()) {
-                        groupChatViewModel.sendGroupMessage(groupId, messageContent)
-                        messageContent = ""
+            if (userGroupStatus?.isMuted == true) {
+                Column (
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("You are muted", style = MaterialTheme.typography.bodyLarge)
+                    userGroupStatus.muteReason?.let {
+                        Text("Reason: $it", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    userGroupStatus.mutedUntil?.let {
+                        val mutedUntil = formatDateTime(it) // You can format the date as needed
+                        //val mutedUntil = userGroupStatus.mutedUntil
+                        Log.d("GroupProfile", "Muted Until: $mutedUntil")
+                        Text("Muted until: $mutedUntil", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-            )
+            } else {
+                MessageInputBar(
+                    messageText = messageContent,
+                    onMessageChange = { messageContent = it },
+                    onSendClick = {
+                        if (messageContent.isNotBlank()) {
+                            groupChatViewModel.sendGroupMessage(groupId, messageContent)
+                            messageContent = ""
+                        }
+                    }
+                )
+            }
         },
         modifier = Modifier.fillMaxSize(),
         containerColor = BackgroundColor
@@ -564,4 +597,17 @@ fun Avatar(url: String, size: Int) {
             .clip(CircleShape)
             .border(2.dp, Color.Gray, CircleShape),
     )
+}
+
+fun formatDateTime(input: String): String {
+    return try {
+        // Parse the input string into a ZonedDateTime object
+        val dateTime = ZonedDateTime.parse(input)
+
+        // Format the ZonedDateTime into a desired string format (e.g., "dd/MM/yyyy hh:mm a")
+        val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a")
+        dateTime.format(formatter)
+    } catch (e: Exception) {
+        "Invalid date" // Return a fallback string if parsing fails
+    }
 }

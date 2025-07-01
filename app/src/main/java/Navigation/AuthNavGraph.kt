@@ -30,6 +30,7 @@ import DI.ViewModels.WalletViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.GroupFundViewModel
+import DI.ViewModels.GroupModerationViewModel
 import DI.ViewModels.GroupTransactionCommentViewModel
 import DI.ViewModels.GroupTransactionViewModel
 import GroupFundScreen
@@ -117,6 +118,7 @@ private fun InnerNavHost(
     val groupTransactionViewModel = hiltViewModel<GroupTransactionViewModel>(parentEntry)
     val groupChatViewModel = hiltViewModel<GroupChatViewModel>(parentEntry)
     val groupTransactionCommentViewModel = hiltViewModel<GroupTransactionCommentViewModel>(parentEntry)
+    val groupModerationViewModel = hiltViewModel<GroupModerationViewModel>(parentEntry)
 
     NavHost(
         navController    = navController,
@@ -308,7 +310,8 @@ private fun InnerNavHost(
                 groupId = groupId,
                 groupChatViewModel = groupChatViewModel,
                 groupTransactionCommentViewModel = groupTransactionCommentViewModel,
-                profileViewModel = profileViewModel
+                profileViewModel = profileViewModel,
+                groupModerationViewModel = groupModerationViewModel
             )
         }
 
@@ -319,7 +322,8 @@ private fun InnerNavHost(
                 navController = navController,
                 groupChatViewModel = hiltViewModel(),
                 groupTransactionCommentViewModel = groupTransactionCommentViewModel,
-                profileViewModel = hiltViewModel()
+                profileViewModel = hiltViewModel(),
+                groupModerationViewModel = groupModerationViewModel
             )
         }
 
@@ -329,6 +333,8 @@ private fun InnerNavHost(
                 groupId = groupId,
                 navController = navController,
                 groupChatViewModel = groupChatViewModel,
+                groupModerationViewModel = groupModerationViewModel,
+                profileViewModel = profileViewModel
             )
         }
 
