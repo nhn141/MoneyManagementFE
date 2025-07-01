@@ -12,7 +12,7 @@ data class PostDetail(
     val mediaUrl: String?,
     val mediaType: String?,
     val targetType: Int,
-    val targetGroupIds: String?,
+    val targetGroupIds: List<String>?,
     val comments: List<Comment>,
     val likes: List<Like>
 )

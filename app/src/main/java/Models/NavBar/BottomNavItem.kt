@@ -8,6 +8,8 @@ sealed class BottomNavItem(val route: String, val icon: Int, val title: String) 
     object Transaction : BottomNavItem("transaction", R.drawable.ic_transaction, "Transaction")
     object Setting : BottomNavItem("user", R.drawable.ic_setting, "Profile")
     object NewsFeed : BottomNavItem("newsfeed", R.drawable.ic_newsfeed, "NewsFeed")
+    object Chat : BottomNavItem("chat", R.drawable.ic_chat, "Chat")
+    object GroupChat : BottomNavItem("groupchat", R.drawable.ic_friend, "GroupChat")
 
     companion object {
         val allRoutes = listOf(
@@ -16,6 +18,8 @@ sealed class BottomNavItem(val route: String, val icon: Int, val title: String) 
             Analysis,
             Setting,
             NewsFeed,
+            Chat,
+            GroupChat
         )
     }
 }

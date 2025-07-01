@@ -17,6 +17,7 @@ import DI.Composables.HomeSection.HomeScreen
 import DI.Composables.NewsFeedSection.NewsFeedScreen
 import DI.Composables.ProfileSection.EditProfileScreen
 import DI.Composables.TransactionSection.AddTransactionScreen
+import DI.Composables.TransactionSection.TemporaryTransactionViewScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
 import DI.Composables.TransactionSection.TransactionEditScreen
 import DI.Composables.TransactionSection.TransactionScreen
@@ -186,7 +187,7 @@ private fun InnerNavHost(
             }
         }
 
-        composable(Routes.Chat) {
+        composable(BottomNavItem.Chat.route) {
             ChatScreen(
                 chatViewModel = chatViewModel,
                 profileViewModel = profileViewModel,
@@ -212,14 +213,17 @@ private fun InnerNavHost(
             )
         }
 
-        composable(Routes.GroupChat) {
+        composable(BottomNavItem.GroupChat.route) {
             GroupChatScreen(navController, groupChatViewModel, profileViewModel)
         }
 
         composable(BottomNavItem.NewsFeed.route) {
             NewsFeedScreen(
+                navController = navController,
                 viewModel = newsFeedViewModel,
-                profileViewModel = profileViewModel
+                profileViewModel = profileViewModel,
+                chatViewModel = chatViewModel,
+                groupChatViewModel = groupChatViewModel
             )
         }
 
@@ -227,6 +231,34 @@ private fun InnerNavHost(
             ReportScreen(
                 viewModel = reportViewModel
             )
+        }
+
+        composable(
+            route = "${BottomNavItem.NewsFeed.route}?postIdToFocus={postIdToFocus}",
+            arguments = listOf(navArgument("postIdToFocus") { defaultValue = null; nullable = true })
+        ) { backStackEntry ->
+            val postIdToFocus = backStackEntry.arguments?.getString("postIdToFocus")
+            NewsFeedScreen(
+                navController = navController,
+                viewModel = newsFeedViewModel,
+                profileViewModel = profileViewModel,
+                chatViewModel = chatViewModel,
+                groupChatViewModel = groupChatViewModel,
+                postIdToFocus = postIdToFocus
+            )
+        }
+
+        composable(
+            route = "temporary_transaction?content={content}",
+            arguments = listOf(navArgument("content") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val content = backStackEntry.arguments?.getString("content")
+            if (content != null) {
+                TemporaryTransactionViewScreen(
+                    navController = navController,
+                    messageContent = content
+                )
+            }
         }
 
         composable(
@@ -318,7 +350,10 @@ private fun InnerNavHost(
                 viewModel = transactionViewModel,
                 categoryViewModel = categoryViewModel,
                 walletViewModel = walletViewModel,
-                currencyViewModel = currencyViewModel
+                currencyViewModel = currencyViewModel,
+                chatViewModel = chatViewModel,
+                groupChatViewModel = groupChatViewModel,
+                profileViewModel = profileViewModel
             )
         }
 

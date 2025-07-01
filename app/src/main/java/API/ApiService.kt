@@ -55,6 +55,8 @@ import DI.Models.NewsFeed.CreateCommentRequest
 import DI.Models.NewsFeed.NewsFeedResponse
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
+import DI.Models.NewsFeed.ReplyCommentRequest
+import DI.Models.NewsFeed.ReplyCommentResponse
 import DI.Models.NewsFeed.UpdatePostTargetRequest
 import DI.Models.Ocr.OcrData
 import DI.Models.Reports.ReportRequest
@@ -259,7 +261,7 @@ interface ApiService {
     suspend fun createPost(
         @Query("content") content: String,
         @Query("category") category: String = "general",
-        @Query("targetType") targetType: Int? = null,
+        @Query("targetType") targetType: Int?,
         @Query("targetGroupIds") targetGroupIds: String? = null,
         @Part file: MultipartBody.Part? = null
     ): Response<Post>
@@ -294,6 +296,17 @@ interface ApiService {
         @Path("postId") postId: String,
         @Body request: UpdatePostTargetRequest
     ): Response<Unit>
+
+    @POST("NewsFeed/comment/reply")
+    suspend fun replyToComment(
+        @Body request: ReplyCommentRequest
+    ): Response<ReplyCommentResponse>
+
+    @DELETE("NewsFeed/comment/reply/{replyId}")
+    suspend fun deleteReply(
+        @Path("replyId") replyId: String
+    ): Response<Unit>
+
 
     //Report
     @POST("Reports/generate")

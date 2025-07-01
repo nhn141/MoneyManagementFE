@@ -11,7 +11,7 @@ data class Group(
     val name: String,
     val description: String? = null,
     val imageUrl: String? = null,
-    val createdAt: String, // ISO 8601 datetime, dùng String hoặc LocalDateTime nếu có converter
+    val createdAt: String,
     val creatorId: String,
     val creatorName: String,
     val memberCount: Int,

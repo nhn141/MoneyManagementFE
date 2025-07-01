@@ -6,5 +6,6 @@ data class Comment(
     val createdAt: String,
     val authorId: String,
     val authorName: String,
-    val authorAvatarUrl: String
+    val authorAvatarUrl: String,
+    val replies: List<ReplyCommentResponse>
 )
