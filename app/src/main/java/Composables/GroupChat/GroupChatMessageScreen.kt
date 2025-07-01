@@ -210,7 +210,7 @@ fun MessageBubble(
             val endIndex = postMatch.range.last + 1
             append(content.substring(0, startIndex))
             withAnnotation("postId", postId) {
-                withStyle(style = SpanStyle(color = Color.Blue, textDecoration = TextDecoration.Underline)) {
+                withStyle(style = SpanStyle(color = Color(0xFF667EEA), textDecoration = TextDecoration.Underline)) {
                     append("\n[Xem bài viết]")
                 }
             }
@@ -222,7 +222,7 @@ fun MessageBubble(
             val transactionContent = content.substring(0, startIndex).trim() // Lấy nội dung trước [transaction]
             append(transactionContent)
             withAnnotation("transactionId", transactionId) {
-                withStyle(style = SpanStyle(color = Color.Green, textDecoration = TextDecoration.Underline)) {
+                withStyle(style = SpanStyle(color = Color(0xFF667EEA), textDecoration = TextDecoration.Underline)) {
                     append("\n[Xem giao dịch]")
                 }
             }
