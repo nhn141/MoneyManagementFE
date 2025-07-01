@@ -271,7 +271,7 @@ fun TransactionDetailBody(
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
 
     val shareMessage = """
-        Shared:
+        Shared Transaction:
         Title: $title
         Type: $type
         Amount: $amount

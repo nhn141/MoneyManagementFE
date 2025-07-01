@@ -11,6 +11,7 @@ import DI.Models.UserInfo.Profile
 import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.GroupTransactionCommentViewModel
 import DI.ViewModels.ProfileViewModel
+import android.net.Uri
 import android.util.Log
 import android.widget.ImageView
 import androidx.compose.foundation.background
@@ -210,7 +211,7 @@ fun MessageBubble(
             append(content.substring(0, startIndex))
             withAnnotation("postId", postId) {
                 withStyle(style = SpanStyle(color = Color.Blue, textDecoration = TextDecoration.Underline)) {
-                    append("[Xem bài viết]")
+                    append("\n[Xem bài viết]")
                 }
             }
             append(content.substring(endIndex))
@@ -222,7 +223,7 @@ fun MessageBubble(
             append(transactionContent)
             withAnnotation("transactionId", transactionId) {
                 withStyle(style = SpanStyle(color = Color.Green, textDecoration = TextDecoration.Underline)) {
-                    append("[Xem giao dịch]")
+                    append("\n[Xem giao dịch]")
                 }
             }
         } else {
@@ -283,7 +284,8 @@ fun MessageBubble(
                                                     navController.navigate("newsfeed?postIdToFocus=${annotation.item}")
                                                 } ?: annotatedString.getStringAnnotations("transactionId", position, position)
                                                 .firstOrNull()?.let { annotation ->
-                                                    navController.navigate("temporary_transaction?content=${message.content}")
+                                                    val encodedContent = Uri.encode(message.content)
+                                                    navController.navigate("temporary_transaction?content=$encodedContent")
                                                 }
                                         }
                                     }

@@ -1202,7 +1202,7 @@ fun PostItemTextOnly(
     } ?: ""
 
     val shareMessage = """
-        Shared:
+        Shared Post:
         From: ${post.authorName ?: "Unknown Author"}
         $truncatedContent
         [post:${post.postId}]

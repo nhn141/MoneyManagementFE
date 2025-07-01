@@ -6,6 +6,7 @@ import DI.Models.Chat.ChatMessage
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -171,7 +172,7 @@ fun MessageBubble(
             append(content.substring(0, startIndex))
             withAnnotation("postId", postId) {
                 withStyle(style = SpanStyle(color = Color(0xFF667EEA), textDecoration = TextDecoration.Underline)) {
-                    append("[Xem bài viết]")
+                    append("\n[Xem bài viết]")
                 }
             }
             append(content.substring(endIndex))
@@ -183,7 +184,7 @@ fun MessageBubble(
             append(transactionContent)
             withAnnotation("transactionId", transactionId) {
                 withStyle(style = SpanStyle(color = Color(0xFF667EEA), textDecoration = TextDecoration.Underline)) {
-                    append("[Xem giao dịch]")
+                    append("\n[Xem giao dịch]")
                 }
             }
         } else {
@@ -249,10 +250,12 @@ fun MessageBubble(
                                                     navController.navigate("newsfeed?postIdToFocus=${annotation.item}")
                                                 } ?: annotatedString.getStringAnnotations("transactionId", position, position)
                                                 .firstOrNull()?.let { annotation ->
-                                                    navController.navigate("temporary_transaction?content=${message.content}")
+                                                    val encodedContent = Uri.encode(message.content)
+                                                    navController.navigate("temporary_transaction?content=$encodedContent")
                                                 }
                                         }
                                     }
+
                                 }
                                 .onGloballyPositioned { coordinates ->
                                     // Đảm bảo text layout có sẵn khi click
