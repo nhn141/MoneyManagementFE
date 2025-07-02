@@ -342,7 +342,7 @@ fun MessageItem(
                     modifier = Modifier
                         .size(24.dp)
                         .clip(CircleShape)
-                        .background(if (isAlert) Color(0xFFD32F2F) else Color(0xFFB0BEC5)),
+                        .background(if (count > 0) Color(0xFFD32F2F) else Color(0xFFB0BEC5)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(count.toString(), color = Color.White, fontSize = 12.sp)

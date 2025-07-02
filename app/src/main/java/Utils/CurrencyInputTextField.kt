@@ -54,6 +54,12 @@ fun CurrencyInput(
         var amountError by remember { mutableStateOf<String?>(null) }
         var isValid by remember { mutableStateOf(true) }
 
+        LaunchedEffect(value) {
+            if (value != amountTextFieldValue.text) {
+                amountTextFieldValue = TextFieldValue(value, TextRange(value.length))
+            }
+        }
+
         fun validateAmount(rawAmount: String) {
             if (rawAmount.isEmpty()) {
                 amountError = context.getString(R.string.please_enter_amount)

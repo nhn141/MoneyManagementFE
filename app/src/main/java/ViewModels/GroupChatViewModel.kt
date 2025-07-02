@@ -17,7 +17,6 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import com.microsoft.signalr.HubConnection
 import com.microsoft.signalr.HubConnectionBuilder
 import com.microsoft.signalr.HubConnectionState
@@ -60,23 +59,17 @@ class GroupChatViewModel @Inject constructor(
             .build()
 
         // Lắng nghe sự kiện tin nhắn mới trong group
-        hubConnection?.on("ReceiveGroupMessage", { jsonString: String ->
+        hubConnection?.on("ReceiveGroupMessage", { groupMessage: GroupMessage ->
             try {
-                Log.d("SignalR", "Raw JSON message: $jsonString")
+                Log.d("SignalR", "Raw JSON message: $groupMessage")
 
-                val message = Gson().fromJson(jsonString, GroupMessage::class.java)
-
-                Log.d("SignalR", "Parsed GroupMessage: $message")
-
-                viewModelScope.launch {
-                    val updated = _groupMessages.value.toMutableList()
-                    updated.add(message)
-                    _groupMessages.value = updated
-                }
+                val updated = _groupMessages.value.toMutableList()
+                updated.add(groupMessage)
+                _groupMessages.value = updated
             } catch (e: Exception) {
                 Log.e("SignalR", "Failed to parse GroupMessage", e)
             }
-        }, String::class.java)
+        }, GroupMessage::class.java)
 
         // Kết nối
         signalRDisposable = hubConnection?.start()?.doOnComplete {

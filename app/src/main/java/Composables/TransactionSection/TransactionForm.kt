@@ -153,8 +153,8 @@ fun TransactionForm(
                 amountFromOcr / exchangeRate!!
             }
             formattedAmount = CurrencyUtils.formatAmount(convertedAmount, isVND, exchangeRate)
-
-            walletsResult?.getOrNull()?.find { it.walletName.equals("Bank", ignoreCase = true) }
+            walletsResult?.getOrNull()
+                ?.find { result.bankName.contains(it.walletName, ignoreCase = true) }
                 ?.let { wallet ->
                     walletName = wallet.walletName
                     walletId = wallet.walletID

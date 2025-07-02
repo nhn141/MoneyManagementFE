@@ -4,6 +4,7 @@ import DI.Composables.CategorySection.getCategoryIcon
 import DI.Composables.ProfileSection.AvatarImage
 import DI.Composables.ProfileSection.MainColor
 import DI.Composables.TransactionSection.GeneralTransactionItem
+import DI.Models.Category.Category
 import DI.Models.NavBar.BottomNavItem
 import DI.Models.UserInfo.Profile
 import DI.Navigation.Routes
@@ -140,6 +141,8 @@ fun HomeScreen(
         )
     }
 
+    val categories = categoryViewModel.categories.collectAsState().value?.getOrNull() ?: emptyList()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -186,7 +189,7 @@ fun HomeScreen(
                 RecentTransactionsSection(
                     transactions = recentTransactions,
                     navController = navController,
-                    categoryViewModel = categoryViewModel,
+                    categories = categories,
                     isVND = isVND,
                     exchangeRate = exchangeRate
                 )
@@ -337,13 +340,11 @@ fun FinancialOverviewCard(
 @Composable
 fun RecentTransactionsSection(
     transactions: List<GeneralTransactionItem>,
-    categoryViewModel: CategoryViewModel,
+    categories: List<Category>,
     isVND: Boolean,
     exchangeRate: Double,
     navController: NavController,
 ) {
-    val categories = categoryViewModel.categories.collectAsState().value?.getOrNull() ?: emptyList()
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MoneyAppColors.Surface),
