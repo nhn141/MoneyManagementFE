@@ -273,15 +273,16 @@ fun TransactionDetailBody(
     val formattedAmount = CurrencyUtils.formatAmount(amount.toDoubleOrNull() ?: 0.0, isVND, exchangeRate)
 
     val shareMessage = """
-        Shared Transaction:
-        Title: $title
-        Type: $type
-        Amount: $formattedAmount
-        Date: $date
-        Category: $categoryName
-        Wallet: $walletName
-        [transaction:$transactionId]
-    """.trimIndent()
+    ${stringResource(R.string.shared_transaction)}
+    ${stringResource(R.string.title_label)} $title
+    ${stringResource(R.string.type_label)} $type
+    ${stringResource(R.string.amount_label1)} $formattedAmount
+    ${stringResource(R.string.date_label)} $date
+    ${stringResource(R.string.category_label)} $categoryName
+    ${stringResource(R.string.wallet_label)} $walletName
+    [transaction:$transactionId]
+""".trimIndent()
+
 
     var showShareDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog chia sẻ
     var showDeleteDialog by remember { mutableStateOf(false) }
