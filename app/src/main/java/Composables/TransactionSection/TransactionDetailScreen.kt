@@ -270,11 +270,13 @@ fun TransactionDetailBody(
 
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
 
+    val formattedAmount = CurrencyUtils.formatAmount(amount.toDoubleOrNull() ?: 0.0, isVND, exchangeRate)
+
     val shareMessage = """
         Shared Transaction:
         Title: $title
         Type: $type
-        Amount: $amount
+        Amount: $formattedAmount
         Date: $date
         Category: $categoryName
         Wallet: $walletName

@@ -1,8 +1,5 @@
 package DI.Composables.NewsFeedSection
 
-import DI.Composables.ProfileSection.uriToFile
-import DI.Models.Chat.Chat
-import DI.Models.Chat.ChatMessage
 import DI.Models.Chat.LatestChat
 import DI.Models.Group.Group
 import DI.Models.NewsFeed.Comment
@@ -55,24 +52,15 @@ import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.ui.res.painterResource
-import com.example.moneymanagement_frontend.R
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.launch
-import java.io.File
 import kotlin.collections.isNotEmpty
-import android.util.Base64
-import android.util.Log
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -80,15 +68,12 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -98,43 +83,30 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
-import androidx.compose.material.icons.automirrored.filled.Reply
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Reply
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.net.toUri
 import androidx.navigation.NavController
@@ -142,9 +114,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.FileOutputStream
 import java.io.IOException
-import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -509,6 +479,7 @@ fun NewsFeedScreen(
                 .align(Alignment.TopStart)
                 .padding(16.dp)
                 .size(40.dp)
+                .border(width = 1.dp, color = Color(0xFF009460), shape = CircleShape)
                 .background(
                     color = Color(0xFF1A1A1A).copy(alpha = 0.7f),
                     shape = CircleShape
@@ -520,6 +491,27 @@ fun NewsFeedScreen(
                 tint = Color.White
             )
         }
+
+        // Nút thông báo
+        IconButton(
+            onClick = { },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(40.dp)
+                .border(width = 1.dp, color = Color(0xFF009460), shape = CircleShape)
+                .background(
+                    color = Color(0xFF1A1A1A).copy(alpha = 0.7f),
+                    shape = CircleShape
+                )
+        ) {
+            Icon(
+                imageVector = Icons.Default.Notifications,
+                contentDescription = "Notifications",
+                tint = Color.White
+            )
+        }
+
 
 
         SnackbarHost(
@@ -1705,7 +1697,6 @@ fun ShareDialog(
             Column {
                 Text(
                     text = "Chia sẻ với bạn bè",
-                    color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -1745,7 +1736,7 @@ fun ShareDialog(
                                 } else {
                                     latestMessage.senderName ?: "Unknown"
                                 },
-                                color = Color.White,
+                                color = Color(0xFF00D09E),
                                 fontSize = 14.sp
                             )
                         }
@@ -1756,7 +1747,6 @@ fun ShareDialog(
 
                 Text(
                     text = "Chia sẻ với nhóm",
-                    color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -1786,7 +1776,7 @@ fun ShareDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = group.name,
-                                color = Color.White,
+                                color = Color(0xFF00D09E),
                                 fontSize = 14.sp
                             )
                         }
