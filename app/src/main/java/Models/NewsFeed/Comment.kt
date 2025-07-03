@@ -9,3 +9,4 @@ data class Comment(
     val authorAvatarUrl: String,
     val replies: List<ReplyCommentResponse>
 )
+

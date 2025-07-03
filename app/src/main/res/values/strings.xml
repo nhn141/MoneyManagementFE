@@ -745,5 +745,12 @@
     <string name="error_fetching_user_info_with_message">Unable to fetch user information: %s</string>
     <string name="error_fetching_post_detail">Failed to fetch post details: %s</string>
     <string name="error_fetching_comments">Failed to fetch comments: %s</string>
+    <string name="group_selection_required">Please select at least one group</string>
+    <string name="share_to_friend_success">Shared to friend successfully</string>
+    <string name="share_to_friend_failed">Failed to share to friend</string>
+    <string name="share_to_group_success">Shared to group successfully</string>
+    <string name="share_to_group_failed">Failed to share to group</string>
+    <string name="save_image_success">Image saved successfully</string>
+    <string name="save_image_failed">Failed to save image</string>
 </resources>
 

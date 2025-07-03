@@ -7,6 +7,7 @@ import DI.Models.NewsFeed.ResultState
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.ReplyCommentRequest
 import DI.Models.NewsFeed.ReplyCommentResponse
+import DI.Models.UiEvent.UiEvent
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.GroupChatViewModel
 import androidx.compose.foundation.background
@@ -59,7 +60,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.launch
 import kotlin.collections.isNotEmpty
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -127,6 +127,7 @@ fun NewsFeedScreen(
     profileViewModel: ProfileViewModel,
     chatViewModel: ChatViewModel,
     groupChatViewModel: GroupChatViewModel,
+    newsFeedViewModel: NewsFeedViewModel,
     postIdToFocus: String? = null
 ) {
     val posts by viewModel.posts.collectAsState()
@@ -185,21 +186,16 @@ fun NewsFeedScreen(
         )
     )
 
-    LaunchedEffect(postCreationState) {
-        when (postCreationState) {
-            is ResultState.Success -> {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Đăng bài thành công!")
+    // Handle post events
+    LaunchedEffect(Unit) {
+        viewModel.postEvent.collect { event ->
+            when (event) {
+                is UiEvent.ShowMessage -> {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(event.message)
+                    }
                 }
             }
-            is ResultState.Error -> {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(
-                        (postCreationState as ResultState.Error).message
-                    )
-                }
-            }
-            else -> { /* Không làm gì khi đang tải hoặc null */ }
         }
     }
 
@@ -347,7 +343,8 @@ fun NewsFeedScreen(
                     },
                     profileViewModel = profileViewModel,
                     chatViewModel = chatViewModel,
-                    groupChatViewModel = groupChatViewModel
+                    groupChatViewModel = groupChatViewModel,
+                    newsFeedViewModel = newsFeedViewModel
                 )
             }
         }
@@ -643,7 +640,7 @@ fun NewsFeedScreen(
                                                     "like" -> stringResource(R.string.notification_like_content, notification.userName)
                                                     "comment" -> stringResource(R.string.notification_comment_content, notification.userName)
                                                     "reply" -> stringResource(R.string.notification_reply_content, notification.userName)
-                                                    else -> notification.userName // Fallback nếu type không xác định
+                                                    else -> notification.userName
                                                 },
                                                 color = Color.White,
                                                 fontSize = 14.sp,
@@ -746,29 +743,13 @@ fun PostItem(
     viewModel: NewsFeedViewModel,
     profileViewModel: ProfileViewModel,
     chatViewModel: ChatViewModel,
-    groupChatViewModel: GroupChatViewModel
+    groupChatViewModel: GroupChatViewModel,
+    newsFeedViewModel: NewsFeedViewModel
 ) {
     val postDetailState by viewModel.postDetail.collectAsState()
-    val updateTargetState by viewModel.updateTargetState.collectAsState()
 
     LaunchedEffect(post.postId) {
         viewModel.loadPostDetail(post.postId)
-    }
-
-    // Handle update target state
-    val context = LocalContext.current
-    LaunchedEffect(updateTargetState) {
-        when (updateTargetState) {
-            is ResultState.Success -> {
-                Toast.makeText(context, "Cập nhật quyền riêng tư thành công", Toast.LENGTH_SHORT).show()
-                viewModel.clearUpdateTargetState()
-            }
-            is ResultState.Error -> {
-                Toast.makeText(context, "Lỗi: ${(updateTargetState as ResultState.Error).message}", Toast.LENGTH_SHORT).show()
-                viewModel.clearUpdateTargetState()
-            }
-            else -> Unit
-        }
     }
 
     val mediaUrl = when (postDetailState) {
@@ -787,7 +768,8 @@ fun PostItem(
             viewModel = viewModel,
             profileViewModel = profileViewModel,
             chatViewModel = chatViewModel,
-            groupChatViewModel = groupChatViewModel
+            groupChatViewModel = groupChatViewModel,
+            newsFeedViewModel = newsFeedViewModel
         )
     } else {
         PostItemTextOnly(
@@ -991,14 +973,14 @@ fun PostItemWithImage(
     onCommentClick: (Post) -> Unit,
     viewModel: NewsFeedViewModel,
     profileViewModel: ProfileViewModel,
+    chatViewModel: ChatViewModel,
     groupChatViewModel: GroupChatViewModel,
-    chatViewModel: ChatViewModel // Thêm ChatViewModel để lấy danh sách bạn bè
+    newsFeedViewModel: NewsFeedViewModel
 ) {
     var isImagePreviewOpen by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
-    var showShareDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog chia sẻ
-    val context = LocalContext.current
+    var showShareDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var selectedPrivacy by remember { mutableStateOf(post.targetType) }
     val selectedGroupIds = remember {
@@ -1009,12 +991,14 @@ fun PostItemWithImage(
         }
     }
 
+    val context = LocalContext.current
+
     val groups by groupChatViewModel.groups.collectAsState(initial = emptyList())
-    val latestChats by chatViewModel.latestChats.collectAsState(initial = null) // Lấy danh sách bạn bè
+    val latestChats by chatViewModel.latestChats.collectAsState(initial = null)
 
     LaunchedEffect(Unit) {
-        groupChatViewModel.loadUserGroups() // Tải danh sách nhóm
-        chatViewModel.getLatestChats() // Tải danh sách bạn bè
+        groupChatViewModel.loadUserGroups()
+        chatViewModel.getLatestChats()
     }
 
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
@@ -1117,13 +1101,13 @@ fun PostItemWithImage(
                                     onPrivacyChanged = { newPrivacy ->
                                         selectedPrivacy = newPrivacy
                                         if (newPrivacy == 3 && selectedGroupIds.isEmpty()) {
-                                            Toast.makeText(context, "Vui lòng chọn ít nhất một nhóm", Toast.LENGTH_SHORT).show()
+                                            viewModel.notifyGroupSelectionError()
                                         } else {
                                             viewModel.updatePostTarget(
                                                 postId = post.postId,
                                                 targetType = newPrivacy,
                                                 targetGroupIds = if (newPrivacy == 3 && selectedGroupIds.isNotEmpty()) {
-                                                    selectedGroupIds.toList() // Gửi List<String>
+                                                    selectedGroupIds.toList()
                                                 } else {
                                                     null
                                                 }
@@ -1259,7 +1243,8 @@ fun PostItemWithImage(
                 confirmButton = {
                     TextButton(onClick = {
                         coroutineScope.launch {
-                            saveImageToGallery(context, mediaUrl)
+                            val saved = saveImageToGallery(context, mediaUrl, newsFeedViewModel)
+                            viewModel.notifySaveImage(success = saved)
                             showSaveDialog = false
                         }
                     }) {
@@ -1281,12 +1266,26 @@ fun PostItemWithImage(
                 groups = groups,
                 currentUserId = currentUserId,
                 onShareToFriend = { friendId ->
-                    chatViewModel.sendMessage(friendId, shareMessage)
-                    showShareDialog = false
+                    coroutineScope.launch {
+                        try {
+                            chatViewModel.sendMessage(friendId, shareMessage)
+                            viewModel.notifyShareAction(success = true, isGroup = false)
+                        } catch (e: Exception) {
+                            viewModel.notifyShareAction(success = false, isGroup = false)
+                        }
+                        showShareDialog = false
+                    }
                 },
                 onShareToGroup = { groupId ->
-                    groupChatViewModel.sendGroupMessage(groupId, shareMessage)
-                    showShareDialog = false
+                    coroutineScope.launch {
+                        try {
+                            groupChatViewModel.sendGroupMessage(groupId, shareMessage)
+                            viewModel.notifyShareAction(success = true, isGroup = true)
+                        } catch (e: Exception) {
+                            viewModel.notifyShareAction(success = false, isGroup = true)
+                        }
+                        showShareDialog = false
+                    }
                 },
                 post = post
             )
@@ -1306,7 +1305,7 @@ fun PostItemTextOnly(
 ) {
     var selectedPrivacy by remember { mutableStateOf(post.targetType) }
     var isExpanded by remember { mutableStateOf(false) }
-    var showShareDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog chia sẻ
+    var showShareDialog by remember { mutableStateOf(false) }
     val selectedGroupIds = remember {
         mutableStateListOf<String>().apply {
             if (post.targetType == 3 && !post.targetGroupIds.isNullOrEmpty()) {
@@ -1314,9 +1313,9 @@ fun PostItemTextOnly(
             }
         }
     }
-    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val groups by groupChatViewModel.groups.collectAsState(initial = emptyList())
-    val latestChats by chatViewModel.latestChats.collectAsState(initial = null) // Lấy danh sách bạn bè
+    val latestChats by chatViewModel.latestChats.collectAsState(initial = null)
 
     LaunchedEffect(Unit) {
         groupChatViewModel.loadUserGroups()
@@ -1437,18 +1436,19 @@ fun PostItemTextOnly(
                     }
 
                     if (isAuthor) {
+                        Spacer(modifier = Modifier.height(12.dp))
                         PrivacyDropdown(
                             selectedPrivacy = selectedPrivacy,
                             onPrivacyChanged = { newPrivacy ->
                                 selectedPrivacy = newPrivacy
                                 if (newPrivacy == 3 && selectedGroupIds.isEmpty()) {
-                                    Toast.makeText(context, "Vui lòng chọn ít nhất một nhóm", Toast.LENGTH_SHORT).show()
+                                    viewModel.notifyGroupSelectionError()
                                 } else {
                                     viewModel.updatePostTarget(
                                         postId = post.postId,
                                         targetType = newPrivacy,
                                         targetGroupIds = if (newPrivacy == 3 && selectedGroupIds.isNotEmpty()) {
-                                            selectedGroupIds.toList() // Gửi List<String>
+                                            selectedGroupIds.toList()
                                         } else {
                                             null
                                         }
@@ -1516,7 +1516,7 @@ fun PostItemTextOnly(
                         post = post,
                         viewModel = viewModel,
                         onCommentClick = onCommentClick,
-                        onShareClick = { showShareDialog = true } // Thêm sự kiện chia sẻ
+                        onShareClick = { showShareDialog = true }
                     )
                 }
             }
@@ -1561,21 +1561,35 @@ fun PostItemTextOnly(
                 groups = groups,
                 currentUserId = currentUserId,
                 onShareToFriend = { friendId ->
-                    chatViewModel.sendMessage(friendId, shareMessage)
-                    showShareDialog = false
+                    coroutineScope.launch {
+                        try {
+                            chatViewModel.sendMessage(friendId, shareMessage)
+                            viewModel.notifyShareAction(success = true, isGroup = false)
+                        } catch (e: Exception) {
+                            viewModel.notifyShareAction(success = false, isGroup = false)
+                        }
+                        showShareDialog = false
+                    }
                 },
                 onShareToGroup = { groupId ->
-                    groupChatViewModel.sendGroupMessage(groupId, shareMessage)
-                    showShareDialog = false
+                    coroutineScope.launch {
+                        try {
+                            groupChatViewModel.sendGroupMessage(groupId, shareMessage)
+                            viewModel.notifyShareAction(success = true, isGroup = true)
+                        } catch (e: Exception) {
+                            viewModel.notifyShareAction(success = false, isGroup = true)
+                        }
+                        showShareDialog = false
+                    }
                 },
-                post = post // Truyền post
+                post = post
             )
         }
     }
 }
 
-suspend fun saveImageToGallery(context: Context, imageUrl: String) {
-    withContext(Dispatchers.IO) {
+suspend fun saveImageToGallery(context: Context, imageUrl: String, viewModel: NewsFeedViewModel): Boolean {
+    return withContext(Dispatchers.IO) {
         try {
             // Tải ảnh từ URL bằng OkHttp
             val client = OkHttpClient()
@@ -1607,14 +1621,13 @@ suspend fun saveImageToGallery(context: Context, imageUrl: String) {
             contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
             resolver.update(uri, contentValues, null, null)
 
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Đã lưu ảnh!", Toast.LENGTH_SHORT).show()
-            }
+            true // Thành công
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Lưu ảnh thất bại: ${e.message}", Toast.LENGTH_SHORT).show()
+                viewModel.notifySaveImage(success = false)
             }
+            false // Thất bại
         }
     }
 }
@@ -1936,15 +1949,11 @@ fun CommentSection(
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
     var replyingTo by remember { mutableStateOf<ReplyCommentResponse?>(null) }
 
-    // Xử lý trạng thái reply
     LaunchedEffect(replyState) {
         when (replyState) {
             is ResultState.Success -> {
-                // Có thể hiển thị SnackBar hoặc Toast
-                // Danh sách comment đã được làm mới trong ViewModel
             }
             is ResultState.Error -> {
-                // Hiển thị thông báo lỗi
             }
             else -> {}
         }
