@@ -49,6 +49,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,8 +66,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
@@ -2571,8 +2574,12 @@ fun CreatePostDialog(
             shape = RoundedCornerShape(28.dp)
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()) // Enable scrolling
+                    .padding(bottom = 16.dp) // Ensure bottom padding for safe area
             ) {
+                // Header
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2622,11 +2629,16 @@ fun CreatePostDialog(
                     }
                 }
 
+                // Main Content
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
                 ) {
+                    // Add spacing above PrivacyDropdown
+                    Spacer(modifier = Modifier.height(16.dp)) // Adjust this value as needed
+
+                    // Privacy Dropdown
                     Box(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.TopEnd
@@ -2642,6 +2654,7 @@ fun CreatePostDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    // Text Input
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -2673,7 +2686,7 @@ fun CreatePostDialog(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(180.dp)
+                                .heightIn(min = 120.dp, max = 200.dp) // Flexible height
                                 .padding(16.dp),
                             enabled = !isPosting,
                             colors = OutlinedTextFieldDefaults.colors(
@@ -2693,6 +2706,7 @@ fun CreatePostDialog(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // Image Picker Button
                     Button(
                         onClick = { imagePickerLauncher.launch("image/*") },
                         enabled = !isPosting,
@@ -2755,6 +2769,7 @@ fun CreatePostDialog(
                         }
                     }
 
+                    // Selected Image
                     selectedImageUri?.let { uri ->
                         Spacer(modifier = Modifier.height(20.dp))
                         Card(
@@ -2773,7 +2788,8 @@ fun CreatePostDialog(
                                     contentDescription = stringResource(R.string.image),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(280.dp)
+                                        .aspectRatio(4 / 3f) // Maintain aspect ratio
+                                        .heightIn(max = 300.dp) // Limit max height
                                         .clip(RoundedCornerShape(20.dp)),
                                     contentScale = ContentScale.Crop
                                 )
@@ -2800,8 +2816,9 @@ fun CreatePostDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.height(24.dp))
 
+                    // Post Button
                     Button(
                         onClick = {
                             if (content.isNotBlank()) {
