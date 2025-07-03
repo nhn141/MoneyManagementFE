@@ -1,42 +1,16 @@
 package DI.Composables.NewsFeedSection
 
-import DI.Models.Chat.LatestChat
+import DI.Models.Friend.Friend
 import DI.Models.Group.Group
 import DI.Models.NewsFeed.Comment
-import DI.Models.NewsFeed.ResultState
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.ReplyCommentRequest
 import DI.Models.NewsFeed.ReplyCommentResponse
+import DI.Models.NewsFeed.ResultState
 import DI.Models.UiEvent.UiEvent
 import DI.ViewModels.ChatViewModel
+import DI.ViewModels.FriendViewModel
 import DI.ViewModels.GroupChatViewModel
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.pager.VerticalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import DI.ViewModels.NewsFeedViewModel
 import DI.ViewModels.ProfileViewModel
 import android.content.ContentValues
@@ -46,21 +20,8 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateContentSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChatBubbleOutline
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Image
-import coil.compose.AsyncImage
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.text.style.TextOverflow
-import kotlinx.coroutines.launch
-import kotlin.collections.isNotEmpty
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -74,21 +35,50 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
@@ -97,23 +87,72 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.moneymanagement_frontend.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -128,7 +167,8 @@ fun NewsFeedScreen(
     chatViewModel: ChatViewModel,
     groupChatViewModel: GroupChatViewModel,
     newsFeedViewModel: NewsFeedViewModel,
-    postIdToFocus: String? = null
+    postIdToFocus: String? = null,
+    friendViewModel: FriendViewModel
 ) {
     val posts by viewModel.posts.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -344,7 +384,8 @@ fun NewsFeedScreen(
                     profileViewModel = profileViewModel,
                     chatViewModel = chatViewModel,
                     groupChatViewModel = groupChatViewModel,
-                    newsFeedViewModel = newsFeedViewModel
+                    newsFeedViewModel = newsFeedViewModel,
+                    friendViewModel = friendViewModel
                 )
             }
         }
@@ -637,9 +678,21 @@ fun NewsFeedScreen(
                                         Column {
                                             Text(
                                                 text = when (notification.type) {
-                                                    "like" -> stringResource(R.string.notification_like_content, notification.userName)
-                                                    "comment" -> stringResource(R.string.notification_comment_content, notification.userName)
-                                                    "reply" -> stringResource(R.string.notification_reply_content, notification.userName)
+                                                    "like" -> stringResource(
+                                                        R.string.notification_like_content,
+                                                        notification.userName
+                                                    )
+
+                                                    "comment" -> stringResource(
+                                                        R.string.notification_comment_content,
+                                                        notification.userName
+                                                    )
+
+                                                    "reply" -> stringResource(
+                                                        R.string.notification_reply_content,
+                                                        notification.userName
+                                                    )
+
                                                     else -> notification.userName
                                                 },
                                                 color = Color.White,
@@ -744,7 +797,8 @@ fun PostItem(
     profileViewModel: ProfileViewModel,
     chatViewModel: ChatViewModel,
     groupChatViewModel: GroupChatViewModel,
-    newsFeedViewModel: NewsFeedViewModel
+    newsFeedViewModel: NewsFeedViewModel,
+    friendViewModel: FriendViewModel
 ) {
     val postDetailState by viewModel.postDetail.collectAsState()
 
@@ -769,7 +823,8 @@ fun PostItem(
             profileViewModel = profileViewModel,
             chatViewModel = chatViewModel,
             groupChatViewModel = groupChatViewModel,
-            newsFeedViewModel = newsFeedViewModel
+            newsFeedViewModel = newsFeedViewModel,
+            friendViewModel = friendViewModel
         )
     } else {
         PostItemTextOnly(
@@ -779,7 +834,8 @@ fun PostItem(
             viewModel = viewModel,
             profileViewModel = profileViewModel,
             chatViewModel = chatViewModel,
-            groupChatViewModel = groupChatViewModel
+            groupChatViewModel = groupChatViewModel,
+            friendViewModel = friendViewModel
         )
     }
 }
@@ -889,7 +945,9 @@ fun PrivacyDropdown(
                                 Icon(
                                     imageVector = privacyIcons[value] ?: Icons.Default.People,
                                     contentDescription = null,
-                                    tint = if (isSelected) Color(0xFF00D09E) else Color.White.copy(alpha = 0.7f),
+                                    tint = if (isSelected) Color(0xFF00D09E) else Color.White.copy(
+                                        alpha = 0.7f
+                                    ),
                                     modifier = Modifier.size(12.dp)
                                 )
 
@@ -975,7 +1033,8 @@ fun PostItemWithImage(
     profileViewModel: ProfileViewModel,
     chatViewModel: ChatViewModel,
     groupChatViewModel: GroupChatViewModel,
-    newsFeedViewModel: NewsFeedViewModel
+    newsFeedViewModel: NewsFeedViewModel,
+    friendViewModel: FriendViewModel
 ) {
     var isImagePreviewOpen by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
@@ -999,6 +1058,23 @@ fun PostItemWithImage(
     LaunchedEffect(Unit) {
         groupChatViewModel.loadUserGroups()
         chatViewModel.getLatestChats()
+    }
+
+    val friends = friendViewModel.friends.collectAsState().value?.getOrNull() ?: emptyList()
+    val friendAvatars = profileViewModel.friendAvatars.collectAsState().value
+
+    LaunchedEffect(friends.toList()) {
+        if (friends.isNotEmpty()) {
+            profileViewModel.getFriendAvatars(friends.map { it.userId })
+        }
+    }
+
+    // When both chats and avatars are ready, update chats with avatarUrls
+    val friendsWithAvatars = remember(friends, friendAvatars) {
+        friends.map { friend ->
+            val avatarUrl = friendAvatars.find { it.userId == friend.userId }?.avatarUrl ?: ""
+            friend.copy(avatarUrl = avatarUrl)
+        }
     }
 
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
@@ -1138,7 +1214,9 @@ fun PostItemWithImage(
 
                                 if (shouldShowExpand) {
                                     Text(
-                                        text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.___see_more),
+                                        text = if (isExpanded) stringResource(R.string.collapse) else stringResource(
+                                            R.string.___see_more
+                                        ),
                                         color = Color(0xFF00D09E),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
@@ -1262,7 +1340,7 @@ fun PostItemWithImage(
         if (showShareDialog) {
             ShareDialog(
                 onDismiss = { showShareDialog = false },
-                friends = latestChats?.getOrNull() ?: emptyList(),
+                friends = friendsWithAvatars,
                 groups = groups,
                 currentUserId = currentUserId,
                 onShareToFriend = { friendId ->
@@ -1286,8 +1364,7 @@ fun PostItemWithImage(
                         }
                         showShareDialog = false
                     }
-                },
-                post = post
+                }
             )
         }
     }
@@ -1301,7 +1378,8 @@ fun PostItemTextOnly(
     viewModel: NewsFeedViewModel,
     profileViewModel: ProfileViewModel,
     groupChatViewModel: GroupChatViewModel,
-    chatViewModel: ChatViewModel
+    chatViewModel: ChatViewModel,
+    friendViewModel: FriendViewModel
 ) {
     var selectedPrivacy by remember { mutableStateOf(post.targetType) }
     var isExpanded by remember { mutableStateOf(false) }
@@ -1320,6 +1398,24 @@ fun PostItemTextOnly(
     LaunchedEffect(Unit) {
         groupChatViewModel.loadUserGroups()
         chatViewModel.getLatestChats()
+        friendViewModel.getAllFriends()
+    }
+
+    val friends = friendViewModel.friends.collectAsState().value?.getOrNull() ?: emptyList()
+    val friendAvatars = profileViewModel.friendAvatars.collectAsState().value
+
+    LaunchedEffect(friends.toList()) {
+        if (friends.isNotEmpty()) {
+            profileViewModel.getFriendAvatars(friends.map { it.userId })
+        }
+    }
+
+    // When both chats and avatars are ready, update chats with avatarUrls
+    val friendsWithAvatars = remember(friends, friendAvatars) {
+        friends.map { friend ->
+            val avatarUrl = friendAvatars.find { it.userId == friend.userId }?.avatarUrl ?: ""
+            friend.copy(avatarUrl = avatarUrl)
+        }
     }
 
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
@@ -1498,7 +1594,9 @@ fun PostItemTextOnly(
 
                             if (shouldShowExpand) {
                                 Text(
-                                    text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.___see_more),
+                                    text = if (isExpanded) stringResource(R.string.collapse) else stringResource(
+                                        R.string.___see_more
+                                    ),
                                     color = Color(0xFF00D09E),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Medium,
@@ -1557,7 +1655,7 @@ fun PostItemTextOnly(
         if (showShareDialog) {
             ShareDialog(
                 onDismiss = { showShareDialog = false },
-                friends = latestChats?.getOrNull() ?: emptyList(),
+                friends = friendsWithAvatars,
                 groups = groups,
                 currentUserId = currentUserId,
                 onShareToFriend = { friendId ->
@@ -1581,14 +1679,17 @@ fun PostItemTextOnly(
                         }
                         showShareDialog = false
                     }
-                },
-                post = post
+                }
             )
         }
     }
 }
 
-suspend fun saveImageToGallery(context: Context, imageUrl: String, viewModel: NewsFeedViewModel): Boolean {
+suspend fun saveImageToGallery(
+    context: Context,
+    imageUrl: String,
+    viewModel: NewsFeedViewModel
+): Boolean {
     return withContext(Dispatchers.IO) {
         try {
             // Tải ảnh từ URL bằng OkHttp
@@ -1603,7 +1704,10 @@ suspend fun saveImageToGallery(context: Context, imageUrl: String, viewModel: Ne
 
             // Lưu vào MediaStore
             val contentValues = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, "saved_image_${System.currentTimeMillis()}.jpg")
+                put(
+                    MediaStore.Images.Media.DISPLAY_NAME,
+                    "saved_image_${System.currentTimeMillis()}.jpg"
+                )
                 put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
                 put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
                 put(MediaStore.Images.Media.IS_PENDING, 1)
@@ -1820,12 +1924,11 @@ fun ActionButtons(
 @Composable
 fun ShareDialog(
     onDismiss: () -> Unit,
-    friends: List<LatestChat>,
+    friends: List<Friend>,
     groups: List<Group>,
     currentUserId: String,
     onShareToFriend: (String) -> Unit,
     onShareToGroup: (String) -> Unit,
-    post: Post // Thêm post để lấy postId
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1844,16 +1947,10 @@ fun ShareDialog(
                         .fillMaxWidth()
                 ) {
                     items(friends) { friend ->
-                        val latestMessage = friend.latestMessage
-                        val friendId = if (latestMessage.senderId == currentUserId) {
-                            latestMessage.receiverId
-                        } else {
-                            latestMessage.senderId
-                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onShareToFriend(friendId) }
+                                .clickable { onShareToFriend(friend.userId) }
                                 .padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -1868,11 +1965,7 @@ fun ShareDialog(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (latestMessage.senderId == currentUserId) {
-                                    latestMessage.receiverName ?: "Unknown"
-                                } else {
-                                    latestMessage.senderName ?: "Unknown"
-                                },
+                                text = friend.displayName,
                                 color = Color(0xFF00D09E),
                                 fontSize = 14.sp
                             )
@@ -1953,8 +2046,10 @@ fun CommentSection(
         when (replyState) {
             is ResultState.Success -> {
             }
+
             is ResultState.Error -> {
             }
+
             else -> {}
         }
     }
@@ -2086,7 +2181,10 @@ fun CommentSection(
                                                     },
                                                     onClick = {
                                                         expanded = false
-                                                        viewModel.deleteComment(post.postId, comment.commentId)
+                                                        viewModel.deleteComment(
+                                                            post.postId,
+                                                            comment.commentId
+                                                        )
                                                     }
                                                 )
                                             }
@@ -2114,7 +2212,9 @@ fun CommentSection(
                                     modifier = Modifier.align(Alignment.Start)
                                 ) {
                                     Text(
-                                        text = if (showReplyInput && replyingTo == null) stringResource(R.string.cancel) else stringResource(R.string.reply_action),
+                                        text = if (showReplyInput && replyingTo == null) stringResource(
+                                            R.string.cancel
+                                        ) else stringResource(R.string.reply_action),
                                         color = Color(0xFF00D09E),
                                         fontSize = 12.sp
                                     )
@@ -2128,7 +2228,9 @@ fun CommentSection(
                                         onValueChange = { replyText = it },
                                         label = {
                                             Text(
-                                                text = if (replyingTo != null) "${stringResource(R.string.reply_to_label)} ${replyingTo!!.authorName}..." else stringResource(R.string.enter_reply),
+                                                text = if (replyingTo != null) "${stringResource(R.string.reply_to_label)} ${replyingTo!!.authorName}..." else stringResource(
+                                                    R.string.enter_reply
+                                                ),
                                                 color = Color.White.copy(alpha = 0.6f)
                                             )
                                         },
@@ -2172,7 +2274,10 @@ fun CommentSection(
                                             modifier = Modifier
                                                 .background(
                                                     Brush.horizontalGradient(
-                                                        colors = listOf(Color(0xFF00F5D4), Color(0xFF00D09E))
+                                                        colors = listOf(
+                                                            Color(0xFF00F5D4),
+                                                            Color(0xFF00D09E)
+                                                        )
                                                     ),
                                                     shape = RoundedCornerShape(20.dp)
                                                 )
@@ -2204,7 +2309,8 @@ fun CommentSection(
                                                 },
                                                 onReply = { replyToReply ->
                                                     showReplyInput = true
-                                                    replyingTo = replyToReply // Lưu reply đang trả lời
+                                                    replyingTo =
+                                                        replyToReply // Lưu reply đang trả lời
                                                     replyText = ""
                                                 }
                                             )
