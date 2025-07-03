@@ -137,6 +137,9 @@
     <string name="date_label">Ngày:</string>
     <string name="category_label">Danh mục:</string>
     <string name="wallet_label">Ví:</string>
+    <string name="you_are_banned">Bạn đã bị cấm</string>
+
+    <string name="ban_reason">Lí do bị cấm : %1$s</string>
 
 
     <!-- Transaction Form Fields -->

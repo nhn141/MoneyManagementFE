@@ -153,6 +153,9 @@
     <string name="scan_receipt">Scan Receipt</string>
     <string name="scan_receipt_description">Scan Receipt</string>
     <string name="enter_amount">Enter amount</string>
+    <string name="you_are_banned">You Are Banned</string>
+
+    <string name="ban_reason">Ban Reason: %1$s</string>
 
     <!-- Transaction Form Validation -->
     <string name="title_empty_error">Title cannot be empty</string>
