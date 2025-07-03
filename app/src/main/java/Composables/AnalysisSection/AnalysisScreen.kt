@@ -284,7 +284,7 @@ fun AnalysisScreen(
                                         color = Color(0xFF2196F3)
                                     )
                                     Text(
-                                        text = "Thousand",
+                                        text = stringResource(R.string.k_unit),
                                         fontSize = 10.sp,
                                         color = Color(0xFF8F9BB3)
                                     )
@@ -301,7 +301,7 @@ fun AnalysisScreen(
                                         color = Color(0xFF2196F3)
                                     )
                                     Text(
-                                        text = "Million",
+                                        text = stringResource(R.string.m_unit),
                                         fontSize = 10.sp,
                                         color = Color(0xFF8F9BB3)
                                     )
@@ -318,7 +318,7 @@ fun AnalysisScreen(
                                         color = Color(0xFF2196F3)
                                     )
                                     Text(
-                                        text = "Billion",
+                                        text = stringResource(R.string.b_unit),
                                         fontSize = 10.sp,
                                         color = Color(0xFF8F9BB3)
                                     )

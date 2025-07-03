@@ -286,6 +286,9 @@
     <string name="budget">Budget</string>
     <string name="savings">Savings</string>
     <string name="spent">Spent</string>
+    <string name="k_unit">Thousand</string>
+    <string name="m_unit">Million</string>
+    <string name="b_unit">Billion</string>
 
     <!-- Period Labels -->
     <string name="daily">Daily</string>
@@ -435,9 +438,6 @@
     <string name="error_message">Error: %1$s</string>
     <string name="something_went_wrong">Something went wrong</string>
 
-    <!-- ================== MISCELLANEOUS ================== -->
-    <string name="language">Language</string>
-
     <!-- ================== REPORTS ================== -->
     <string name="cash_flow">Cash flow</string>
     <string name="category_breakdown">Category breakdown</string>
@@ -508,5 +508,14 @@
     <string name="current_month_income">This month’s income</string>
     <string name="current_month_expense">This month’s expense</string>
 
+    <!-- ================== LANGUAGE SETTINGS ================== -->
+    <string name="language">Language</string>
+    <string name="current_language">Current: %1$s</string>
+    <string name="select_language">Select Language</string>
+    <string name="english">English</string>
+    <string name="vietnamese">Tiếng Việt</string>
+
+    <!-- ================== SETTINGS SCREEN ================== -->
+    <string name="settings_screen_title">Settings</string>
 </resources>
 

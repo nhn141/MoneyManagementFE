@@ -1,37 +1,55 @@
 package DI.Composables.ExportReports
 
-import DI.Composables.TransactionSection.TransactionTextField
 import DI.Models.Reports.ReportRequest
 import DI.ViewModels.ReportViewModel
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -41,25 +59,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import com.vanpra.composematerialdialogs.MaterialDialog
-import com.vanpra.composematerialdialogs.datetime.date.datepicker
-import com.vanpra.composematerialdialogs.datetime.time.timepicker
-import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.moneymanagement_frontend.R
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults
+import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
+import com.vanpra.composematerialdialogs.datetime.time.timepicker
+import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import com.example.moneymanagement_frontend.R
 
 @Composable
-fun ReportScreen(viewModel: ReportViewModel) {
+fun ReportScreen(viewModel: ReportViewModel, navController: NavController) {
     val reportResult by viewModel.reportResult.collectAsState()
     var startDate by remember { mutableStateOf(LocalDateTime.now()) }
     var endDate by remember { mutableStateOf(LocalDateTime.now()) }
@@ -142,6 +160,22 @@ fun ReportScreen(viewModel: ReportViewModel) {
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(color = primaryGreen)
+                    .clickable(onClick = { navController.popBackStack() }),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
             // Header Section
             HeaderSection()
 
@@ -225,7 +259,6 @@ fun ReportScreen(viewModel: ReportViewModel) {
             GenerateButton(
                 isLoading = isLoading,
                 primaryColor = primaryGreen,
-                lightColor = lightGreen,
                 onClick = {
                     isLoading = true
                     val request = ReportRequest(
@@ -236,7 +269,12 @@ fun ReportScreen(viewModel: ReportViewModel) {
                         currency = selectedCurrency
                     )
                     viewModel.generateReport(request)
-                    Log.d("ReportScreen", "Start Date: ${startDate.format(dateFormatter)}, End Date: ${endDate.format(dateFormatter)}, Type: $selectedType, Format: $format, Currency: $selectedCurrency")
+                    Log.d(
+                        "ReportScreen",
+                        "Start Date: ${startDate.format(dateFormatter)}, End Date: ${
+                            endDate.format(dateFormatter)
+                        }, Type: $selectedType, Format: $format, Currency: $selectedCurrency"
+                    )
                 }
             )
 
@@ -248,7 +286,7 @@ fun ReportScreen(viewModel: ReportViewModel) {
 @Composable
 private fun HeaderSection() {
     val primaryGreen = Color(0xFF00D09E)
-    val lightGreen = Color(0xFF4DE6C7)
+    val darkGreen = Color(0xFF00B890)
 
     Card(
         modifier = Modifier
@@ -266,11 +304,7 @@ private fun HeaderSection() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(primaryGreen, lightGreen)
-                    )
-                )
+                .background(color = primaryGreen)
                 .padding(24.dp)
         ) {
             Row(
@@ -541,7 +575,6 @@ fun DropdownSelector(
 private fun GenerateButton(
     isLoading: Boolean,
     primaryColor: Color,
-    lightColor: Color,
     onClick: () -> Unit
 ) {
     Card(
@@ -562,9 +595,7 @@ private fun GenerateButton(
                 .fillMaxWidth()
                 .height(64.dp)
                 .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(primaryColor, lightColor)
-                    ),
+                    color = primaryColor,
                     shape = RoundedCornerShape(16.dp)
                 ),
             colors = ButtonDefaults.buttonColors(

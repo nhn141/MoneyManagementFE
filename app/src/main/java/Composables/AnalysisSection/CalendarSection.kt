@@ -1,5 +1,6 @@
 package DI.Composables.AnalysisSection
 
+import DI.Composables.HomeSection.MoneyAppColors
 import DI.Models.Analysis.CategoryBreakdown
 import DI.Models.Analysis.CategoryBreakdownPieData
 import DI.Models.Analysis.DateSelection
@@ -35,6 +36,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -54,6 +56,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -67,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
@@ -86,7 +90,8 @@ import java.util.Locale
 @Composable
 fun CalendarScreen(
     analysisViewModel: AnalysisViewModel,
-    currencyConverterViewModel: CurrencyConverterViewModel
+    currencyConverterViewModel: CurrencyConverterViewModel,
+    navController: NavController
 ) {
     val strings = rememberAppStrings()
 
@@ -151,16 +156,14 @@ fun CalendarScreen(
 
     var statisticsMode by remember { mutableStateOf(strings.aggregate) }
 
-    // Modern gradient background
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFFF8FAFF),
-                        Color(0xFFE8F4FD),
-                        Color(0xFFF0F9FF)
+                        MoneyAppColors.Background,
+                        Color(0xFFECFDF5)
                     )
                 )
             )
@@ -171,7 +174,24 @@ fun CalendarScreen(
                 .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(15.dp))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .clickable(onClick = { navController.popBackStack() }),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                    tint = Color(0xFF1A73E8).copy(alpha = 0.8f),
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
 
             // Modern Header Section
             ModernHeaderSection(

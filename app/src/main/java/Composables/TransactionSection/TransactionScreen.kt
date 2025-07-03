@@ -112,22 +112,26 @@ fun TransactionScreen(
     var visibleCount by remember { mutableStateOf(5) }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        MoneyAppColors.Background,
-                        Color(0xFFECFDF5) // Emerald-50
-                    )
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(
+                    brush =
+                        Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    MoneyAppColors.Background,
+                                    Color(0xFFECFDF5) // Emerald-50
+                                )
+                        )
                 )
-            )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(end = 10.dp)
-                .verticalScroll(rememberScrollState())
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(end = 10.dp)
+                    .verticalScroll(rememberScrollState())
         ) {
             // Header card
             TransactionHeader()
@@ -155,11 +159,12 @@ fun TransactionScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = CurrencyUtils.formatAmount(
-                            amount = cashFlow?.netCashFlow ?: 0.0,
-                            isVND = isVND,
-                            exchangeRate = exchangeRate
-                        ),
+                        text =
+                            CurrencyUtils.formatAmount(
+                                amount = cashFlow?.netCashFlow ?: 0.0,
+                                isVND = isVND,
+                                exchangeRate = exchangeRate
+                            ),
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
                         color = MoneyAppColors.OnPrimary
@@ -169,68 +174,79 @@ fun TransactionScreen(
 
             // Income + Expense Cards
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Income Card
                 Card(
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (selected == "Income")
-                            Color(0xFF4CAF50) else MoneyAppColors.PrimaryVariant
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (selected == "Income") 16.dp else 8.dp
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(120.dp)
-                        .clickable { transactionViewModel.onTypeSelected("Income") }
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                if (selected == "Income") Color(0xFF4CAF50)
+                                else MoneyAppColors.PrimaryVariant
+                        ),
+                    elevation =
+                        CardDefaults.cardElevation(
+                            defaultElevation = if (selected == "Income") 16.dp else 8.dp
+                        ),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .height(120.dp)
+                            .clickable {
+                                transactionViewModel.onTypeSelected("Income")
+                            }
                 ) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                if (selected == "Income") {
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color(0xFF4CAF50),
-                                            Color(0xFF388E3C)
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(
+                                    if (selected == "Income") {
+                                        Brush.verticalGradient(
+                                            colors =
+                                                listOf(
+                                                    Color(0xFF4CAF50),
+                                                    Color(0xFF388E3C)
+                                                )
                                         )
-                                    )
-                                } else {
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            Color(0xFFF8FFF8)
+                                    } else {
+                                        Brush.verticalGradient(
+                                            colors =
+                                                listOf(
+                                                    Color.White,
+                                                    Color(0xFFF8FFF8)
+                                                )
                                         )
-                                    )
-                                }
-                            ),
+                                    }
+                                ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(
-                                        if (selected == "Income")
-                                            Color.White.copy(alpha = 0.2f)
-                                        else Color(0xFF4CAF50).copy(alpha = 0.1f),
-                                        CircleShape
-                                    ),
+                                modifier =
+                                    Modifier
+                                        .size(36.dp)
+                                        .background(
+                                            if (selected == "Income")
+                                                Color.White.copy(alpha = 0.2f)
+                                            else
+                                                Color(0xFF4CAF50)
+                                                    .copy(alpha = 0.1f),
+                                            CircleShape
+                                        ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_income),
                                     contentDescription = stringResource(R.string.income),
-                                    tint = if (selected == "Income") Color.White else Color(
-                                        0xFF4CAF50
-                                    ),
+                                    tint =
+                                        if (selected == "Income") Color.White
+                                        else Color(0xFF4CAF50),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -238,21 +254,22 @@ fun TransactionScreen(
                             Text(
                                 text = stringResource(R.string.income),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (selected == "Income") Color.White else Color(
-                                    0xFF666666
-                                ),
+                                color =
+                                    if (selected == "Income") Color.White
+                                    else Color(0xFF666666),
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = CurrencyUtils.formatAmount(
-                                    cashFlow?.totalIncome ?: 0.0,
-                                    isVND,
-                                    exchangeRate
-                                ), // Cập nhật số tiền
+                                text =
+                                    CurrencyUtils.formatAmount(
+                                        cashFlow?.totalIncome ?: 0.0,
+                                        isVND,
+                                        exchangeRate
+                                    ), // Cập nhật số tiền
                                 fontWeight = FontWeight.Bold,
-                                color = if (selected == "Income") Color.White else Color(
-                                    0xFF4CAF50
-                                ),
+                                color =
+                                    if (selected == "Income") Color.White
+                                    else Color(0xFF4CAF50),
                                 fontSize = 16.sp
                             )
                         }
@@ -262,60 +279,71 @@ fun TransactionScreen(
                 // Expense Card
                 Card(
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (selected == "Expense")
-                            Color(0xFFFF5722) else MoneyAppColors.PrimaryVariant
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (selected == "Expense") 16.dp else 8.dp
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(120.dp)
-                        .clickable { transactionViewModel.onTypeSelected("Expense") }
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                if (selected == "Expense") Color(0xFFFF5722)
+                                else MoneyAppColors.PrimaryVariant
+                        ),
+                    elevation =
+                        CardDefaults.cardElevation(
+                            defaultElevation =
+                                if (selected == "Expense") 16.dp else 8.dp
+                        ),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .height(120.dp)
+                            .clickable {
+                                transactionViewModel.onTypeSelected("Expense")
+                            }
                 ) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                if (selected == "Expense") {
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color(0xFFFF5722),
-                                            Color(0xFFD84315)
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(
+                                    if (selected == "Expense") {
+                                        Brush.verticalGradient(
+                                            colors =
+                                                listOf(
+                                                    Color(0xFFFF5722),
+                                                    Color(0xFFD84315)
+                                                )
                                         )
-                                    )
-                                } else {
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            Color(0xFFFFF8F8)
+                                    } else {
+                                        Brush.verticalGradient(
+                                            colors =
+                                                listOf(
+                                                    Color.White,
+                                                    Color(0xFFFFF8F8)
+                                                )
                                         )
-                                    )
-                                }
-                            ),
+                                    }
+                                ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(
-                                        if (selected == "Expense")
-                                            Color.White.copy(alpha = 0.2f)
-                                        else Color(0xFFFF5722).copy(alpha = 0.1f),
-                                        CircleShape
-                                    ),
+                                modifier =
+                                    Modifier
+                                        .size(36.dp)
+                                        .background(
+                                            if (selected == "Expense")
+                                                Color.White.copy(alpha = 0.2f)
+                                            else
+                                                Color(0xFFFF5722)
+                                                    .copy(alpha = 0.1f),
+                                            CircleShape
+                                        ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_expense),
                                     contentDescription = stringResource(R.string.expense),
-                                    tint = if (selected == "Expense") Color.White else Color(
-                                        0xFFFF5722
-                                    ),
+                                    tint =
+                                        if (selected == "Expense") Color.White
+                                        else Color(0xFFFF5722),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -323,21 +351,22 @@ fun TransactionScreen(
                             Text(
                                 text = stringResource(R.string.expense),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (selected == "Expense") Color.White else Color(
-                                    0xFF666666
-                                ),
+                                color =
+                                    if (selected == "Expense") Color.White
+                                    else Color(0xFF666666),
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = CurrencyUtils.formatAmount(
-                                    cashFlow?.totalExpense ?: 0.0,
-                                    isVND,
-                                    exchangeRate
-                                ), // Cập nhật số tiền
+                                text =
+                                    CurrencyUtils.formatAmount(
+                                        cashFlow?.totalExpense ?: 0.0,
+                                        isVND,
+                                        exchangeRate
+                                    ), // Cập nhật số tiền
                                 fontWeight = FontWeight.Bold,
-                                color = if (selected == "Expense") Color.White else Color(
-                                    0xFFFF5722
-                                ),
+                                color =
+                                    if (selected == "Expense") Color.White
+                                    else Color(0xFFFF5722),
                                 fontSize = 16.sp
                             )
                         }
@@ -364,7 +393,8 @@ fun TransactionScreen(
                                 context,
                                 context.getString(R.string.filters_reset),
                                 Toast.LENGTH_SHORT
-                            ).show()
+                            )
+                                .show()
                         }
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -430,9 +460,7 @@ fun TransactionScreen(
                         modifier = Modifier
                             .padding(20.dp)
                             .fillMaxWidth()
-                    ) {
-                        Text(text = stringResource(R.string.see_more))
-                    }
+                    ) { Text(text = stringResource(R.string.see_more)) }
                 }
             } else {
                 EmptyTransactionState()
@@ -447,16 +475,17 @@ fun TransactionScreen(
                 initialSearchParams = searchParams,
                 onSearch = { params ->
                     showSearchDialog.value = false
-                    val request = TransactionSearchRequest(
-                        startDate = params.startDate,
-                        endDate = params.endDate,
-                        type = params.type?.ifBlank { null },
-                        category = params.category?.ifBlank { null },
-                        amountRange = params.amountRange?.ifBlank { null },
-                        keywords = params.keywords?.ifBlank { null },
-                        timeRange = params.timeRange?.ifBlank { null },
-                        dayOfWeek = params.dayOfWeek?.ifBlank { null }
-                    )
+                    val request =
+                        TransactionSearchRequest(
+                            startDate = params.startDate,
+                            endDate = params.endDate,
+                            type = params.type?.ifBlank { null },
+                            category = params.category?.ifBlank { null },
+                            amountRange = params.amountRange?.ifBlank { null },
+                            keywords = params.keywords?.ifBlank { null },
+                            timeRange = params.timeRange?.ifBlank { null },
+                            dayOfWeek = params.dayOfWeek?.ifBlank { null }
+                        )
                     transactionViewModel.searchTransactions(request)
                 },
                 currencyViewModel = currencyViewModel
@@ -468,17 +497,30 @@ fun TransactionScreen(
                 onDateSelected = { millis ->
                     showDatePickerDialog.value = false
                     millis?.let {
-                        val localDate = Instant.ofEpochMilli(it)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate()
+                        val localDate =
+                            Instant.ofEpochMilli(it)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
 
                         selectedDate.value =
                             localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
-                        val from = localDate.atStartOfDay()
-                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        val to = localDate.atTime(LocalTime.MAX)
-                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        val from =
+                            localDate
+                                .atStartOfDay()
+                                .format(
+                                    DateTimeFormatter.ofPattern(
+                                        "yyyy-MM-dd HH:mm:ss"
+                                    )
+                                )
+                        val to =
+                            localDate
+                                .atTime(LocalTime.MAX)
+                                .format(
+                                    DateTimeFormatter.ofPattern(
+                                        "yyyy-MM-dd HH:mm:ss"
+                                    )
+                                )
 
                         transactionViewModel.fetchTransactionsByDateRange(from, to)
                     }
@@ -521,18 +563,19 @@ private fun ActionButton(
     isPrimary: Boolean = false
 ) {
     Box(
-        modifier = Modifier
-            .size(44.dp)
-            .background(
-                color =
-                    if (isPrimary) {
-                        MoneyAppColors.Primary
-                    } else {
-                        Color.White
-                    },
-                CircleShape
-            )
-            .clickable { onClick() },
+        modifier =
+            Modifier
+                .size(44.dp)
+                .background(
+                    color =
+                        if (isPrimary) {
+                            MoneyAppColors.Primary
+                        } else {
+                            Color.White
+                        },
+                    CircleShape
+                )
+                .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -564,11 +607,12 @@ fun TransactionHeader() {
             Icon(
                 painter = painterResource(R.drawable.ic_transaction),
                 contentDescription = "Transaction Header",
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MoneyAppColors.Primary)
-                    .padding(5.dp),
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MoneyAppColors.Primary)
+                        .padding(5.dp),
                 tint = MoneyAppColors.Surface
             )
 
@@ -605,37 +649,35 @@ fun TransactionRow(
     val isVND by currencyViewModel.isVND.collectAsState()
     val exchangeRate by currencyViewModel.exchangeRate.collectAsState()
 
-
     val dateTime = DateTimeUtils.formatDateTime(transaction.timestamp, LocalContext.current)
 
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = modifier
-            .clickable {
+        modifier =
+            modifier.clickable {
                 navController.navigate("transaction_detail/${transaction.transactionID}")
                 Log.d("TransactionRow", "ID: ${transaction.transactionID}")
             }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(
-                            if (transaction.isIncome)
-                                Color(0xFF4CAF50).copy(alpha = 0.15f)
-                            else Color(0xFFFF5722).copy(alpha = 0.15f),
-                            CircleShape
-                        ),
+                    modifier =
+                        Modifier
+                            .size(56.dp)
+                            .background(
+                                if (transaction.isIncome)
+                                    Color(0xFF4CAF50).copy(alpha = 0.15f)
+                                else Color(0xFFFF5722).copy(alpha = 0.15f),
+                                CircleShape
+                            ),
                     contentAlignment = Alignment.Center
                 ) {
                     TransactionIconButton(
@@ -643,11 +685,9 @@ fun TransactionRow(
                     )
                 }
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 16.dp)
-                ) {
+                Column(modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp)) {
                     Text(
                         text = transaction.title,
                         style = MaterialTheme.typography.titleMedium,
@@ -666,11 +706,12 @@ fun TransactionRow(
             }
 
             Text(
-                text = CurrencyUtils.formatAmount(
-                    amount = transaction.amount.toDoubleOrNull() ?: 0.0,
-                    isVND = isVND,
-                    exchangeRate = exchangeRate
-                ),
+                text =
+                    CurrencyUtils.formatAmount(
+                        amount = transaction.amount.toDoubleOrNull() ?: 0.0,
+                        isVND = isVND,
+                        exchangeRate = exchangeRate
+                    ),
                 color = if (transaction.isIncome) Color(0xFF4CAF50) else Color(0xFFFF5722),
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium,
@@ -682,32 +723,34 @@ fun TransactionRow(
     }
 }
 
-
 @Composable
 fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String {
-    val displayAmount = if (isVND || exchangeRate == null) {
-        amount
-    } else {
-        amount / exchangeRate
-    }
-
-    val symbols = if (isVND) {
-        DecimalFormatSymbols().apply {
-            groupingSeparator = '.'
-            decimalSeparator = ','
+    val displayAmount =
+        if (isVND || exchangeRate == null) {
+            amount
+        } else {
+            amount / exchangeRate
         }
-    } else {
-        DecimalFormatSymbols().apply {
-            groupingSeparator = ','
-            decimalSeparator = '.'
-        }
-    }
 
-    val formatter = if (isVND) {
-        DecimalFormat("#,##0.##", symbols)
-    } else {
-        DecimalFormat("#,##0.00", symbols)
-    }
+    val symbols =
+        if (isVND) {
+            DecimalFormatSymbols().apply {
+                groupingSeparator = '.'
+                decimalSeparator = ','
+            }
+        } else {
+            DecimalFormatSymbols().apply {
+                groupingSeparator = ','
+                decimalSeparator = '.'
+            }
+        }
+
+    val formatter =
+        if (isVND) {
+            DecimalFormat("#,##0.##", symbols)
+        } else {
+            DecimalFormat("#,##0.00", symbols)
+        }
 
     val formatted = formatter.format(displayAmount)
     val currencySymbol = if (isVND) "VND" else "USD"
@@ -715,7 +758,6 @@ fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String 
     Log.d("formatAmount", "Exchange Rate: $exchangeRate")
     return "$formatted $currencySymbol"
 }
-
 
 @Composable
 private fun EmptyTransactionState() {
@@ -736,29 +778,23 @@ private fun EmptyTransactionState() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DatePickerModal(
-    onDateSelected: (Long?) -> Unit,
-    onDismiss: () -> Unit
-) {
+fun DatePickerModal(onDateSelected: (Long?) -> Unit, onDismiss: () -> Unit) {
     val datePickerState = rememberDatePickerState()
 
     DatePickerDialog(
-        onDismissRequest = onDismiss, confirmButton = {
-            TextButton(onClick = {
-                onDateSelected(datePickerState.selectedDateMillis)
-                onDismiss()
-            }) {
-                Text(stringResource(R.string.ok))
-            }
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDateSelected(datePickerState.selectedDateMillis)
+                    onDismiss()
+                }
+            ) { Text(stringResource(R.string.ok)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
-    ) {
-        DatePicker(state = datePickerState)
-    }
+    ) { DatePicker(state = datePickerState) }
 }
 
 @Composable
@@ -775,12 +811,19 @@ fun SearchDialog(
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
-    val formatter = remember {
-        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    }
+    val formatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
     var startDate by remember { mutableStateOf(initialSearchParams?.startDate ?: "") }
     var endDate by remember { mutableStateOf(initialSearchParams?.endDate ?: "") }
     var type by remember { mutableStateOf(initialSearchParams?.type ?: "") }
+
+    // Map display (i18n) values to backend values
+    val typeMap =
+        mapOf(
+            stringResource(R.string.all) to "",
+            stringResource(R.string.expense) to "expense",
+            stringResource(R.string.income) to "income"
+        )
+    val reverseTypeMap = typeMap.entries.associate { it.value to it.key }
     var category by remember { mutableStateOf(initialSearchParams?.category ?: "") }
     var amountRange by remember { mutableStateOf(initialSearchParams?.amountRange ?: "") }
     var keywords by remember { mutableStateOf(initialSearchParams?.keywords ?: "") }
@@ -791,62 +834,65 @@ fun SearchDialog(
         return amount.toIntOrNull()?.let {
             val formatted = "%,d".format(it).replace(",", ".")
             if (isVND) "$formatted VND" else "$formatted USD"
-        } ?: amount
-    }
-
-    fun unformatAmount(formatted: String): String {
-        return formatted.replace(".", "").replace(",", "").replace(" VND", "").replace(" USD", "")
+        }
+            ?: amount
     }
 
     // Tạo danh sách rawAmountRanges dựa trên đơn vị tiền tệ
-    val rawAmountRanges = if (isVND) {
-        listOf("0-50000", "50000-200000", "200000-500000", "500000-1000000", "1000000+")
-    } else {
-        exchangeRate?.let { rate ->
-            listOf(
-                "0-${(50000 / rate).toInt()}",
-                "${(50000 / rate).toInt()}-${(200000 / rate).toInt()}",
-                "${(200000 / rate).toInt()}-${(500000 / rate).toInt()}",
-                "${(500000 / rate).toInt()}-${(1000000 / rate).toInt()}",
-                "${(1000000 / rate).toInt()}+"
-            )
-        } ?: listOf(
-            "0-50",
-            "50-200",
-            "200-500",
-            "500-1000",
-            "1000+"
-        ) // Giá trị mặc định nếu exchangeRate null
-    }
+    val rawAmountRanges =
+        if (isVND) {
+            listOf("0-50000", "50000-200000", "200000-500000", "500000-1000000", "1000000+")
+        } else {
+            exchangeRate?.let { rate ->
+                listOf(
+                    "0-${(50000 / rate).toInt()}",
+                    "${(50000 / rate).toInt()}-${(200000 / rate).toInt()}",
+                    "${(200000 / rate).toInt()}-${(500000 / rate).toInt()}",
+                    "${(500000 / rate).toInt()}-${(1000000 / rate).toInt()}",
+                    "${(1000000 / rate).toInt()}+"
+                )
+            }
+                ?: listOf(
+                    "0-50",
+                    "50-200",
+                    "200-500",
+                    "500-1000",
+                    "1000+"
+                ) // Giá trị mặc định nếu exchangeRate null
+        }
 
     // Define a local object to hold non-composable string constants
-    val nonComposableStrings = object {
-        val allOption = "All"
-        val time0008 = "00:00 - 08:00"
-        val time0816 = "08:00 - 16:00"
-        val time1600 = "16:00 - 24:00"
-        val monday = "Monday"
-        val tuesday = "Tuesday"
-        val wednesday = "Wednesday"
-        val thursday = "Thursday"
-        val friday = "Friday"
-        val saturday = "Saturday"
-        val sunday = "Sunday"
-        val pleaseSelectDates = "Please select both start and end dates"
-        val startDateLaterError = "Start date cannot be after end date"
-    }
+    val nonComposableStrings =
+        object {
+            val allOption = "All"
+            val time0008 = "00:00 - 08:00"
+            val time0816 = "08:00 - 16:00"
+            val time1600 = "16:00 - 24:00"
+            val monday = "Monday"
+            val tuesday = "Tuesday"
+            val wednesday = "Wednesday"
+            val thursday = "Thursday"
+            val friday = "Friday"
+            val saturday = "Saturday"
+            val sunday = "Sunday"
+            val pleaseSelectDates = "Please select both start and end dates"
+            val startDateLaterError = "Start date cannot be after end date"
+        }
 
     val amountRangeMap = buildMap {
         put(nonComposableStrings.allOption, "")
-        putAll(rawAmountRanges.associateBy { range ->
-            val display = if (range.contains("-")) {
-                val (start, end) = range.split("-")
-                "${formatAmount(start, isVND)} - ${formatAmount(end, isVND)}"
-            } else {
-                formatAmount(range, isVND) + "+"
+        putAll(
+            rawAmountRanges.associateBy { range ->
+                val display =
+                    if (range.contains("-")) {
+                        val (start, end) = range.split("-")
+                        "${formatAmount(start, isVND)} - ${formatAmount(end, isVND)}"
+                    } else {
+                        formatAmount(range, isVND) + "+"
+                    }
+                display
             }
-            display
-        })
+        )
     }
 
     val reverseAmountRangeMap = amountRangeMap.entries.associate { it.value to it.key }
@@ -885,9 +931,7 @@ fun SearchDialog(
         addAll(categoriesResult?.getOrNull()?.map { it.name } ?: emptyList())
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.getCategories()
-    }
+    LaunchedEffect(Unit) { viewModel.getCategories() }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -895,16 +939,12 @@ fun SearchDialog(
                 .fillMaxWidth()
                 .fillMaxHeight(0.85f),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF85E0B3)
-            ),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF85E0B3)),
             elevation = CardDefaults.cardElevation(defaultElevation = 20.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp)
-            ) {
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)) {
                 // Header with search design
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -921,12 +961,13 @@ fun SearchDialog(
                     }
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier
-                            .size(22.dp)
-                            .background(
-                                color = Color(0xFFFFB7B7),
-                                shape = RoundedCornerShape(8.dp)
-                            )
+                        modifier =
+                            Modifier
+                                .size(22.dp)
+                                .background(
+                                    color = Color(0xFFFFB7B7),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -987,16 +1028,16 @@ fun SearchDialog(
                                 ) {
                                     SearchDropdownField(
                                         label = stringResource(R.string.type),
-                                        options = listOf(
-                                            stringResource(R.string.all),
-                                            stringResource(R.string.expense),
-                                            stringResource(R.string.income)
-                                        ),
-                                        selectedOption = type.ifEmpty { stringResource(R.string.all) },
+                                        options =
+                                            listOf(
+                                                stringResource(R.string.all),
+                                                stringResource(R.string.expense),
+                                                stringResource(R.string.income)
+                                            ),
+                                        selectedOption = reverseTypeMap[type]
+                                            ?: stringResource(R.string.all),
                                         onOptionSelected = { selected ->
-                                            type =
-                                                if (selected == nonComposableStrings.allOption) ""
-                                                else selected
+                                            type = typeMap[selected] ?: ""
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
@@ -1004,10 +1045,18 @@ fun SearchDialog(
                                     SearchDropdownField(
                                         label = stringResource(R.string.category),
                                         options = categoryNames,
-                                        selectedOption = category.ifEmpty { stringResource(R.string.all) },
+                                        selectedOption =
+                                            category.ifEmpty {
+                                                stringResource(R.string.all)
+                                            },
                                         onOptionSelected = { selected ->
                                             category =
-                                                if (selected == nonComposableStrings.allOption) "" else selected
+                                                if (selected ==
+                                                    nonComposableStrings
+                                                        .allOption
+                                                )
+                                                    ""
+                                                else selected
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
@@ -1091,10 +1140,11 @@ fun SearchDialog(
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         border = BorderStroke(1.dp, Color(0xFFBDBDBD)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color(0xFFF5F5F5),
-                            contentColor = Color(0xFF424242)
-                        )
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color(0xFFF5F5F5),
+                                contentColor = Color(0xFF424242)
+                            )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
@@ -1110,7 +1160,8 @@ fun SearchDialog(
                                     context,
                                     nonComposableStrings.pleaseSelectDates,
                                     Toast.LENGTH_SHORT
-                                ).show()
+                                )
+                                    .show()
                                 return@Button
                             }
 
@@ -1122,24 +1173,34 @@ fun SearchDialog(
                                     context,
                                     nonComposableStrings.startDateLaterError,
                                     Toast.LENGTH_SHORT
-                                ).show()
+                                )
+                                    .show()
                                 return@Button
                             }
 
-                            val adjustedAmountRange = if (!isVND && exchangeRate != null) {
-                                amountRange.split("-").joinToString("-") { range ->
-                                    val value = range.removeSuffix("+").toDoubleOrNull() ?: 0.0
-                                    ((value * exchangeRate!!).toInt()
-                                        .toString() + (if (range.endsWith("+")) "+" else ""))
+                            val adjustedAmountRange =
+                                if (!isVND && exchangeRate != null) {
+                                    amountRange.split("-").joinToString("-") { range ->
+                                        val value =
+                                            range.removeSuffix("+").toDoubleOrNull()
+                                                ?: 0.0
+                                        ((value * exchangeRate!!).toInt().toString() +
+                                                (if (range.endsWith("+")) "+" else ""))
+                                    }
+                                } else {
+                                    amountRange
                                 }
-                            } else {
-                                amountRange
-                            }
 
                             onSearch(
                                 TransactionSearchRequest(
-                                    startDate, endDate, type, category,
-                                    adjustedAmountRange, keywords, timeRange, dayOfWeek
+                                    startDate,
+                                    endDate,
+                                    type,
+                                    category,
+                                    adjustedAmountRange,
+                                    keywords,
+                                    timeRange,
+                                    dayOfWeek
                                 )
                             )
                             onDismiss()
@@ -1148,9 +1209,8 @@ fun SearchDialog(
                             .weight(2f)
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF36C249)
-                        ),
+                        colors =
+                            ButtonDefaults.buttonColors(containerColor = Color(0xFF36C249)),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                     ) {
                         Icon(
@@ -1196,24 +1256,16 @@ fun SearchDialog(
 }
 
 @Composable
-fun SearchSection(
-    title: String,
-    icon: ImageVector,
-    content: @Composable () -> Unit
-) {
+fun SearchSection(title: String, icon: ImageVector, content: @Composable () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF7FFF1)
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FFF1)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 12.dp)
@@ -1258,34 +1310,42 @@ fun SearchSearchField(
 
         OutlinedTextField(
             value = value,
-            onValueChange = if (isDateField) {
-                {}
-            } else onChange,
+            onValueChange =
+                if (isDateField) {
+                    {}
+                } else onChange,
             readOnly = isDateField,
-            placeholder = if (placeholder.isNotEmpty()) {
-                { Text(placeholder, color = Color(0xFFCCCCCC)) }
-            } else null,
-            trailingIcon = if (isDateField) {
-                {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = null,
-                        tint = Color(0xFF00D09E),
-                        modifier = Modifier.clickable { onClick?.invoke() }
-                    )
-                }
-            } else null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(if (isDateField) Modifier.clickable { onClick?.invoke() } else Modifier),
+            placeholder =
+                if (placeholder.isNotEmpty()) {
+                    { Text(placeholder, color = Color(0xFFCCCCCC)) }
+                } else null,
+            trailingIcon =
+                if (isDateField) {
+                    {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            tint = Color(0xFF00D09E),
+                            modifier = Modifier.clickable { onClick?.invoke() }
+                        )
+                    }
+                } else null,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (isDateField) Modifier.clickable { onClick?.invoke() }
+                        else Modifier
+                    ),
             shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF00D09E),
-                unfocusedBorderColor = Color(0xFFE0E0E0),
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                cursorColor = Color(0xFF00D09E)
-            ),
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF00D09E),
+                    unfocusedBorderColor = Color(0xFFE0E0E0),
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    cursorColor = Color(0xFF00D09E)
+                ),
             singleLine = true
         )
     }
@@ -1323,34 +1383,33 @@ fun SearchDropdownField(
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 },
-                modifier = Modifier
-                    .menuAnchor(
-                        type = MenuAnchorType.PrimaryEditable,
-                        enabled = true
-                    )
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .menuAnchor(
+                            type = MenuAnchorType.PrimaryEditable,
+                            enabled = true
+                        )
+                        .fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF00D09E),
-                    unfocusedBorderColor = Color(0xFFE0E0E0),
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                ),
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00D09E),
+                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    ),
                 singleLine = true
             )
 
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
+            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 options.forEach { option ->
                     DropdownMenuItem(
                         text = {
                             Text(
                                 option,
-                                color = if (option == selectedOption) Color(0xFF00D09E) else Color(
-                                    0xFF1A1A1A
-                                ),
+                                color =
+                                    if (option == selectedOption) Color(0xFF00D09E)
+                                    else Color(0xFF1A1A1A),
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1
                             )
@@ -1359,11 +1418,13 @@ fun SearchDropdownField(
                             onOptionSelected(option)
                             expanded = false
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                if (option == selectedOption) Color(0xFFF0FDF4) else Color.Transparent
-                            )
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (option == selectedOption) Color(0xFFF0FDF4)
+                                    else Color.Transparent
+                                )
                     )
                 }
             }

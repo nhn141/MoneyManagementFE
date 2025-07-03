@@ -286,6 +286,9 @@
     <string name="budget">Ngân sách</string>
     <string name="savings">Tiết kiệm</string>
     <string name="spent">Đã chi</string>
+    <string name="k_unit">Ngàn</string>
+    <string name="m_unit">Triệu</string>
+    <string name="b_unit">Tỷ</string>
 
     <!-- Period Labels -->
     <string name="daily">Hàng ngày</string>
@@ -435,9 +438,6 @@
     <string name="error_message">Lỗi: %1$s</string>
     <string name="something_went_wrong">Đã có lỗi xảy ra</string>
 
-    <!-- ================== MISCELLANEOUS ================== -->
-    <string name="language">Ngôn ngữ</string>
-
     <!-- ================== REPORTS ================== -->
     <string name="cash_flow">Báo cáo thu chi</string>
     <string name="category_breakdown">Phân loại danh mục</string>
@@ -508,5 +508,13 @@
     <string name="current_month_income">Thu nhập của tháng này</string>
     <string name="current_month_expense">Chi tiêu của tháng này</string>
 
+    <!-- ================== LANGUAGE SETTINGS ================== -->
+    <string name="language">Ngôn ngữ</string>
+    <string name="current_language">Hiện tại: %1$s</string>
+    <string name="select_language">Chọn ngôn ngữ</string>
+    <string name="english">English</string>
+    <string name="vietnamese">Tiếng Việt</string>
 
+    <!-- ================== SETTINGS SCREEN ================== -->
+    <string name="settings_screen_title">Cài đặt</string>
 </resources>

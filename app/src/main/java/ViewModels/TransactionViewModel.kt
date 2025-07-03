@@ -219,6 +219,7 @@ class TransactionViewModel @Inject constructor(
     fun searchTransactions(request: TransactionSearchRequest) {
         viewModelScope.launch {
             _searchParams.value = request
+            Log.d("SearchTransactions", "Searching with params: $request")
             val result = transactionRepository.searchTransactions(request)
             if (result.isSuccess) {
                 _allTransactions.value = result.getOrThrow().map { it.toGeneralTransactionItem() }

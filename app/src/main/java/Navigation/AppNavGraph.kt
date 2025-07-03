@@ -16,6 +16,7 @@ import DI.Composables.GroupTransactionScreen.GroupTransactionScreen
 import DI.Composables.HomeSection.HomeScreen
 import DI.Composables.NewsFeedSection.NewsFeedScreen
 import DI.Composables.ProfileSection.EditProfileScreen
+import DI.Composables.SettingSection.SettingsScreen
 import DI.Composables.TransactionSection.AddTransactionScreen
 import DI.Composables.TransactionSection.TemporaryTransactionViewScreen
 import DI.Composables.TransactionSection.TransactionDetailScreen
@@ -40,7 +41,6 @@ import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import GroupFundScreen
 import ModernCategoriesScreen
-import ProfileScreen
 import Screens.MainLayout
 import ViewModels.AuthViewModel
 import android.os.Build
@@ -143,6 +143,7 @@ private fun InnerNavHost(
         profileViewModel.refreshAllData()
         newsFeedViewModel.loadNextPost()
         analysisViewModel.refreshAllData()
+        categoryViewModel.getCategories()
 
         // For HomeScreen
         currencyViewModel.refreshAllData()
@@ -160,7 +161,7 @@ private fun InnerNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = BottomNavItem.Setting.route,
+        startDestination = BottomNavItem.Home.route,
         modifier = modifier
     ) {
         composable(BottomNavItem.Home.route) {
@@ -229,7 +230,8 @@ private fun InnerNavHost(
 
         composable(Routes.Report) {
             ReportScreen(
-                viewModel = reportViewModel
+                viewModel = reportViewModel,
+                navController = navController,
             )
         }
 
@@ -291,12 +293,12 @@ private fun InnerNavHost(
         }
 
         composable(BottomNavItem.Setting.route) {
-            ProfileScreen(
+            SettingsScreen(
                 appNavController = appNavController,
                 navController = navController,
                 authViewModel = authViewModel,
                 profileViewModel = profileViewModel,
-                currencyViewModel = currencyViewModel
+                currencyConverterViewModel = currencyViewModel
             )
         }
 
@@ -318,7 +320,8 @@ private fun InnerNavHost(
         composable(Routes.Calendar) {
             CalendarScreen(
                 analysisViewModel = analysisViewModel,
-                currencyConverterViewModel = currencyViewModel
+                currencyConverterViewModel = currencyViewModel,
+                navController = navController,
             )
         }
 

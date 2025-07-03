@@ -6,6 +6,7 @@ import DI.Composables.ProfileSection.MainColor
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -62,10 +63,14 @@ fun ChatScreen(
     profileViewModel: ProfileViewModel,
     friendViewModel: FriendViewModel
 ) {
+    // State for loading chats
+    var isLoadingChats by remember { mutableStateOf(true) }
+
     // State for search query
     var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
+        isLoadingChats = true
         chatViewModel.connectToSignalR()
         chatViewModel.getLatestChats()
     }
@@ -118,6 +123,17 @@ fun ChatScreen(
         }
     }
 
+    LaunchedEffect(latestChats, friendAvatars, profile) {
+        isLoadingChats = latestChats.isEmpty() ||
+                profile == null ||
+                latestChats.any { chat ->
+                    val friendId = if (chat.latestMessage.senderName == profile.displayName)
+                        chat.latestMessage.receiverId
+                    else chat.latestMessage.senderId
+                    friendAvatars.none { it.userId == friendId }
+                }
+    }
+
     val friendsResult = friendViewModel.friends.collectAsState()
     val friends = friendsResult.value?.getOrNull() ?: emptyList()
 
@@ -140,7 +156,16 @@ fun ChatScreen(
             onClearQuery = { searchQuery = "" }
         )
         Spacer(modifier = Modifier.height(16.dp))
-        if (chatsWithAvatars.isEmpty()) {
+
+        if (isLoadingChats) {
+            Log.d("ChatScreen", "Loading chats...")
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        } else if (chatsWithAvatars.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
