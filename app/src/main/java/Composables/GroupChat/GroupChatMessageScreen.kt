@@ -195,7 +195,26 @@ fun GroupChatMessageScreen(
                         )
                     }
                 }
-            } else {
+            } else if (userGroupStatus?.isBanned == true) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.you_are_banned),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    userGroupStatus.banReason?.let {
+                        Text(
+                            stringResource(R.string.ban_reason, it),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+            else {
                 MessageInputBar(
                     messageText = messageContent,
                     onMessageChange = { messageContent = it },

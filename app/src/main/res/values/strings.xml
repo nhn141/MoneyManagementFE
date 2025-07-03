@@ -632,6 +632,10 @@
 
     <string name="group_profile_back">Back</string>
 
+    <string name="you_are_banned">You Are Banned</string>
+
+    <string name="ban_reason">Ban Reason: %1$s</string>
+
     <!-- ================== GROUP TRANSACTION COMMENT ================== -->
     <string name="comment_added">Comment Added</string>
     <string name="comment_updated">Comment Updated</string>
