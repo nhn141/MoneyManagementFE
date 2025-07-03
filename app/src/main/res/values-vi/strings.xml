@@ -127,6 +127,8 @@
     <string name="transaction_type">Loại giao dịch</string>
     <string name="transaction_type_unchangeable">Loại giao dịch (Không thể thay đổi)</string>
     <string name="amount_label">Số tiền (%1$s)</string>
+    <string name="share_dialog_title">Chia sẻ giao dịch</string>
+    <string name="unknown_user">Không xác định</string>
 
     <!-- Transaction Form Fields -->
     <string name="title">Tiêu đề</string>

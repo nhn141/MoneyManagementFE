@@ -127,6 +127,8 @@
     <string name="transaction_type">Transaction Type</string>
     <string name="transaction_type_unchangeable">Transaction Type (Unchangeable)</string>
     <string name="amount_label">Amount (%1$s)</string>
+    <string name="share_dialog_title">Share transaction</string>
+    <string name="unknown_user">Unknown</string>
 
     <!-- Transaction Form Fields -->
     <string name="title">Title</string>

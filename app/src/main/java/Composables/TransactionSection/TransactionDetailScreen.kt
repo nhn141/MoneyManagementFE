@@ -557,16 +557,15 @@ fun ShareDialog(
     currentUserId: String,
     onShareToFriend: (String) -> Unit,
     onShareToGroup: (String) -> Unit,
-    transactionId: String // Giữ tham số này để tham chiếu
+    transactionId: String
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Chia sẻ giao dịch") }, // Cập nhật tiêu đề cho phù hợp
+        title = { Text(stringResource(R.string.share_dialog_title)) },
         text = {
             Column {
                 Text(
-                    text = "Chia sẻ với bạn bè",
-                    color = Color.White,
+                    text = stringResource(R.string.share_with_friends),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -592,7 +591,7 @@ fun ShareDialog(
                         ) {
                             AsyncImage(
                                 model = friend.avatarUrl,
-                                contentDescription = "Friend Avatar",
+                                contentDescription = stringResource(R.string.friend_avatar),
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
@@ -602,11 +601,11 @@ fun ShareDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = if (latestMessage.senderId == currentUserId) {
-                                    latestMessage.receiverName ?: "Unknown"
+                                    latestMessage.receiverName ?: stringResource(R.string.unknown_user)
                                 } else {
-                                    latestMessage.senderName ?: "Unknown"
+                                    latestMessage.senderName ?: stringResource(R.string.unknown_user)
                                 },
-                                color = Color.White,
+                                color = Color(0xFF00D09E),
                                 fontSize = 14.sp
                             )
                         }
@@ -616,8 +615,7 @@ fun ShareDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Chia sẻ với nhóm",
-                    color = Color.White,
+                    text = stringResource(R.string.share_with_groups),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -637,7 +635,7 @@ fun ShareDialog(
                         ) {
                             AsyncImage(
                                 model = group.imageUrl,
-                                contentDescription = "Group Avatar",
+                                contentDescription = stringResource(R.string.group_avatar),
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
@@ -647,7 +645,7 @@ fun ShareDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = group.name,
-                                color = Color.White,
+                                color = Color(0xFF00D09E),
                                 fontSize = 14.sp
                             )
                         }
@@ -657,7 +655,7 @@ fun ShareDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Hủy")
+                Text(stringResource(R.string.cancel))
             }
         },
         dismissButton = {}
