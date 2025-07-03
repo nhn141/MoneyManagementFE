@@ -1,6 +1,5 @@
 import DI.Composables.GroupFundSection.AddGroupFundDialog
 import DI.Composables.GroupFundSection.EditGroupFundDialog
-import DI.Composables.TransactionSection.formatAmount
 import DI.Models.GroupFund.CreateGroupFundDto
 import DI.Models.GroupFund.GroupFundDto
 import DI.Models.GroupFund.UpdateGroupFundDto
@@ -21,7 +20,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -90,9 +88,6 @@ fun GroupFundScreen(
 
     var selectedFund by remember { mutableStateOf<GroupFundDto?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
-
-    val isVND by currencyViewModel.isVND.collectAsState() // Lấy trạng thái isVND
-    val exchangeRate by currencyViewModel.exchangeRate.collectAsState() // Lấy tỷ giá
 
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -206,9 +201,6 @@ fun GroupFundScreen(
             // Group Fund List
             if (funds.isNotEmpty()) {
                 itemsIndexed(funds) { _, fund ->
-                    val fundBalance = CurrencyUtils.formatAmount(fund.balance, isVND, exchangeRate)
-                    val fundSavingGoal =
-                        CurrencyUtils.formatAmount(fund.savingGoal, isVND, exchangeRate)
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -244,21 +236,37 @@ fun GroupFundScreen(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    val savingGoalAmount = fund.savingGoal.toDoubleOrNull() ?: 0.0
+                                    val savingGoalAmount = fund.savingGoal
                                     Text(
-                                        text = "${stringResource(id = R.string.saving_goal_label)}: ${formatAmount(amount = savingGoalAmount, isVND = isVND, exchangeRate = exchangeRate)}",
+                                        text = "${stringResource(id = R.string.saving_goal_label)}: ${
+                                            CurrencyUtils.formatAmount(
+                                                amount = savingGoalAmount,
+                                                isVND = isVND,
+                                                exchangeRate = exchangeRate
+                                            )
+                                        }",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color(0xFF666666)
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "${stringResource(id = R.string.balance_label)}: ${formatAmount(amount = fund.balance, isVND = isVND, exchangeRate = exchangeRate)}",
+                                        text = "${stringResource(id = R.string.balance_label)}: ${
+                                            CurrencyUtils.formatAmount(
+                                                amount = fund.balance,
+                                                isVND = isVND,
+                                                exchangeRate = exchangeRate
+                                            )
+                                        }",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color(0xFF666666)
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "${stringResource(id = R.string.created_at_label)}: ${formatDateTime(fund.createdAt)}",
+                                        text = "${stringResource(id = R.string.created_at_label)}: ${
+                                            formatDateTime(
+                                                fund.createdAt
+                                            )
+                                        }",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color(0xFF666666)
                                     )
@@ -295,16 +303,6 @@ fun GroupFundScreen(
 
     if (showDetailDialog && selectedFund != null) {
         Dialog(onDismissRequest = { showDetailDialog = false }) {
-            val fundBalance =
-                CurrencyUtils.formatAmount(selectedFund!!.balance, isVND, exchangeRate)
-            val fundSavingGoal =
-                CurrencyUtils.formatAmount(selectedFund!!.savingGoal, isVND, exchangeRate)
-            val totalFundsIn = CurrencyUtils.formatAmount(
-                selectedFund!!.totalFundsIn, isVND, exchangeRate
-            )
-            val totalFundsOut = CurrencyUtils.formatAmount(
-                selectedFund!!.totalFundsOut, isVND, exchangeRate
-            )
             Card(
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier
@@ -331,14 +329,45 @@ fun GroupFundScreen(
 
                     HorizontalDivider(color = Color(0xFFE0E0E0))
 
-                    val savingGoal = selectedFund!!.savingGoal.toDoubleOrNull() ?: 0.0
+                    val savingGoal = selectedFund?.savingGoal ?: 0.0
 
                     // Detailed Info
-                    InfoText(label = stringResource(id = R.string.description_label), value = selectedFund!!.description)
-                    InfoText(label = stringResource(id = R.string.saving_goal_label), value = formatAmount(amount = savingGoal, isVND = isVND, exchangeRate = exchangeRate))
-                    InfoText(label = stringResource(id = R.string.income_label), value = formatAmount(amount = selectedFund!!.totalFundsIn, isVND = isVND, exchangeRate = exchangeRate))
-                    InfoText(label = stringResource(id = R.string.expense_label), value = formatAmount(amount = selectedFund!!.totalFundsOut, isVND = isVND, exchangeRate = exchangeRate))
-                    InfoText(label = stringResource(id = R.string.balance_label), value = formatAmount(amount = selectedFund!!.balance, isVND = isVND, exchangeRate = exchangeRate))
+                    InfoText(
+                        label = stringResource(id = R.string.description_label),
+                        value = selectedFund!!.description
+                    )
+                    InfoText(
+                        label = stringResource(id = R.string.saving_goal_label),
+                        value = CurrencyUtils.formatAmount(
+                            amount = savingGoal,
+                            isVND = isVND,
+                            exchangeRate = exchangeRate
+                        )
+                    )
+                    InfoText(
+                        label = stringResource(id = R.string.income_label),
+                        value = CurrencyUtils.formatAmount(
+                            amount = selectedFund!!.totalFundsIn,
+                            isVND = isVND,
+                            exchangeRate = exchangeRate
+                        )
+                    )
+                    InfoText(
+                        label = stringResource(id = R.string.expense_label),
+                        value = CurrencyUtils.formatAmount(
+                            amount = selectedFund!!.totalFundsOut,
+                            isVND = isVND,
+                            exchangeRate = exchangeRate
+                        )
+                    )
+                    InfoText(
+                        label = stringResource(id = R.string.balance_label),
+                        value = CurrencyUtils.formatAmount(
+                            amount = selectedFund!!.balance,
+                            isVND = isVND,
+                            exchangeRate = exchangeRate
+                        )
+                    )
                     InfoText(
                         label = stringResource(id = R.string.created_at_label),
                         value = formatDateTime(selectedFund!!.createdAt),
@@ -348,10 +377,7 @@ fun GroupFundScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Action Button
-                    Column(
-
-                    )
-                    {
+                    Column {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
@@ -400,7 +426,10 @@ fun GroupFundScreen(
                                     )
                                 )
                             ) {
-                                Text(stringResource(id = R.string.view_group_transaction), color = Color.White)
+                                Text(
+                                    stringResource(id = R.string.view_group_transaction),
+                                    color = Color.White
+                                )
                             }
                         }
                     }

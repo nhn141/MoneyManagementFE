@@ -1,12 +1,12 @@
 package DI.Composables.GroupTransactionScreen
 
 import DI.Composables.TransactionSection.TransactionIconButton
-import DI.Composables.TransactionSection.formatAmount
 import DI.Models.Category.Category
 import DI.Models.GroupTransaction.CreateGroupTransactionDto
 import DI.Models.GroupTransaction.GroupTransactionDto
 import DI.Models.GroupTransaction.UpdateGroupTransactionDto
 import DI.Models.UiEvent.UiEvent
+import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.GroupTransactionViewModel
@@ -24,10 +24,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -154,11 +152,12 @@ fun GroupTransactionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                        painter = painterResource(R.drawable.ic_arrow_back),
-                        contentDescription = stringResource(R.string.back),
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    ) }
+                            painter = painterResource(R.drawable.ic_arrow_back),
+                            contentDescription = stringResource(R.string.back),
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
 
                     Text(
                         text = stringResource(R.string.group_transaction),
@@ -198,7 +197,11 @@ fun GroupTransactionScreen(
                         modifier = Modifier
                             .clickable {
                                 selectedTransaction = transaction
-                                Log.d("GroupTransactionRow", "ID: ${transaction.groupTransactionID}")}
+                                Log.d(
+                                    "GroupTransactionRow",
+                                    "ID: ${transaction.groupTransactionID}"
+                                )
+                            }
                             .padding(horizontal = 20.dp, vertical = 6.dp)
                     ) {
                         Column(
@@ -222,7 +225,8 @@ fun GroupTransactionScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     TransactionIconButton(
-                                        categoryName = category?.name ?: stringResource(R.string.unknown_category),
+                                        categoryName = category?.name
+                                            ?: stringResource(R.string.unknown_category),
                                     )
                                 }
 
@@ -249,12 +253,14 @@ fun GroupTransactionScreen(
                             }
 
                             Text(
-                                text = formatAmount(
+                                text = CurrencyUtils.formatAmount(
                                     amount = transaction.amount,
                                     isVND = isVND,
                                     exchangeRate = exchangeRate
                                 ),
-                                color = if (transaction.toGeneralGroupTransactionItem().isIncome) Color(0xFF4CAF50) else Color(0xFFFF5722),
+                                color = if (transaction.toGeneralGroupTransactionItem().isIncome) Color(
+                                    0xFF4CAF50
+                                ) else Color(0xFFFF5722),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier
@@ -280,10 +286,19 @@ fun GroupTransactionScreen(
             onDismiss = { showAddDialog = false },
             onSave = { wallet, userCategory, amount, desc, date, type ->
                 viewModel.createGroupTransaction(
-                    CreateGroupTransactionDto(groupFundId, wallet, userCategory, amount, desc, date, type)
+                    CreateGroupTransactionDto(
+                        groupFundId,
+                        wallet,
+                        userCategory,
+                        amount,
+                        desc,
+                        date,
+                        type
+                    )
                 )
                 showAddDialog = false
-            }
+            },
+            isVND = isVND
         )
     }
 
@@ -297,15 +312,28 @@ fun GroupTransactionScreen(
             onUpdate = { wallet, category, amount, desc, date, type ->
                 viewModel.updateGroupTransaction(
                     transaction.groupTransactionID,
-                    UpdateGroupTransactionDto(transaction.groupTransactionID, wallet, category, amount, desc, date, type),
+                    UpdateGroupTransactionDto(
+                        transaction.groupTransactionID,
+                        wallet,
+                        category,
+                        amount,
+                        desc,
+                        date,
+                        type
+                    ),
                     groupFundId
                 )
                 selectedTransaction = null
             },
             onDelete = {
-                viewModel.deleteGroupTransaction(transaction.groupTransactionID, transaction.groupFundID)
+                viewModel.deleteGroupTransaction(
+                    transaction.groupTransactionID,
+                    transaction.groupFundID
+                )
                 selectedTransaction = null
-            }
+            },
+            isVND = isVND,
+            exchangeRate = exchangeRate
         )
     }
 }

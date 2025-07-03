@@ -13,8 +13,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.moneymanagement_frontend.R
 
@@ -30,25 +30,56 @@ fun AddGroupFundDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.add_group_fund)) },
+        title = {
+            Text(
+                text = stringResource(R.string.add_group_fund),
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text(stringResource(R.string.description_label)) }
+                    label = {
+                        Text(
+                            text = stringResource(R.string.description_label),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    singleLine = true,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    textStyle = androidx.compose.material3.MaterialTheme.typography.bodyLarge.copy(
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00D09E),
+                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                        errorBorderColor = Color.Red,
+                        focusedLabelColor = Color(0xFF00D09E),
+                        unfocusedLabelColor = Color(0xFF00D09E),
+                        cursorColor = Color(0xFF00D09E)
+                    )
                 )
                 CurrencyInput(
                     isVND = isVND,
-                    label = "Saving Goal",
+                    label = {
+                        Text(
+                            text = stringResource(R.string.saving_goal_label),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
                     value = savingGoalText,
                     onValueChange = { savingGoalText = it },
                     onValidationResult = { savingGoalError = it }
-                    label = { Text(stringResource(R.string.saving_goal_label)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 if (savingGoalError != null) {
-                    Text(savingGoalError ?: "", color = androidx.compose.ui.graphics.Color.Red)
+                    Text(
+                        savingGoalError ?: "",
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.error,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         },
@@ -62,13 +93,22 @@ fun AddGroupFundDialog(
                     savingGoalText
                 ) != null
             ) {
-                Text(stringResource(R.string.save))
+                Text(
+                    text = stringResource(R.string.save),
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
+                Text(
+                    text = stringResource(R.string.cancel),
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+                )
             }
-        }
+        },
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp
     )
 }

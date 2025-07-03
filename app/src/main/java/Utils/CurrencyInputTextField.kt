@@ -39,7 +39,7 @@ import com.example.moneymanagement_frontend.R
 @Composable
 fun CurrencyInput(
     isVND: Boolean,
-    label: String? = null,
+    label: (@Composable (() -> Unit))? = null,
     value: String = "",
     onValueChange: ((String) -> Unit)? = null,
     onValidationResult: ((String?) -> Unit)? = null
@@ -122,7 +122,7 @@ fun CurrencyInputTextField(
     onValueChange: (TextFieldValue) -> Unit,
     isVND: Boolean,
     modifier: Modifier = Modifier,
-    label: String? = null,
+    label: (@Composable (() -> Unit))? = null,
     placeholder: String? = null,
     supportingText: String? = null,
     enabled: Boolean = true,
@@ -139,15 +139,6 @@ fun CurrencyInputTextField(
     val defaultPlaceholder = if (isVND) "e.g. 1.000.000₫" else "e.g. 1000.51 (formats when done)"
 
     Column(modifier = modifier) {
-        if (label != null) {
-            Text(
-                text = label,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF666666),
-                modifier = Modifier.padding(bottom = 6.dp)
-            )
-        }
         OutlinedTextField(
             value = value,
             onValueChange = { newTextFieldValue ->
@@ -236,7 +227,7 @@ fun CurrencyInputTextField(
                         }
                     }
                 },
-            label = null, // handled above
+            label = label,
             placeholder = {
                 Text(placeholder ?: defaultPlaceholder, color = Color(0xFFCCCCCC))
             },
