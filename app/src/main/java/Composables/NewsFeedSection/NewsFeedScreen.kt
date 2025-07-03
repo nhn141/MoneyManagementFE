@@ -108,9 +108,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.net.toUri
 import androidx.navigation.NavController
+import com.example.moneymanagement_frontend.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -318,13 +320,13 @@ fun NewsFeedScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Text(
-                        text = "Không có bài đăng nào",
+                        text = stringResource(R.string.no_posts_found),
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Hãy tạo bài đăng đầu tiên của bạn!",
+                        text = stringResource(R.string.create_first_post_prompt),
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
@@ -414,7 +416,7 @@ fun NewsFeedScreen(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Đang tải thêm...",
+                        text = stringResource(R.string.loading_more),
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
@@ -464,7 +466,7 @@ fun NewsFeedScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Add Post",
+                    contentDescription = stringResource(R.string.add_post),
                     modifier = Modifier.size(26.dp),
                     tint = Color.White
                 )
@@ -485,7 +487,7 @@ fun NewsFeedScreen(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.back),
                 tint = Color.White
             )
         }
@@ -519,7 +521,7 @@ fun NewsFeedScreen(
             IconButton(onClick = { showNotificationPopup = true }) {
                 Icon(
                     imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notifications",
+                    contentDescription = stringResource(R.string.notifications),
                     tint = Color.White
                 )
             }
@@ -576,7 +578,7 @@ fun NewsFeedScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Thông báo",
+                        text = stringResource(R.string.notifications),
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
@@ -593,7 +595,7 @@ fun NewsFeedScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                text = "Không có thông báo mới",
+                                text = stringResource(R.string.no_new_notifications),
                                 color = Color.White.copy(alpha = 0.7f),
                                 fontSize = 16.sp,
                                 modifier = Modifier
@@ -627,7 +629,7 @@ fun NewsFeedScreen(
                                     ) {
                                         AsyncImage(
                                             model = notification.userAvatarUrl,
-                                            contentDescription = "Avatar",
+                                            contentDescription = stringResource(R.string.avatar),
                                             modifier = Modifier
                                                 .size(40.dp)
                                                 .clip(CircleShape)
@@ -637,7 +639,12 @@ fun NewsFeedScreen(
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column {
                                             Text(
-                                                text = notification.content,
+                                                text = when (notification.type) {
+                                                    "like" -> stringResource(R.string.notification_like_content, notification.userName)
+                                                    "comment" -> stringResource(R.string.notification_comment_content, notification.userName)
+                                                    "reply" -> stringResource(R.string.notification_reply_content, notification.userName)
+                                                    else -> notification.userName // Fallback nếu type không xác định
+                                                },
                                                 color = Color.White,
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Medium
@@ -698,7 +705,7 @@ fun NewsFeedScreen(
                                         }
                                 )
                                 Text(
-                                    text = "Kéo lên để nhập bình luận",
+                                    text = stringResource(R.string.pull_to_comment),
                                     color = Color(0xFF00D09E).copy(alpha = 0.8f * arrowAlpha),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium,
@@ -795,6 +802,7 @@ fun PostItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrivacyDropdown(
     selectedPrivacy: Int,
@@ -806,10 +814,10 @@ fun PrivacyDropdown(
     var expanded by remember { mutableStateOf(false) }
 
     val privacyOptions = mapOf(
-        "Bạn bè" to 0,
-        "Riêng tư" to 1,
-        "Công khai" to 2,
-        "Nhóm" to 3
+        stringResource(R.string.privacy_friends) to 0,
+        stringResource(R.string.privacy_private) to 1,
+        stringResource(R.string.privacy_public) to 2,
+        stringResource(R.string.privacy_group) to 3
     )
 
     val privacyIcons = mapOf(
@@ -842,7 +850,7 @@ fun PrivacyDropdown(
 
                 Text(
                     text = privacyOptions.entries.find { it.value == selectedPrivacy }?.key
-                        ?: "Bạn bè",
+                        ?: stringResource(R.string.privacy_friends),
                     color = Color.White,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium,
@@ -925,7 +933,7 @@ fun PrivacyDropdown(
                         }
                     }
 
-                    //hiển thị danh sách group
+                    // Hiển thị danh sách group
                     if (selectedPrivacy == 3 && groups.isNotEmpty()) {
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 4.dp),
@@ -933,7 +941,7 @@ fun PrivacyDropdown(
                             color = Color.Gray.copy(alpha = 0.3f)
                         )
                         Text(
-                            text = "Chọn nhóm:",
+                            text = stringResource(R.string.select_group),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -1012,14 +1020,13 @@ fun PostItemWithImage(
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
     val isAuthor = post.authorId == currentUserId
 
-
     val truncatedContent = post.content?.let {
         if (it.length > 15) it.take(15) + "..." else it
     } ?: ""
 
     val shareMessage = """
-        Shared Post:
-        From: ${post.authorName ?: "Unknown Author"}
+        ${stringResource(R.string.shared_post)}
+        ${stringResource(R.string.from_label)} ${post.authorName ?: "Unknown Author"}
         $truncatedContent
         [post:${post.postId}]
     """.trimIndent()
@@ -1075,7 +1082,7 @@ fun PostItemWithImage(
                             ) {
                                 AsyncImage(
                                     model = imageUri,
-                                    contentDescription = "Author Avatar",
+                                    contentDescription = stringResource(R.string.avatar),
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(CircleShape)
@@ -1147,7 +1154,7 @@ fun PostItemWithImage(
 
                                 if (shouldShowExpand) {
                                     Text(
-                                        text = if (isExpanded) "Rút gọn" else "...Xem thêm",
+                                        text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.___see_more),
                                         color = Color(0xFF00D09E),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
@@ -1210,7 +1217,7 @@ fun PostItemWithImage(
             ) {
                 AsyncImage(
                     model = mediaUrl,
-                    contentDescription = "Image",
+                    contentDescription = stringResource(R.string.image),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxSize()
@@ -1237,7 +1244,7 @@ fun PostItemWithImage(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.close),
                         tint = Color.White
                     )
                 }
@@ -1247,8 +1254,8 @@ fun PostItemWithImage(
         if (showSaveDialog) {
             AlertDialog(
                 onDismissRequest = { showSaveDialog = false },
-                title = { Text("Lưu ảnh") },
-                text = { Text("Bạn có muốn lưu ảnh này vào thư viện không?") },
+                title = { Text(stringResource(R.string.save_image)) },
+                text = { Text(stringResource(R.string.save_image_prompt)) },
                 confirmButton = {
                     TextButton(onClick = {
                         coroutineScope.launch {
@@ -1256,12 +1263,12 @@ fun PostItemWithImage(
                             showSaveDialog = false
                         }
                     }) {
-                        Text("Lưu")
+                        Text(stringResource(R.string.save))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showSaveDialog = false }) {
-                        Text("Hủy")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -1324,8 +1331,8 @@ fun PostItemTextOnly(
     } ?: ""
 
     val shareMessage = """
-        Shared Post:
-        From: ${post.authorName ?: "Unknown Author"}
+        ${stringResource(R.string.shared_post)}
+        ${stringResource(R.string.from_label)} ${post.authorName ?: "Unknown Author"}
         $truncatedContent
         [post:${post.postId}]
     """.trimIndent()
@@ -1393,7 +1400,7 @@ fun PostItemTextOnly(
                         ) {
                             AsyncImage(
                                 model = imageUri,
-                                contentDescription = "Author Avatar",
+                                contentDescription = stringResource(R.string.avatar),
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .clip(CircleShape)
@@ -1491,7 +1498,7 @@ fun PostItemTextOnly(
 
                             if (shouldShowExpand) {
                                 Text(
-                                    text = if (isExpanded) "Rút gọn" else "...Xem thêm",
+                                    text = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.___see_more),
                                     color = Color(0xFF00D09E),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Medium,
@@ -1679,7 +1686,7 @@ fun ActionButtons(
                     Icon(
                         imageVector = if (post.isLikedByCurrentUser)
                             Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Like",
+                        contentDescription = stringResource(R.string.like_action),
                         tint = if (post.isLikedByCurrentUser)
                             Color(0xFFFF6B6B) else Color.White.copy(alpha = 0.8f),
                         modifier = Modifier.size(14.dp)
@@ -1730,7 +1737,7 @@ fun ActionButtons(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ChatBubbleOutline,
-                        contentDescription = "Comments",
+                        contentDescription = stringResource(R.string.comments_action),
                         tint = Color(0xFF00D09E),
                         modifier = Modifier.size(14.dp)
                     )
@@ -1780,14 +1787,14 @@ fun ActionButtons(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Share,
-                        contentDescription = "Share",
+                        contentDescription = stringResource(R.string.share_action),
                         tint = Color(0xFF00B4D8),
                         modifier = Modifier.size(14.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Chia sẻ",
+                    text = stringResource(R.string.share_label),
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
@@ -1809,11 +1816,11 @@ fun ShareDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Chia sẻ bài viết") },
+        title = { Text(stringResource(R.string.share_post_title)) },
         text = {
             Column {
                 Text(
-                    text = "Chia sẻ với bạn bè",
+                    text = stringResource(R.string.share_with_friends),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -1839,7 +1846,7 @@ fun ShareDialog(
                         ) {
                             AsyncImage(
                                 model = friend.avatarUrl,
-                                contentDescription = "Friend Avatar",
+                                contentDescription = stringResource(R.string.friend_avatar),
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
@@ -1863,7 +1870,7 @@ fun ShareDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Chia sẻ với nhóm",
+                    text = stringResource(R.string.share_with_groups),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -1883,7 +1890,7 @@ fun ShareDialog(
                         ) {
                             AsyncImage(
                                 model = group.imageUrl,
-                                contentDescription = "Group Avatar",
+                                contentDescription = stringResource(R.string.group_avatar),
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
@@ -1903,7 +1910,7 @@ fun ShareDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Hủy")
+                Text(stringResource(R.string.cancel))
             }
         },
         dismissButton = {}
@@ -1928,6 +1935,7 @@ fun CommentSection(
     val lazyListState = rememberLazyListState()
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
     var replyingTo by remember { mutableStateOf<ReplyCommentResponse?>(null) }
+
     // Xử lý trạng thái reply
     LaunchedEffect(replyState) {
         when (replyState) {
@@ -1979,7 +1987,7 @@ fun CommentSection(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        "Bình luận bài viết",
+                        text = stringResource(R.string.post_comments_title),
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
                         color = Color.White
@@ -2012,11 +2020,11 @@ fun CommentSection(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                // Phần hiển thị thông tin comment (giữ nguyên)
+                                // Phần hiển thị thông tin comment
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     AsyncImage(
                                         model = comment.authorAvatarUrl,
-                                        contentDescription = "Avatar",
+                                        contentDescription = stringResource(R.string.avatar),
                                         modifier = Modifier
                                             .size(36.dp)
                                             .clip(CircleShape),
@@ -2049,7 +2057,7 @@ fun CommentSection(
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.MoreVert,
-                                                    contentDescription = "Menu",
+                                                    contentDescription = stringResource(R.string.menu_action),
                                                     tint = Color.White.copy(alpha = 0.7f),
                                                     modifier = Modifier.size(18.dp)
                                                 )
@@ -2062,7 +2070,7 @@ fun CommentSection(
                                                 DropdownMenuItem(
                                                     text = {
                                                         Text(
-                                                            "Xóa",
+                                                            text = stringResource(R.string.delete_action),
                                                             color = Color(0xFFFF6B6B),
                                                             fontSize = 14.sp
                                                         )
@@ -2097,7 +2105,7 @@ fun CommentSection(
                                     modifier = Modifier.align(Alignment.Start)
                                 ) {
                                     Text(
-                                        text = if (showReplyInput && replyingTo == null) "Hủy" else "Trả lời",
+                                        text = if (showReplyInput && replyingTo == null) stringResource(R.string.cancel) else stringResource(R.string.reply_action),
                                         color = Color(0xFF00D09E),
                                         fontSize = 12.sp
                                     )
@@ -2111,7 +2119,7 @@ fun CommentSection(
                                         onValueChange = { replyText = it },
                                         label = {
                                             Text(
-                                                text = if (replyingTo != null) "Trả lời ${replyingTo!!.authorName}..." else "Nhập phản hồi...",
+                                                text = if (replyingTo != null) "${stringResource(R.string.reply_to_label)} ${replyingTo!!.authorName}..." else stringResource(R.string.enter_reply),
                                                 color = Color.White.copy(alpha = 0.6f)
                                             )
                                         },
@@ -2162,7 +2170,7 @@ fun CommentSection(
                                                 .padding(horizontal = 24.dp, vertical = 12.dp)
                                         ) {
                                             Text(
-                                                "Gửi",
+                                                text = stringResource(R.string.send_reply),
                                                 color = Color.White,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 12.sp
@@ -2172,7 +2180,6 @@ fun CommentSection(
                                 }
 
                                 // Hiển thị danh sách reply
-                                // Trong CommentSection, thay phần hiển thị reply
                                 if (comment.replies.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Column(
@@ -2214,7 +2221,10 @@ fun CommentSection(
                         value = commentText,
                         onValueChange = { commentText = it },
                         label = {
-                            Text("Nhập bình luận...", color = Color.White.copy(alpha = 0.6f))
+                            Text(
+                                text = stringResource(R.string.enter_comment),
+                                color = Color.White.copy(alpha = 0.6f)
+                            )
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -2263,7 +2273,7 @@ fun CommentSection(
                                 .padding(horizontal = 24.dp, vertical = 12.dp)
                         ) {
                             Text(
-                                "Gửi",
+                                text = stringResource(R.string.send_comment),
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp
@@ -2294,7 +2304,7 @@ fun ReplyItem(
     ) {
         if (reply.parentReplyName.isNotBlank()) {
             Text(
-                text = "Trả lời bình luận của ${reply.parentReplyName}",
+                text = "${stringResource(R.string.reply_to_comment_label)} ${reply.parentReplyName}",
                 color = Color.White.copy(alpha = 0.6f),
                 fontSize = 12.sp,
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -2304,7 +2314,7 @@ fun ReplyItem(
         Row {
             AsyncImage(
                 model = reply.authorAvatarUrl,
-                contentDescription = "Avatar",
+                contentDescription = stringResource(R.string.avatar),
                 modifier = Modifier
                     .size(24.dp)
                     .clip(CircleShape),
@@ -2338,7 +2348,7 @@ fun ReplyItem(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Menu",
+                                    contentDescription = stringResource(R.string.menu_action),
                                     tint = Color.White.copy(alpha = 0.7f),
                                     modifier = Modifier.size(14.dp)
                                 )
@@ -2351,7 +2361,7 @@ fun ReplyItem(
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            "Xóa",
+                                            text = stringResource(R.string.delete_action),
                                             color = Color(0xFFFF6B6B),
                                             fontSize = 12.sp
                                         )
@@ -2379,7 +2389,7 @@ fun ReplyItem(
                     modifier = Modifier.align(Alignment.Start)
                 ) {
                     Text(
-                        text = "Trả lời",
+                        text = stringResource(R.string.reply_action),
                         color = Color(0xFF00D09E),
                         fontSize = 12.sp
                     )
@@ -2471,7 +2481,7 @@ fun CreatePostDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Tạo bài viết",
+                            text = stringResource(R.string.create_post_title),
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -2489,7 +2499,7 @@ fun CreatePostDialog(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
+                                contentDescription = stringResource(R.string.close),
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -2541,7 +2551,7 @@ fun CreatePostDialog(
                             onValueChange = { content = it },
                             placeholder = {
                                 Text(
-                                    "Bạn đang nghĩ gì?",
+                                    text = stringResource(R.string.post_content_placeholder),
                                     color = Color.Gray.copy(alpha = 0.7f),
                                     fontSize = 16.sp
                                 )
@@ -2614,14 +2624,14 @@ fun CreatePostDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Image,
-                                        contentDescription = "Select Image",
+                                        contentDescription = stringResource(R.string.select_image_action),
                                         tint = Color.White,
                                         modifier = Modifier.size(22.dp)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(
-                                    "Thêm ảnh",
+                                    text = stringResource(R.string.add_image_label),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color(0xFFFFFFFF)
@@ -2645,7 +2655,7 @@ fun CreatePostDialog(
                             Box {
                                 AsyncImage(
                                     model = uri,
-                                    contentDescription = "Image Preview",
+                                    contentDescription = stringResource(R.string.image),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(280.dp)
@@ -2666,7 +2676,7 @@ fun CreatePostDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Remove Image",
+                                        contentDescription = stringResource(R.string.remove_image_action),
                                         tint = Color.White,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -2738,7 +2748,7 @@ fun CreatePostDialog(
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(
-                                        "Đang đăng...",
+                                        text = stringResource(R.string.posting_label),
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color.White
@@ -2746,7 +2756,7 @@ fun CreatePostDialog(
                                 }
                             } else {
                                 Text(
-                                    "Đăng",
+                                    text = stringResource(R.string.post_action),
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
