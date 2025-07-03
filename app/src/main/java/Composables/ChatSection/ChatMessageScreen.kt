@@ -1,15 +1,19 @@
 package DI.Composables.ChatSection
 
 import DI.API.TokenHandler.AuthStorage
+import DI.Composables.GroupChat.ReactionDialog
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Models.Chat.ChatMessage
+import DI.Models.CreateMessageReactionDTO
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
+import DI.ViewModels.MessageEnhancementViewModel
 import DI.ViewModels.ProfileViewModel
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +39,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
@@ -66,7 +71,8 @@ fun ChatMessageScreen(
     chatViewModel: ChatViewModel,
     friendId: String,
     profileViewModel: ProfileViewModel,
-    friendViewModel: FriendViewModel
+    friendViewModel: FriendViewModel,
+    messageEnhancementViewModel: MessageEnhancementViewModel
 ) {
     val currentUserId = AuthStorage.getUserIdFromToken(LocalContext.current)
     var messageContent by remember { mutableStateOf("") }
@@ -85,6 +91,9 @@ fun ChatMessageScreen(
     val friendsResult = friendViewModel.friends.collectAsState()
     val friends = friendsResult.value?.getOrNull() ?: emptyList()
     val friendName = chatMessages.firstOrNull { it.senderId == friendId }?.senderName ?: ""
+
+    var activeReactionMessageId by remember { mutableStateOf<String?>(null) }
+    val reactionSummary by messageEnhancementViewModel.reactionSummary.collectAsState()
 
     Scaffold(
         topBar = {
@@ -128,10 +137,34 @@ fun ChatMessageScreen(
                     friendAvatarUrl = friendAvatar.avatarUrl,
                     isLoadingAvatar = isLoadingAvatar.value,
                     navController = navController // Truyền NavController
+                    onReactionClick = { messageId ->
+                        activeReactionMessageId = messageId
+                        messageEnhancementViewModel.getMessageReactions(messageId, "private")
+                    }
                 )
             }
         }
     }
+
+    activeReactionMessageId?.let { messageId ->
+        ReactionDialog(
+            messageId = messageId,
+            summaryResult = reactionSummary,
+            onAddReaction = { reactionType ->
+                messageEnhancementViewModel.addReaction(
+                    CreateMessageReactionDTO(
+                        messageId = messageId,
+                        reactionType = reactionType,
+                        messageType = "direct"
+                    )
+                )
+            },
+            onDismiss = {
+                activeReactionMessageId = null
+            }
+        )
+    }
+
 }
 
 @OptIn(ExperimentalTextApi::class)
@@ -142,6 +175,7 @@ fun MessageBubble(
     friendAvatarUrl: String,
     isLoadingAvatar: Boolean,
     navController: NavController
+    onReactionClick: (String) -> Unit
 ) {
     val bubbleShape = RoundedCornerShape(
         topStart = 20.dp,
@@ -278,6 +312,14 @@ fun MessageBubble(
                         fontSize = 11.sp,
                         color = if (isSentByCurrentUser) Color.White.copy(alpha = 0.7f) else Color.Gray,
                         modifier = Modifier.align(Alignment.End)
+                    )
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_reaction),
+                        contentDescription = stringResource(R.string.reactions),
+                        tint = Color.Gray,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable { onReactionClick(message.messageID) }
                     )
                 }
             }

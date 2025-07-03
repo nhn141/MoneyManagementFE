@@ -31,8 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.moneymanagement_frontend.R
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
@@ -105,21 +107,21 @@ fun EditGroupTransactionDialog(
                     onUpdate(walletID, categoryID, parsedAmount, description, storageDate, type)
                 }
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             Row {
                 TextButton(onClick = onDelete) {
-                    Text("Delete", color = Color.Red)
+                    Text(stringResource(R.string.delete), color = Color.Red)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         },
-        title = { Text("Edit Group Transaction") },
+        title = { Text(stringResource(R.string.edit_group_transaction)) },
         text = {
             Column {
                 // Wallet dropdown
@@ -129,9 +131,9 @@ fun EditGroupTransactionDialog(
                 ) {
                     OutlinedTextField(
                         readOnly = true,
-                        value = selectedWallet?.walletName ?: "Select Wallet",
+                        value = selectedWallet?.walletName ?: stringResource(R.string.select_wallet),
                         onValueChange = {},
-                        label = { Text("Wallet") },
+                        label = { Text(stringResource(R.string.select_wallet)) },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = walletExpanded)
                         },
@@ -165,9 +167,9 @@ fun EditGroupTransactionDialog(
                 ) {
                     OutlinedTextField(
                         readOnly = true,
-                        value = selectedCategory?.name ?: "Select Category",
+                        value = selectedCategory?.name ?: stringResource(R.string.select_category),
                         onValueChange = {},
-                        label = { Text("Category") },
+                        label = { Text(stringResource(R.string.select_category)) },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded)
                         },
@@ -199,14 +201,14 @@ fun EditGroupTransactionDialog(
                     onValueChange = { input ->
                         amountRaw = input.filter { char -> char.isDigit() }
                     },
-                    label = { Text("Amount") },
+                    label = { Text(stringResource(R.string.amount)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.description)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -215,12 +217,12 @@ fun EditGroupTransactionDialog(
                     value = displayDate,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Date & Time") },
+                    label = { Text(stringResource(R.string.date_and_time)) },
                     trailingIcon = {
                         IconButton(onClick = { dateDialogState.show() }) {
                             Icon(
                                 imageVector = Icons.Default.DateRange,
-                                contentDescription = "Pick Date",
+                                contentDescription = stringResource(R.string.pick_date),
                                 tint = Color(0xFF00D09E)
                             )
                         }
@@ -231,7 +233,7 @@ fun EditGroupTransactionDialog(
                 OutlinedTextField(
                     value = type,
                     onValueChange = { type = it },
-                    label = { Text("Type") },
+                    label = { Text(stringResource(R.string.type)) },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -242,8 +244,8 @@ fun EditGroupTransactionDialog(
     MaterialDialog(
         dialogState = dateDialogState,
         buttons = {
-            positiveButton("OK")
-            negativeButton("Cancel")
+            positiveButton(stringResource(R.string.ok))
+            negativeButton(stringResource(R.string.cancel))
         }
     ) {
         datepicker { date ->
@@ -257,8 +259,8 @@ fun EditGroupTransactionDialog(
     MaterialDialog(
         dialogState = timeDialogState,
         buttons = {
-            positiveButton("OK")
-            negativeButton("Cancel")
+            positiveButton(stringResource(R.string.ok))
+            negativeButton(stringResource(R.string.cancel))
         }
     ) {
         timepicker { time ->
