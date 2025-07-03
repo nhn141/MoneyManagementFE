@@ -65,7 +65,7 @@ class TransactionViewModel @Inject constructor(
     val selectedTransaction: State<Transaction?> = _selectedTransaction
 
     // Flow để phát các sự kiện UI (như thông báo)
-    private val _transactionEvent = MutableSharedFlow<UiEvent>()
+    internal val _transactionEvent = MutableSharedFlow<UiEvent>()
     val transactionEvent: SharedFlow<UiEvent> = _transactionEvent.asSharedFlow()
 
     init {

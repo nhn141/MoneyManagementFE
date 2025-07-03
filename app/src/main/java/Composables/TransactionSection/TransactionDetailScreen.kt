@@ -5,6 +5,7 @@ import DI.Composables.CategorySection.getCategoryIcon
 import DI.Models.Chat.LatestChat
 import DI.Models.Group.Group
 import DI.Models.NewsFeed.Post
+import DI.Models.UiEvent.UiEvent
 import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.ChatViewModel
@@ -297,6 +298,18 @@ fun TransactionDetailBody(
     LaunchedEffect(Unit) {
         groupChatViewModel.loadUserGroups()
         chatViewModel.getLatestChats()
+    }
+
+    LaunchedEffect(Unit) {
+        launch {
+            viewModel._transactionEvent.collect { event ->
+                when (event) {
+                    is UiEvent.ShowMessage -> {
+                        Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     }
 
     Box(
