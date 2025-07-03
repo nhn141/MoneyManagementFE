@@ -128,6 +128,15 @@
     <string name="transaction_type_unchangeable">Transaction Type (Unchangeable)</string>
     <string name="amount_label">Amount (%1$s)</string>
 
+    <string name="shared_transaction">Shared Transaction:</string>
+    <string name="title_label">Title:</string>
+    <string name="type_label">Type:</string>
+    <string name="amount_label1">Amount:</string>
+    <string name="date_label">Date:</string>
+    <string name="category_label">Category:</string>
+    <string name="wallet_label">Wallet:</string>
+
+
     <!-- Transaction Form Fields -->
     <string name="title">Title</string>
     <string name="amount">Amount</string>

@@ -128,6 +128,15 @@
     <string name="transaction_type_unchangeable">Loại giao dịch (Không thể thay đổi)</string>
     <string name="amount_label">Số tiền (%1$s)</string>
 
+    <string name="shared_transaction">Giao dịch được chia sẻ:</string>
+    <string name="title_label">Tiêu đề:</string>
+    <string name="type_label">Loại:</string>
+    <string name="amount_label1">Số tiền:</string>
+    <string name="date_label">Ngày:</string>
+    <string name="category_label">Danh mục:</string>
+    <string name="wallet_label">Ví:</string>
+
+
     <!-- Transaction Form Fields -->
     <string name="title">Tiêu đề</string>
     <string name="amount">Số tiền</string>

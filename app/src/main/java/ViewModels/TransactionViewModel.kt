@@ -6,8 +6,10 @@ import DI.Models.Category.Category
 import DI.Models.Category.Transaction
 import DI.Models.Transaction.CashFlow
 import DI.Models.Transaction.TransactionSearchRequest
+import DI.Models.UiEvent.UiEvent
 import DI.Repositories.CategoryRepository
 import DI.Repositories.TransactionRepository
+import Utils.StringResourceProvider
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -15,13 +17,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.example.moneymanagement_frontend.R
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+// Enum để xác định loại hành động giao dịch
+enum class TransactionAction {
+    DELETE // Có thể thêm CREATE, UPDATE nếu cần
+}
 
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val stringProvider: StringResourceProvider
 ) : ViewModel() {
 
     private val _selectedType = mutableStateOf("All")
@@ -30,10 +42,8 @@ class TransactionViewModel @Inject constructor(
     private val _allTransactions = mutableStateOf<List<GeneralTransactionItem>>(emptyList())
     val allTransactions: List<GeneralTransactionItem> get() = _allTransactions.value
 
-    // Original transactions before any filtering
     private val _originalTransactions = mutableStateOf<List<GeneralTransactionItem>>(emptyList())
 
-    // Search parameters state
     private val _searchParams = mutableStateOf<TransactionSearchRequest?>(null)
     val searchParams: State<TransactionSearchRequest?> = _searchParams
 
@@ -47,11 +57,16 @@ class TransactionViewModel @Inject constructor(
             else -> allTransactions
         }
     }
+
     private val _categories = mutableStateOf<List<Category>>(emptyList())
     val categories: List<Category> get() = _categories.value
 
     private val _selectedTransaction = mutableStateOf<Transaction?>(null)
     val selectedTransaction: State<Transaction?> = _selectedTransaction
+
+    // Flow để phát các sự kiện UI (như thông báo)
+    internal val _transactionEvent = MutableSharedFlow<UiEvent>()
+    val transactionEvent: SharedFlow<UiEvent> = _transactionEvent.asSharedFlow()
 
     init {
         refreshData()
@@ -76,8 +91,7 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-
-    internal fun fetchTransactions() {
+    fun fetchTransactions() {
         viewModelScope.launch {
             val result = transactionRepository.getTransactions()
             if (result.isSuccess) {
@@ -155,7 +169,6 @@ class TransactionViewModel @Inject constructor(
             }
         }
     }
-
 
     fun updateTransaction(
         transactionID: String,
@@ -235,5 +248,33 @@ class TransactionViewModel @Inject constructor(
         _selectedType.value = "All"
     }
 
-}
+    fun notifyShareAction(success: Boolean, isGroup: Boolean) {
+        viewModelScope.launch {
+            _transactionEvent.emit(
+                UiEvent.ShowMessage(
+                    stringProvider.getString(
+                        if (success) {
+                            if (isGroup) R.string.share_to_group_success else R.string.share_to_friend_success
+                        } else {
+                            if (isGroup) R.string.share_to_group_failed else R.string.share_to_friend_failed
+                        }
+                    )
+                )
+            )
+        }
+    }
 
+    fun notifyTransactionAction(action: TransactionAction, success: Boolean) {
+        viewModelScope.launch {
+            _transactionEvent.emit(
+                UiEvent.ShowMessage(
+                    stringProvider.getString(
+                        when (action) {
+                            TransactionAction.DELETE -> if (success) R.string.transaction_deleted_success else R.string.transaction_deleted_failed
+                        }
+                    )
+                )
+            )
+        }
+    }
+}
