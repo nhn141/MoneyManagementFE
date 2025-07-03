@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Monee</string>
 
     <!-- ================== COMMON ACTIONS & UI ELEMENTS ================== -->
     <string name="ok">OK</string>
@@ -126,6 +127,17 @@
     <string name="transaction_type">Transaction Type</string>
     <string name="transaction_type_unchangeable">Transaction Type (Unchangeable)</string>
     <string name="amount_label">Amount (%1$s)</string>
+    <string name="share_dialog_title">Share transaction</string>
+    <string name="unknown_user">Unknown</string>
+
+    <string name="shared_transaction">Shared Transaction:</string>
+    <string name="title_label">Title:</string>
+    <string name="type_label">Type:</string>
+    <string name="amount_label1">Amount:</string>
+    <string name="date_label">Date:</string>
+    <string name="category_label">Category:</string>
+    <string name="wallet_label">Wallet:</string>
+
 
     <!-- Transaction Form Fields -->
     <string name="title">Title</string>
@@ -141,6 +153,9 @@
     <string name="scan_receipt">Scan Receipt</string>
     <string name="scan_receipt_description">Scan Receipt</string>
     <string name="enter_amount">Enter amount</string>
+    <string name="you_are_banned">You Are Banned</string>
+
+    <string name="ban_reason">Ban Reason: %1$s</string>
 
     <!-- Transaction Form Validation -->
     <string name="title_empty_error">Title cannot be empty</string>
@@ -751,5 +766,12 @@
     <string name="error_fetching_user_info_with_message">Unable to fetch user information: %s</string>
     <string name="error_fetching_post_detail">Failed to fetch post details: %s</string>
     <string name="error_fetching_comments">Failed to fetch comments: %s</string>
+    <string name="group_selection_required">Please select at least one group</string>
+    <string name="share_to_friend_success">Shared to friend successfully</string>
+    <string name="share_to_friend_failed">Failed to share to friend</string>
+    <string name="share_to_group_success">Shared to group successfully</string>
+    <string name="share_to_group_failed">Failed to share to group</string>
+    <string name="save_image_success">Image saved successfully</string>
+    <string name="save_image_failed">Failed to save image</string>
 </resources>
 

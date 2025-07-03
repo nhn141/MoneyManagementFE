@@ -1,19 +1,21 @@
 package DI.Composables.TransactionSection
 
-import DI.API.TokenHandler.AuthStorage
 import DI.Composables.CategorySection.getCategoryIcon
-import DI.Models.Chat.LatestChat
+import DI.Models.Friend.Friend
 import DI.Models.Group.Group
-import DI.Models.NewsFeed.Post
+import DI.Models.UiEvent.UiEvent
 import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.CurrencyConverterViewModel
+import DI.ViewModels.FriendViewModel
 import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.ProfileViewModel
+import DI.ViewModels.TransactionAction
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -68,6 +70,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,6 +87,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.moneymanagement_frontend.R
+import kotlinx.coroutines.launch
 
 @Composable
 fun TransactionDetailScreen(
@@ -95,7 +99,8 @@ fun TransactionDetailScreen(
     currencyViewModel: CurrencyConverterViewModel,
     chatViewModel: ChatViewModel,
     groupChatViewModel: GroupChatViewModel,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    friendViewModel: FriendViewModel
 ) {
     val selectedTransaction by viewModel.selectedTransaction
     val categories by categoryViewModel.categories.collectAsState()
@@ -110,6 +115,27 @@ fun TransactionDetailScreen(
         walletViewModel.getWallets()
         viewModel.loadTransactionById(transactionId) {
             isLoaded = it
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        friendViewModel.getAllFriends()
+    }
+
+    val friends = friendViewModel.friends.collectAsState().value?.getOrNull() ?: emptyList()
+    val friendAvatars = profileViewModel.friendAvatars.collectAsState().value
+
+    LaunchedEffect(friends.toList()) {
+        if (friends.isNotEmpty()) {
+            profileViewModel.getFriendAvatars(friends.map { it.userId })
+        }
+    }
+
+    // When both chats and avatars are ready, update chats with avatarUrls
+    val friendsWithAvatars = remember(friends, friendAvatars) {
+        friends.map { friend ->
+            val avatarUrl = friendAvatars.find { it.userId == friend.userId }?.avatarUrl ?: ""
+            friend.copy(avatarUrl = avatarUrl)
         }
     }
 
@@ -150,7 +176,9 @@ fun TransactionDetailScreen(
                 amount = generalTransaction.amount,
                 walletName = wallet?.walletName ?: stringResource(R.string.unknown),
                 date = generalTransaction.timestamp ?: stringResource(R.string.unknown),
-                type = if (generalTransaction.isIncome) stringResource(R.string.income) else stringResource(R.string.expense),
+                type = if (generalTransaction.isIncome) stringResource(R.string.income) else stringResource(
+                    R.string.expense
+                ),
                 transactionId = transactionId,
                 viewModel = viewModel,
                 context = context,
@@ -158,7 +186,8 @@ fun TransactionDetailScreen(
                 exchangeRate = exchangeRate,
                 chatViewModel = chatViewModel, // Truyền chatViewModel
                 groupChatViewModel = groupChatViewModel, // Truyền groupChatViewModel
-                profileViewModel = profileViewModel // Truyền profileViewModel
+                profileViewModel = profileViewModel, // Truyền profileViewModel,
+                friends = friendsWithAvatars // Truyền danh sách bạn bè đã có avatar
             )
         } else {
             Box(
@@ -261,29 +290,33 @@ fun TransactionDetailBody(
     profileViewModel: ProfileViewModel,
     context: Context,
     isVND: Boolean,
-    exchangeRate: Double?
+    exchangeRate: Double?,
+    friends: List<Friend>,
 ) {
     val typeColor = if (type.equals("Income", ignoreCase = true))
         Color(0xFF48BB78) else Color(0xFFE53E3E)
     val typeIcon = if (type.equals("Income", ignoreCase = true))
         Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
 
+    val coroutineScope = rememberCoroutineScope()
+
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
 
-    val formattedAmount = CurrencyUtils.formatAmount(amount.toDoubleOrNull() ?: 0.0, isVND, exchangeRate)
+    val formattedAmount =
+        CurrencyUtils.formatAmount(amount.toDoubleOrNull() ?: 0.0, isVND, exchangeRate)
 
     val shareMessage = """
-        Shared Transaction:
-        Title: $title
-        Type: $type
-        Amount: $formattedAmount
-        Date: $date
-        Category: $categoryName
-        Wallet: $walletName
+        ${stringResource(R.string.shared_transaction)}
+        ${stringResource(R.string.title_label)} $title
+        ${stringResource(R.string.type_label)} $type
+        ${stringResource(R.string.amount_label1)} $formattedAmount
+        ${stringResource(R.string.date_label)} $date
+        ${stringResource(R.string.category_label)} $categoryName
+        ${stringResource(R.string.wallet_label)} $walletName
         [transaction:$transactionId]
     """.trimIndent()
 
-    var showShareDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog chia sẻ
+    var showShareDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     val latestChats by chatViewModel.latestChats.collectAsState(initial = null)
@@ -292,6 +325,18 @@ fun TransactionDetailBody(
     LaunchedEffect(Unit) {
         groupChatViewModel.loadUserGroups()
         chatViewModel.getLatestChats()
+    }
+
+    LaunchedEffect(Unit) {
+        launch {
+            viewModel._transactionEvent.collect { event ->
+                when (event) {
+                    is UiEvent.ShowMessage -> {
+                        Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     }
 
     Box(
@@ -392,7 +437,7 @@ fun TransactionDetailBody(
                                 icon = Icons.Default.Title,
                                 label = stringResource(R.string.title),
                                 value = title,
-                                iconTint = Color(0xFF667eea)
+                                iconTint = Color(0xFF667EEA)
                             )
 
                             DetailItem(
@@ -465,14 +510,21 @@ fun TransactionDetailBody(
             DeleteDialog(
                 onDismiss = { showDeleteDialog = false },
                 onConfirm = {
-                    showDeleteDialog = false
-                    viewModel.deleteTransaction(transactionId) { success ->
-                        if (success) {
-                            showToast(context, "Transaction deleted successfully ✓")
+                    coroutineScope.launch {
+                        try {
+                            viewModel.deleteTransaction(transactionId) { }
+                            viewModel.notifyTransactionAction(
+                                TransactionAction.DELETE,
+                                success = true
+                            )
                             navController.popBackStack()
-                        } else {
-                            showToast(context, "Failed to delete transaction ✗")
+                        } catch (e: Exception) {
+                            viewModel.notifyTransactionAction(
+                                TransactionAction.DELETE,
+                                success = false
+                            )
                         }
+                        showDeleteDialog = false
                     }
                 }
             )
@@ -482,18 +534,32 @@ fun TransactionDetailBody(
         if (showShareDialog) {
             ShareDialog(
                 onDismiss = { showShareDialog = false },
-                friends = latestChats?.getOrNull() ?: emptyList(),
+                friends = friends,
                 groups = groups,
                 currentUserId = currentUserId,
                 onShareToFriend = { friendId ->
-                    chatViewModel.sendMessage(friendId, shareMessage)
-                    showShareDialog = false
+                    coroutineScope.launch {
+                        try {
+                            chatViewModel.sendMessage(friendId, shareMessage)
+                            viewModel.notifyShareAction(success = true, isGroup = false)
+                        } catch (e: Exception) {
+                            viewModel.notifyShareAction(success = false, isGroup = false)
+                        }
+                        showShareDialog = false
+                    }
                 },
                 onShareToGroup = { groupId ->
-                    groupChatViewModel.sendGroupMessage(groupId, shareMessage)
-                    showShareDialog = false
+                    coroutineScope.launch {
+                        try {
+                            groupChatViewModel.sendGroupMessage(groupId, shareMessage)
+                            viewModel.notifyShareAction(success = true, isGroup = true)
+                        } catch (e: Exception) {
+                            viewModel.notifyShareAction(success = false, isGroup = true)
+                        }
+                        showShareDialog = false
+                    }
                 },
-                transactionId = transactionId // Truyền transactionId để sử dụng nếu cần
+                transactionId = transactionId
             )
         }
     }
@@ -552,21 +618,20 @@ fun DetailItem(
 @Composable
 fun ShareDialog(
     onDismiss: () -> Unit,
-    friends: List<LatestChat>,
+    friends: List<Friend>,
     groups: List<Group>,
     currentUserId: String,
     onShareToFriend: (String) -> Unit,
     onShareToGroup: (String) -> Unit,
-    transactionId: String // Giữ tham số này để tham chiếu
+    transactionId: String
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Chia sẻ giao dịch") }, // Cập nhật tiêu đề cho phù hợp
+        title = { Text(stringResource(R.string.share_dialog_title)) },
         text = {
             Column {
                 Text(
-                    text = "Chia sẻ với bạn bè",
-                    color = Color.White,
+                    text = stringResource(R.string.share_with_friends),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -577,22 +642,16 @@ fun ShareDialog(
                         .fillMaxWidth()
                 ) {
                     items(friends) { friend ->
-                        val latestMessage = friend.latestMessage
-                        val friendId = if (latestMessage.senderId == currentUserId) {
-                            latestMessage.receiverId
-                        } else {
-                            latestMessage.senderId
-                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onShareToFriend(friendId) }
+                                .clickable { onShareToFriend(friend.userId) }
                                 .padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             AsyncImage(
                                 model = friend.avatarUrl,
-                                contentDescription = "Friend Avatar",
+                                contentDescription = stringResource(R.string.friend_avatar),
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
@@ -601,12 +660,8 @@ fun ShareDialog(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (latestMessage.senderId == currentUserId) {
-                                    latestMessage.receiverName ?: "Unknown"
-                                } else {
-                                    latestMessage.senderName ?: "Unknown"
-                                },
-                                color = Color.White,
+                                text = friend.displayName,
+                                color = Color(0xFF00D09E),
                                 fontSize = 14.sp
                             )
                         }
@@ -616,8 +671,7 @@ fun ShareDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Chia sẻ với nhóm",
-                    color = Color.White,
+                    text = stringResource(R.string.share_with_groups),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -628,6 +682,7 @@ fun ShareDialog(
                         .fillMaxWidth()
                 ) {
                     items(groups) { group ->
+                        Log.d("ShareDialog", "GroupAva: ${group.imageUrl}")
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -637,7 +692,7 @@ fun ShareDialog(
                         ) {
                             AsyncImage(
                                 model = group.imageUrl,
-                                contentDescription = "Group Avatar",
+                                contentDescription = stringResource(R.string.group_avatar),
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
@@ -647,7 +702,7 @@ fun ShareDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = group.name,
-                                color = Color.White,
+                                color = Color(0xFF00D09E),
                                 fontSize = 14.sp
                             )
                         }
@@ -657,7 +712,7 @@ fun ShareDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Hủy")
+                Text(stringResource(R.string.cancel))
             }
         },
         dismissButton = {}
@@ -769,10 +824,5 @@ fun DeleteDialog(
         dismissButton = null,
         modifier = Modifier.padding(16.dp)
     )
-}
-
-// Toast utility function
-fun showToast(context: Context, message: String) {
-    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 }
 

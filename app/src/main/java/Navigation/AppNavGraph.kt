@@ -225,7 +225,9 @@ private fun InnerNavHost(
                 viewModel = newsFeedViewModel,
                 profileViewModel = profileViewModel,
                 chatViewModel = chatViewModel,
-                groupChatViewModel = groupChatViewModel
+                groupChatViewModel = groupChatViewModel,
+                newsFeedViewModel = newsFeedViewModel,
+                friendViewModel = friendViewModel
             )
         }
 
@@ -249,7 +251,9 @@ private fun InnerNavHost(
                 profileViewModel = profileViewModel,
                 chatViewModel = chatViewModel,
                 groupChatViewModel = groupChatViewModel,
-                postIdToFocus = postIdToFocus
+                postIdToFocus = postIdToFocus,
+                newsFeedViewModel = newsFeedViewModel,
+                friendViewModel = friendViewModel
             )
         }
 
@@ -360,7 +364,8 @@ private fun InnerNavHost(
                 currencyViewModel = currencyViewModel,
                 chatViewModel = chatViewModel,
                 groupChatViewModel = groupChatViewModel,
-                profileViewModel = profileViewModel
+                profileViewModel = profileViewModel,
+                friendViewModel = friendViewModel
             )
         }
 

@@ -9,6 +9,7 @@ import DI.Models.NewsFeed.PostDetail
 import DI.Models.NewsFeed.ReplyCommentRequest
 import DI.Models.NewsFeed.ReplyCommentResponse
 import DI.Models.NewsFeed.ResultState
+import DI.Models.UiEvent.UiEvent
 import DI.Repositories.NewsFeedRepository
 import DI.Repositories.ProfileRepository
 import Utils.StringResourceProvider
@@ -18,8 +19,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneymanagement_frontend.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -46,6 +50,9 @@ class NewsFeedViewModel @Inject constructor(
 
     private val _postCreationState = MutableStateFlow<ResultState<Post>?>(null)
     val postCreationState: StateFlow<ResultState<Post>?> = _postCreationState.asStateFlow()
+
+    private val _postEvent = MutableSharedFlow<UiEvent>()
+    val postEvent: SharedFlow<UiEvent> = _postEvent.asSharedFlow()
 
     private val _likeState = MutableStateFlow<ResultState<Unit>?>(null)
     val likeState: StateFlow<ResultState<Unit>?> = _likeState.asStateFlow()
@@ -116,6 +123,14 @@ class NewsFeedViewModel @Inject constructor(
 
                 is ResultState.Error -> {
                     _error.value = result.message
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.error_loading_posts,
+                                result.message ?: stringProvider.getString(R.string.unknown_error)
+                            )
+                        )
+                    )
                 }
 
                 ResultState.Loading -> {
@@ -141,11 +156,25 @@ class NewsFeedViewModel @Inject constructor(
             val profileResult = profileRepository.getProfile()
             val currentUserId = if (profileResult.isSuccess) {
                 profileResult.getOrNull()?.id ?: run {
-                    _error.value = "Không thể lấy thông tin người dùng: ID rỗng"
+                    _error.value = stringProvider.getString(R.string.error_fetching_user_info)
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(stringProvider.getString(R.string.error_fetching_user_info))
+                    )
                     return@launch
                 }
             } else {
-                _error.value = "Không thể lấy thông tin người dùng: ${profileResult.exceptionOrNull()?.message}"
+                _error.value = stringProvider.getString(
+                    R.string.error_fetching_user_info_with_message,
+                    profileResult.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                )
+                _postEvent.emit(
+                    UiEvent.ShowMessage(
+                        stringProvider.getString(
+                            R.string.error_fetching_user_info_with_message,
+                            profileResult.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                        )
+                    )
+                )
                 return@launch
             }
 
@@ -203,6 +232,14 @@ class NewsFeedViewModel @Inject constructor(
                         }
                         is ResultState.Error -> {
                             _error.value = result.message
+                            _postEvent.emit(
+                                UiEvent.ShowMessage(
+                                    stringProvider.getString(
+                                        R.string.error_fetching_post_detail,
+                                        result.message ?: stringProvider.getString(R.string.unknown_error)
+                                    )
+                                )
+                            )
                         }
                         else -> {}
                     }
@@ -230,13 +267,26 @@ class NewsFeedViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _postCreationState.value = ResultState.Loading
-            val result =
-                repository.createPost(content, category, fileUri, targetType, targetGroupIds)
+            val result = repository.createPost(content, category, fileUri, targetType, targetGroupIds)
             _postCreationState.value = result
 
-            if (result is ResultState.Success) {
-                _posts.update { listOf(result.data) + it }
-                checkNewNotifications()
+            when (result) {
+                is ResultState.Success -> {
+                    _posts.update { listOf(result.data) + it }
+                    checkNewNotifications()
+                    _postEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.post_created_success)))
+                }
+                is ResultState.Error -> {
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.post_creation_failed,
+                                result.message ?: stringProvider.getString(R.string.unknown_error)
+                            )
+                        )
+                    )
+                }
+                ResultState.Loading -> {}
             }
             Log.d("NewsFeedViewModel", "createPost: $result content: $content category: $category fileUri: $fileUri targetType: $targetType targetGroupIds: $targetGroupIds")
         }
@@ -249,6 +299,15 @@ class NewsFeedViewModel @Inject constructor(
             _postDetail.value = result
             if (result is ResultState.Success) {
                 checkNewNotifications()
+            } else if (result is ResultState.Error) {
+                _postEvent.emit(
+                    UiEvent.ShowMessage(
+                        stringProvider.getString(
+                            R.string.error_fetching_post_detail,
+                            result.message ?: stringProvider.getString(R.string.unknown_error)
+                        )
+                    )
+                )
             }
         }
     }
@@ -256,7 +315,6 @@ class NewsFeedViewModel @Inject constructor(
     fun likePost(postId: String) {
         viewModelScope.launch {
             _likeState.value = ResultState.Loading
-
             val result = repository.likePost(postId)
 
             when (result) {
@@ -275,15 +333,20 @@ class NewsFeedViewModel @Inject constructor(
                         }
                     }
                     checkNewNotifications()
+                    _postEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.post_liked_success)))
                 }
-
                 is ResultState.Error -> {
                     _likeState.value = result
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.post_like_failed,
+                                result.message ?: stringProvider.getString(R.string.unknown_error)
+                            )
+                        )
+                    )
                 }
-
-                ResultState.Loading -> {
-                    // Không cần xử lý
-                }
+                ResultState.Loading -> {}
             }
         }
     }
@@ -291,7 +354,6 @@ class NewsFeedViewModel @Inject constructor(
     fun unlikePost(postId: String) {
         viewModelScope.launch {
             _likeState.value = ResultState.Loading
-
             val result = repository.unlikePost(postId)
 
             when (result) {
@@ -310,15 +372,20 @@ class NewsFeedViewModel @Inject constructor(
                         }
                     }
                     checkNewNotifications()
+                    _postEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.post_unliked_success)))
                 }
-
                 is ResultState.Error -> {
                     _likeState.value = result
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.post_unlike_failed,
+                                result.message ?: stringProvider.getString(R.string.unknown_error)
+                            )
+                        )
+                    )
                 }
-
-                ResultState.Loading -> {
-                    // Không cần xử lý
-                }
+                ResultState.Loading -> {}
             }
         }
     }
@@ -326,21 +393,33 @@ class NewsFeedViewModel @Inject constructor(
     fun createComment(postId: String, content: String) {
         viewModelScope.launch {
             _commentState.value = ResultState.Loading
-
             val result = repository.createComment(CreateCommentRequest(postId, content))
 
-            if (result is ResultState.Success) {
-                _posts.update { posts ->
-                    posts.map { post ->
-                        if (post.postId == postId) {
-                            post.copy(commentsCount = post.commentsCount + 1)
-                        } else post
+            when (result) {
+                is ResultState.Success -> {
+                    _posts.update { posts ->
+                        posts.map { post ->
+                            if (post.postId == postId) {
+                                post.copy(commentsCount = post.commentsCount + 1)
+                            } else post
+                        }
                     }
+                    fetchComments(postId)
+                    checkNewNotifications()
+                    _postEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.comment_created_success)))
                 }
-                fetchComments(postId)
-                checkNewNotifications()
-            } else if (result is ResultState.Error) {
-                _commentState.value = ResultState.Error(result.message ?: "Create comment failed")
+                is ResultState.Error -> {
+                    _commentState.value = ResultState.Error(result.message ?: stringProvider.getString(R.string.comment_creation_failed))
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.comment_creation_failed,
+                                result.message ?: stringProvider.getString(R.string.unknown_error)
+                            )
+                        )
+                    )
+                }
+                ResultState.Loading -> {}
             }
         }
     }
@@ -349,18 +428,31 @@ class NewsFeedViewModel @Inject constructor(
         viewModelScope.launch {
             val result = repository.deleteComment(commentId)
 
-            if (result is ResultState.Success) {
-                _posts.update { posts ->
-                    posts.map { post ->
-                        if (post.postId == postId) {
-                            post.copy(commentsCount = (post.commentsCount - 1).coerceAtLeast(0))
-                        } else post
+            when (result) {
+                is ResultState.Success -> {
+                    _posts.update { posts ->
+                        posts.map { post ->
+                            if (post.postId == postId) {
+                                post.copy(commentsCount = (post.commentsCount - 1).coerceAtLeast(0))
+                            } else post
+                        }
                     }
+                    fetchComments(postId)
+                    checkNewNotifications()
+                    _postEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.comment_deleted_success)))
                 }
-                fetchComments(postId)
-                checkNewNotifications()
-            } else if (result is ResultState.Error) {
-                _commentState.value = ResultState.Error(result.message ?: "Delete comment failed")
+                is ResultState.Error -> {
+                    _commentState.value = ResultState.Error(result.message ?: stringProvider.getString(R.string.comment_deletion_failed))
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.comment_deletion_failed,
+                                result.message ?: stringProvider.getString(R.string.unknown_error)
+                            )
+                        )
+                    )
+                }
+                ResultState.Loading -> {}
             }
         }
     }
@@ -373,12 +465,18 @@ class NewsFeedViewModel @Inject constructor(
                     _commentState.value = ResultState.Success(result.data.comments)
                     checkNewNotifications()
                 }
-
                 is ResultState.Error -> {
                     _commentState.value = ResultState.Error(result.message)
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.error_fetching_comments,
+                                result.message ?: stringProvider.getString(R.string.unknown_error)
+                            )
+                        )
+                    )
                 }
-
-                else -> Unit
+                else -> {}
             }
         }
     }
@@ -388,22 +486,36 @@ class NewsFeedViewModel @Inject constructor(
             _updateTargetState.value = ResultState.Loading
             val result = repository.updatePostTarget(postId, targetType, targetGroupIds)
             _updateTargetState.value = result
-            Log.d("NewsFeedViewModel", "updatePostTarget: $result postId: $postId targetType: $targetType targetGroupIds: $targetGroupIds")
-            if (result is ResultState.Success) {
-                _posts.update { posts ->
-                    posts.map { post ->
-                        if (post.postId == postId) {
-                            post.copy(
-                                targetType = targetType,
-                                targetGroupIds = targetGroupIds
-                            )
-                        } else {
-                            post
+            when (result) {
+                is ResultState.Success -> {
+                    _posts.update { posts ->
+                        posts.map { post ->
+                            if (post.postId == postId) {
+                                post.copy(
+                                    targetType = targetType,
+                                    targetGroupIds = targetGroupIds
+                                )
+                            } else {
+                                post
+                            }
                         }
                     }
+                    refreshPost(postId)
+                    _postEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.post_target_updated_success)))
                 }
-                refreshPost(postId)
+                is ResultState.Error -> {
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.post_target_update_failed,
+                                result.message ?: stringProvider.getString(R.string.unknown_error)
+                            )
+                        )
+                    )
+                }
+                ResultState.Loading -> {}
             }
+            Log.d("NewsFeedViewModel", "updatePostTarget: $result postId: $postId targetType: $targetType targetGroupIds: $targetGroupIds")
         }
     }
 
@@ -439,6 +551,14 @@ class NewsFeedViewModel @Inject constructor(
                 }
                 is ResultState.Error -> {
                     _error.value = result.message
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.error_fetching_post_detail,
+                                result.message ?: stringProvider.getString(R.string.unknown_error)
+                            )
+                        )
+                    )
                 }
                 else -> {}
             }
@@ -452,11 +572,10 @@ class NewsFeedViewModel @Inject constructor(
     fun replyToComment(request: ReplyCommentRequest, postId: String) {
         viewModelScope.launch {
             _replyState.value = ResultState.Loading
-
             val result = repository.replyToComment(request)
 
-            _replyState.value = result.fold(
-                onSuccess = {
+            when {
+                result.isSuccess -> {
                     _posts.update { posts ->
                         posts.map { post ->
                             if (post.postId == postId) {
@@ -466,12 +585,35 @@ class NewsFeedViewModel @Inject constructor(
                     }
                     fetchComments(postId)
                     checkNewNotifications()
-                    ResultState.Success(it)
-                },
-                onFailure = {
-                    ResultState.Error(it.message ?: "Unknown error")
+                    val replyData = result.getOrNull()
+                    if (replyData != null) {
+                        _replyState.value = ResultState.Success(replyData)
+                        _postEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.reply_created_success)))
+                    } else {
+                        _replyState.value = ResultState.Error(stringProvider.getString(R.string.unknown_error))
+                        _postEvent.emit(
+                            UiEvent.ShowMessage(
+                                stringProvider.getString(
+                                    R.string.reply_creation_failed,
+                                    stringProvider.getString(R.string.unknown_error)
+                                )
+                            )
+                        )
+                    }
                 }
-            )
+                result.isFailure -> {
+                    val errorMessage = result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                    _replyState.value = ResultState.Error(errorMessage)
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.reply_creation_failed,
+                                errorMessage
+                            )
+                        )
+                    )
+                }
+            }
         }
     }
 
@@ -479,8 +621,9 @@ class NewsFeedViewModel @Inject constructor(
         viewModelScope.launch {
             _deleteReplyState.value = ResultState.Loading
             val result = repository.deleteReply(replyId)
-            _deleteReplyState.value = result.fold(
-                onSuccess = {
+
+            when {
+                result.isSuccess -> {
                     _posts.update { posts ->
                         posts.map { post ->
                             if (post.postId == postId) {
@@ -490,11 +633,60 @@ class NewsFeedViewModel @Inject constructor(
                     }
                     fetchComments(postId)
                     checkNewNotifications()
-                    ResultState.Success(Unit)
-                },
-                onFailure = {
-                    ResultState.Error(it.message ?: "Unknown error")
+                    _deleteReplyState.value = ResultState.Success(Unit)
+                    _postEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.reply_deleted_success)))
                 }
+                result.isFailure -> {
+                    val errorMessage = result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                    _deleteReplyState.value = ResultState.Error(errorMessage)
+                    _postEvent.emit(
+                        UiEvent.ShowMessage(
+                            stringProvider.getString(
+                                R.string.reply_deletion_failed,
+                                errorMessage
+                            )
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    fun notifySaveImage(success: Boolean) {
+        viewModelScope.launch {
+            _postEvent.emit(
+                UiEvent.ShowMessage(
+                    stringProvider.getString(
+                        if (success) R.string.save_image_success else R.string.save_image_failed
+                    )
+                )
+            )
+        }
+    }
+
+    fun notifyGroupSelectionError() {
+        viewModelScope.launch {
+            _postEvent.emit(
+                UiEvent.ShowMessage(
+                    stringProvider.getString(R.string.group_selection_required)
+                )
+            )
+        }
+    }
+
+    // Hàm mới để thông báo kết quả chia sẻ bài viết
+    fun notifyShareAction(success: Boolean, isGroup: Boolean = false) {
+        viewModelScope.launch {
+            _postEvent.emit(
+                UiEvent.ShowMessage(
+                    stringProvider.getString(
+                        if (success) {
+                            if (isGroup) R.string.share_to_group_success else R.string.share_to_friend_success
+                        } else {
+                            if (isGroup) R.string.share_to_group_failed else R.string.share_to_friend_failed
+                        }
+                    )
+                )
             )
         }
     }

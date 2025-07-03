@@ -45,6 +45,10 @@ class ChatViewModel @Inject constructor(
     private val _latestChats = MutableStateFlow<Result<List<LatestChat>>?>(null)
     val latestChats: StateFlow<Result<List<LatestChat>>?> = _latestChats.asStateFlow()
 
+    init {
+        getLatestChats()
+    }
+
     fun connectToSignalR() {
         val token = AuthStorage.getToken(context)
         val userId = AuthStorage.getUserIdFromToken(context)
