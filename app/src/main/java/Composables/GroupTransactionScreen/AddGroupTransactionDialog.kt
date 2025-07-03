@@ -92,15 +92,15 @@ fun AddGroupTransactionDialog(
                     onSave(walletId, categoryId, parsedAmount, description, storageDate, type)
                 }
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         },
-        title = { Text("Add Group Transaction") },
+        title = { Text(stringResource(R.string.add_group_transaction)) },
         text = {
             Column (modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Wallet Dropdown
@@ -110,9 +110,9 @@ fun AddGroupTransactionDialog(
                 ) {
                     OutlinedTextField(
                         readOnly = true,
-                        value = selectedWallet?.walletName ?: "Select Wallet",
+                        value = selectedWallet?.walletName ?: stringResource(R.string.select_wallet),
                         onValueChange = {},
-                        label = { Text("Wallet") },
+                        label = { Text(stringResource(R.string.wallet)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(walletExpanded) },
                         modifier = Modifier
                             .menuAnchor(
@@ -144,9 +144,9 @@ fun AddGroupTransactionDialog(
                 ) {
                     OutlinedTextField(
                         readOnly = true,
-                        value = selectedCategory?.name ?: "Select Category",
+                        value = selectedCategory?.name ?: stringResource(R.string.select_category),
                         onValueChange = {},
-                        label = { Text("Category") },
+                        label = { Text(stringResource(R.string.category)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
                         modifier = Modifier
                             .menuAnchor(
@@ -176,14 +176,14 @@ fun AddGroupTransactionDialog(
                     onValueChange = { input ->
                         amount = input.filter { char -> char.isDigit() }
                     },
-                    label = { Text("Amount") },
+                    label = { Text(stringResource(R.string.amount)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.description)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -210,9 +210,9 @@ fun AddGroupTransactionDialog(
                 ) {
                     OutlinedTextField(
                         readOnly = true,
-                        value = type.ifEmpty { "Select Type" },
+                        value = type.ifEmpty { stringResource(R.string.select_type) },
                         onValueChange = {},
-                        label = { Text("Type") },
+                        label = { Text(stringResource(R.string.type)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(typeExpanded) },
                         modifier = Modifier
                             .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true)
@@ -241,8 +241,8 @@ fun AddGroupTransactionDialog(
     MaterialDialog(
         dialogState = dateDialogState,
         buttons = {
-            positiveButton("OK")
-            negativeButton("Cancel")
+            positiveButton(stringResource(R.string.ok))
+            negativeButton(stringResource(R.string.cancel))
         }
     ) {
         datepicker { date ->

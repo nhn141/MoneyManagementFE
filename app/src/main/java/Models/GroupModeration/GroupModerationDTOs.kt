@@ -1,4 +1,4 @@
-package DI.Composables.GroupModeration
+package DI.Models.GroupModeration
 
 data class GroupMemberModeration(
     val id: String,

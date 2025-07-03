@@ -1,12 +1,12 @@
 package DI.Repositories
 
 import API.ApiService
-import DI.Composables.GroupModeration.BanKickUserRequest
-import DI.Composables.GroupModeration.DeleteMessageRequest
-import DI.Composables.GroupModeration.GroupUserActionRequest
-import DI.Composables.GroupModeration.ModerationLogResponse
-import DI.Composables.GroupModeration.MuteUserRequest
-import DI.Composables.GroupModeration.UserGroupStatusDTO
+import DI.Models.GroupModeration.BanKickUserRequest
+import DI.Models.GroupModeration.DeleteMessageRequest
+import DI.Models.GroupModeration.GroupUserActionRequest
+import DI.Models.GroupModeration.ModerationLogResponse
+import DI.Models.GroupModeration.MuteUserRequest
+import DI.Models.GroupModeration.UserGroupStatusDTO
 import javax.inject.Inject
 
 class GroupModerationRepository @Inject constructor(

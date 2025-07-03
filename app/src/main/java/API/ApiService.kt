@@ -1,13 +1,11 @@
 package API
 
-import DI.Composables.GroupModeration.BanKickUserRequest
-import DI.Composables.GroupModeration.DeleteMessageRequest
-import DI.Composables.GroupModeration.GrantRoleRequest
-import DI.Composables.GroupModeration.GroupUserActionRequest
-import DI.Composables.GroupModeration.ModerationLogResponse
-import DI.Composables.GroupModeration.MuteUserRequest
-import DI.Composables.GroupModeration.UnmuteUserRequest
-import DI.Composables.GroupModeration.UserGroupStatusDTO
+import DI.Models.GroupModeration.BanKickUserRequest
+import DI.Models.GroupModeration.DeleteMessageRequest
+import DI.Models.GroupModeration.GroupUserActionRequest
+import DI.Models.GroupModeration.ModerationLogResponse
+import DI.Models.GroupModeration.MuteUserRequest
+import DI.Models.GroupModeration.UserGroupStatusDTO
 import DI.Models.Analysis.BarChart.DailySummary
 import DI.Models.Analysis.BarChart.MonthlySummary
 import DI.Models.Analysis.BarChart.WeeklySummary
@@ -17,6 +15,7 @@ import DI.Models.Auth.RefreshTokenRequest
 import DI.Models.Auth.RefreshTokenResponse
 import DI.Models.Auth.SignInRequest
 import DI.Models.Auth.SignUpRequest
+import DI.Models.BatchMessageReactionsRequestDTO
 import DI.Models.Category.AddCategoryRequest
 import DI.Models.Category.Category
 import DI.Models.Category.Transaction
@@ -24,6 +23,8 @@ import DI.Models.Category.UpdateCategoryRequest
 import DI.Models.Chat.Chat
 import DI.Models.Chat.ChatMessage
 import DI.Models.Chat.LatestChatResponses
+import DI.Models.CreateMessageReactionDTO
+import DI.Models.EnhancedMessageDTO
 import DI.Models.Friend.AcceptFriendRequestResponse
 import DI.Models.Friend.AddFriendRequest
 import DI.Models.Friend.AddFriendResponse
@@ -50,6 +51,10 @@ import DI.Models.GroupTransaction.UpdateGroupTransactionDto
 import DI.Models.GroupTransactionComment.CreateGroupTransactionCommentDto
 import DI.Models.GroupTransactionComment.GroupTransactionCommentDto
 import DI.Models.GroupTransactionComment.UpdateGroupTransactionCommentDto
+import DI.Models.MentionNotificationDTO
+import DI.Models.MessageMentionDTO
+import DI.Models.MessageReactionDTO
+import DI.Models.MessageReactionSummaryDTO
 import DI.Models.NewsFeed.Comment
 import DI.Models.NewsFeed.CreateCommentRequest
 import DI.Models.NewsFeed.NewsFeedResponse
@@ -57,6 +62,7 @@ import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
 import DI.Models.NewsFeed.UpdatePostTargetRequest
 import DI.Models.Ocr.OcrData
+import DI.Models.RemoveMessageReactionDTO
 import DI.Models.Reports.ReportRequest
 import DI.Models.UserInfo.AvatarUploadResponse
 import DI.Models.UserInfo.Profile
@@ -446,4 +452,54 @@ interface ApiService {
 
     @GET("GroupModeration/members/{groupId}")
     suspend fun getAllGroupMemberStatuses(@Path("groupId") groupId: String): Response<List<UserGroupStatusDTO>>
+
+    // Message Enhancement
+    @POST("MessageEnhancements/reactions")
+    suspend fun addReaction(
+        @Body request: CreateMessageReactionDTO
+    ): Response<MessageReactionDTO>
+
+    @DELETE("MessageEnhancements/reactions")
+    suspend fun removeReaction(
+        @Body request: RemoveMessageReactionDTO
+    ): Response<Unit>
+
+    @GET("MessageEnhancements/reactions/{messageId}")
+    suspend fun getMessageReactions(
+        @Path("messageId") messageId: String,
+        @Query("messageType") messageType: String = "direct"
+    ): Response<MessageReactionSummaryDTO>
+
+    @POST("MessageEnhancements/reactions/batch")
+    suspend fun getMultipleMessageReactions(
+        @Body request: BatchMessageReactionsRequestDTO
+    ): Response<Map<String, MessageReactionSummaryDTO>>
+
+    @GET("MessageEnhancements/mentions/{messageId}")
+    suspend fun getMessageMentions(
+        @Path("messageId") messageId: String
+    ): Response<List<MessageMentionDTO>>
+
+    @GET("MessageEnhancements/mentions/unread")
+    suspend fun getUnreadMentions(): Response<List<MentionNotificationDTO>>
+
+    @PUT("MessageEnhancements/mentions/{mentionId}/read")
+    suspend fun markMentionAsRead(
+        @Path("mentionId") mentionId: String
+    ): Response<Unit>
+
+    @PUT("MessageEnhancements/mentions/read-all")
+    suspend fun markAllMentionsAsRead(): Response<Int>
+
+    @GET("MessageEnhancements/enhanced/{messageId}")
+    suspend fun getEnhancedMessage(
+        @Path("messageId") messageId: String,
+        @Query("messageType") messageType: String = "direct"
+    ): Response<EnhancedMessageDTO>
+
+    @POST("MessageEnhancements/enhanced/batch")
+    suspend fun getEnhancedMessages(
+        @Body request: BatchMessageReactionsRequestDTO
+    ): Response<List<EnhancedMessageDTO>>
+
 }

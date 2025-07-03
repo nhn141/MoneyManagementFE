@@ -3,14 +3,17 @@ package DI.Composables.GroupChat
 import DI.API.TokenHandler.AuthStorage
 import DI.Composables.ChatSection.MessageInputBar
 import DI.Composables.ProfileSection.FriendAvatar
+import DI.Models.CreateMessageReactionDTO
 import DI.Models.Group.GroupMessage
 import DI.Models.GroupTransactionComment.CreateGroupTransactionCommentDto
 import DI.Models.GroupTransactionComment.GroupTransactionCommentDto
 import DI.Models.GroupTransactionComment.UpdateGroupTransactionCommentDto
+import DI.Models.MessageReactionSummaryDTO
 import DI.Models.UserInfo.Profile
 import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.GroupModerationViewModel
 import DI.ViewModels.GroupTransactionCommentViewModel
+import DI.ViewModels.MessageEnhancementViewModel
 import DI.ViewModels.ProfileViewModel
 import android.util.Log
 import android.widget.ImageView
@@ -63,7 +66,8 @@ fun GroupChatMessageScreen(
     groupChatViewModel: GroupChatViewModel,
     groupTransactionCommentViewModel: GroupTransactionCommentViewModel,
     profileViewModel: ProfileViewModel,
-    groupModerationViewModel: GroupModerationViewModel
+    groupModerationViewModel: GroupModerationViewModel,
+    messageEnhancementViewModel: MessageEnhancementViewModel
 ) {
     val currentUserId = AuthStorage.getUserIdFromToken(LocalContext.current)
     var messageContent by remember { mutableStateOf("") }
@@ -71,7 +75,17 @@ fun GroupChatMessageScreen(
     var activeTransactionId by remember { mutableStateOf<String?>(null) }
     val comments by groupTransactionCommentViewModel.comments.collectAsState()
 
+    val messages by groupChatViewModel.groupMessages.collectAsState()
+    val profile by profileViewModel.profile.collectAsState()
+
+    val group by groupChatViewModel.selectedGroup.collectAsState()
+    val members by groupChatViewModel.groupMembers.collectAsState()
+
     val userGroupStatus = groupModerationViewModel.userGroupStatus.collectAsState().value
+
+    var activeReactionMessageId by remember { mutableStateOf<String?>(null) }
+
+    val reactionSummary by messageEnhancementViewModel.reactionSummary.collectAsState()
 
     currentUserId?.let {
         groupModerationViewModel.getUserGroupStatus(groupId, it)
@@ -96,16 +110,11 @@ fun GroupChatMessageScreen(
         }
     }
 
-    val messages by groupChatViewModel.groupMessages.collectAsState()
-    val profile by profileViewModel.profile.collectAsState()
-
-    val group by groupChatViewModel.selectedGroup.collectAsState()
-    val members by groupChatViewModel.groupMembers.collectAsState()
 
     Scaffold(
         topBar = {
             GroupChatTopBar(
-                groupName = group?.name ?: "Loading...",
+                groupName = group?.name ?: stringResource(R.string.loading),
                 memberCount = members.size,
                 groupAvatarUrl = group?.imageUrl,
                 isLoadingAvatar = group == null,
@@ -121,15 +130,15 @@ fun GroupChatMessageScreen(
                         .fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("You are muted", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.you_are_muted), style = MaterialTheme.typography.bodyLarge)
                     userGroupStatus.muteReason?.let {
-                        Text("Reason: $it", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.mute_reason, it), style = MaterialTheme.typography.bodyMedium)
                     }
                     userGroupStatus.mutedUntil?.let {
                         val mutedUntil = formatDateTime(it) // You can format the date as needed
                         //val mutedUntil = userGroupStatus.mutedUntil
                         Log.d("GroupProfile", "Muted Until: $mutedUntil")
-                        Text("Muted until: $mutedUntil", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.muted_until, mutedUntil), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             } else {
@@ -163,6 +172,10 @@ fun GroupChatMessageScreen(
                     isSentByCurrentUser = message.senderId == currentUserId,
                     onCommentClick = { transactionId ->
                         activeTransactionId = transactionId
+                    },
+                    onReactionClick = { messageId ->
+                        activeReactionMessageId = messageId
+                        messageEnhancementViewModel.getMessageReactions(messageId, "group")
                     }
                 )
             }
@@ -195,6 +208,26 @@ fun GroupChatMessageScreen(
                 }
             )
         }
+
+        activeReactionMessageId?.let { messageId ->
+            ReactionDialog(
+                messageId = messageId,
+                summaryResult = reactionSummary,
+                onAddReaction = { reactionType ->
+                    messageEnhancementViewModel.addReaction(
+                        CreateMessageReactionDTO(
+                            messageId = messageId,
+                            reactionType = reactionType,
+                            messageType = "group"
+                        )
+                    )
+                },
+                onDismiss = {
+                    activeReactionMessageId = null
+                }
+            )
+        }
+
     }
 }
 
@@ -202,7 +235,8 @@ fun GroupChatMessageScreen(
 fun MessageBubble(
     message: GroupMessage,
     isSentByCurrentUser: Boolean,
-    onCommentClick: (transactionId: String) -> Unit
+    onCommentClick: (transactionId: String) -> Unit,
+    onReactionClick: (messageId: String) -> Unit
 ) {
     val bubbleShape = RoundedCornerShape(
         topStart = 20.dp,
@@ -274,7 +308,7 @@ fun MessageBubble(
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_comment),
-                            contentDescription = "Comment",
+                            contentDescription = stringResource(R.string.comment),
                             tint = Color.Gray,
                             modifier = Modifier
                                 .size(20.dp)
@@ -282,6 +316,15 @@ fun MessageBubble(
                         )
                     }
                 }
+
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_reaction),
+                    contentDescription = stringResource(R.string.reactions),
+                    tint = Color.Gray,
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable { onReactionClick(message.messageId) }
+                )
             }
         }
     }
@@ -427,7 +470,7 @@ fun CommentDialog(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Transaction Comments",
+                    text = stringResource(R.string.transaction_comments),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -446,7 +489,7 @@ fun CommentDialog(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Info,
-                                contentDescription = "No Comments",
+                                contentDescription = stringResource(R.string.no_comments),
                                 tint = Color.Gray,
                                 modifier = Modifier.size(40.dp)
                             )
@@ -512,7 +555,7 @@ fun CommentDialog(
                                     OutlinedTextField(
                                         value = editedContent,
                                         onValueChange = { editedContent = it },
-                                        label = { Text("Edit comment") },
+                                        label = { Text(stringResource(R.string.edit_comment)) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                     Row(
@@ -523,11 +566,11 @@ fun CommentDialog(
                                             onEdit(comment.commentId, editedContent)
                                             editingCommentId = null
                                             editedContent = ""
-                                        }) { Text("Save") }
+                                        }) { Text(stringResource(R.string.save)) }
                                         TextButton(onClick = {
                                             editingCommentId = null
                                             editedContent = ""
-                                        }) { Text("Cancel") }
+                                        }) { Text(stringResource(R.string.cancel)) }
                                     }
                                 } else {
                                     Text(
@@ -546,7 +589,7 @@ fun CommentDialog(
                 OutlinedTextField(
                     value = newComment,
                     onValueChange = { newComment = it },
-                    label = { Text("New comment") },
+                    label = { Text(stringResource(R.string.new_comment)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -554,7 +597,7 @@ fun CommentDialog(
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
@@ -564,7 +607,7 @@ fun CommentDialog(
                             }
                         }
                     ) {
-                        Text("Add")
+                        Text(stringResource(R.string.add))
                     }
                 }
             }
@@ -598,6 +641,7 @@ fun Avatar(url: String, size: Int) {
     )
 }
 
+@Composable
 fun formatDateTime(input: String): String {
     return try {
         // Parse the input string into a ZonedDateTime object
@@ -607,6 +651,137 @@ fun formatDateTime(input: String): String {
         val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a")
         dateTime.format(formatter)
     } catch (e: Exception) {
-        "Invalid date" // Return a fallback string if parsing fails
+        stringResource(R.string.invalid_date) // Return a fallback string if parsing fails
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ReactionDialog(
+    messageId: String,
+    summaryResult: Result<MessageReactionSummaryDTO>?,
+    onAddReaction: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val reactionMap = mapOf(
+        "👍" to "like",
+        "❤️" to "love",
+        "😂" to "laugh",
+        "😢" to "cry",
+        "😡" to "angry",
+        "🤔" to "thinking",
+        "😍" to "loveeyes",
+        "🙌" to "clap"
+    )
+
+    val reverseReactionMap = reactionMap.entries.associate { (emoji, type) ->
+        type to emoji
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            tonalElevation = 8.dp,
+            color = Color.White,
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .wrapContentHeight()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.reactions_for_message),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+
+                // --- Emoji Grid for choosing ---
+                Text(
+                    text = stringResource(R.string.add_reaction),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    reactionMap.forEach { (emoji, reactionType) ->
+                        Text(
+                            text = emoji,
+                            fontSize = 28.sp,
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clickable {
+                                    onAddReaction(reactionType)
+                                }
+                                .background(
+                                    color = Color(0xFFF0F0F0),
+                                    shape = CircleShape
+                                )
+                                .padding(8.dp),
+                        )
+                    }
+                }
+
+                HorizontalDivider()
+
+                // --- Existing Reactions summary ---
+                Text(
+                    text = stringResource(R.string.current_reactions),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
+
+                summaryResult?.onSuccess { summary ->
+                    if (summary.reactionCounts.isEmpty()) {
+                        Text(stringResource(R.string.no_reactions_yet), color = Color.Gray)
+                    } else {
+                        summary.reactionCounts.forEach { (type, count) ->
+                            val emoji = reverseReactionMap[type] ?: type
+                            val users = summary.reactionDetails[type] ?: emptyList()
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(emoji, fontSize = 20.sp)
+                                    if (users.isNotEmpty()) {
+                                        FlowRow(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            users.forEach { user ->
+                                                Avatar(user.userAvatarUrl ?: "", 26)
+                                            }
+                                        }
+                                    }
+                                    Text("$count", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(stringResource(R.string.close))
+                    }
+                }
+            }
+        }
     }
 }

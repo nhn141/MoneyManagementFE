@@ -31,6 +31,7 @@ import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.GroupFundViewModel
 import DI.ViewModels.GroupTransactionCommentViewModel
 import DI.ViewModels.GroupTransactionViewModel
+import DI.ViewModels.MessageEnhancementViewModel
 import DI.ViewModels.NewsFeedViewModel
 import DI.ViewModels.OcrViewModel
 import DI.ViewModels.ProfileViewModel
@@ -134,7 +135,7 @@ private fun InnerNavHost(
     val reportViewModel = hiltViewModel<ReportViewModel>(parentEntry)
     val groupModerationViewModel =
         hiltViewModel<DI.ViewModels.GroupModerationViewModel>(parentEntry)
-
+    val messageEnhancementViewModel = hiltViewModel<MessageEnhancementViewModel>(parentEntry)
     val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
 
     fun refreshAppData() {
@@ -239,7 +240,8 @@ private fun InnerNavHost(
                 friendId = friendId,
                 chatViewModel = chatViewModel,
                 profileViewModel = profileViewModel,
-                friendViewModel = friendViewModel
+                friendViewModel = friendViewModel,
+                messageEnhancementViewModel = messageEnhancementViewModel
             )
         }
 
@@ -363,7 +365,8 @@ private fun InnerNavHost(
                 groupChatViewModel = groupChatViewModel,
                 groupTransactionCommentViewModel = groupTransactionCommentViewModel,
                 profileViewModel = profileViewModel,
-                groupModerationViewModel = groupModerationViewModel
+                groupModerationViewModel = groupModerationViewModel,
+                messageEnhancementViewModel = messageEnhancementViewModel
             )
         }
 
@@ -374,7 +377,8 @@ private fun InnerNavHost(
                 navController = navController,
                 groupChatViewModel = groupChatViewModel,
                 profileViewModel = profileViewModel,
-                groupModerationViewModel = groupModerationViewModel
+                groupModerationViewModel = groupModerationViewModel,
+                friendViewModel = friendViewModel
             )
         }
 

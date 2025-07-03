@@ -17,8 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.moneymanagement_frontend.R
 
 @Composable
 fun EditGroupFundDialog(
@@ -33,20 +35,20 @@ fun EditGroupFundDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Edit Group Fund", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.edit_group_fund), fontWeight = FontWeight.Bold)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.description_label)) },
                     singleLine = true
                 )
                 OutlinedTextField(
                     value = savingGoalText,
                     onValueChange = { savingGoalText = it },
-                    label = { Text("Saving Goal") },
+                    label = { Text(stringResource(R.string.saving_goal_label)) },
                     singleLine = true,
                     isError = savingGoalText.toDoubleOrNull() == null
                 )
@@ -63,17 +65,14 @@ fun EditGroupFundDialog(
                 },
                 enabled = savingGoalText.toDoubleOrNull() != null
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             Row {
-//                TextButton(onClick = onDelete) {
-//                    Text("Delete", color = Color.Red)
-//                }
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         },

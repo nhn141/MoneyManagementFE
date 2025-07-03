@@ -12,8 +12,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.moneymanagement_frontend.R
 
 @Composable
 fun AddGroupFundDialog(
@@ -25,18 +27,18 @@ fun AddGroupFundDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Group Fund") },
+        title = { Text(stringResource(R.string.add_group_fund)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") }
+                    label = { Text(stringResource(R.string.description_label)) }
                 )
                 OutlinedTextField(
                     value = savingGoalText,
                     onValueChange = { savingGoalText = it },
-                    label = { Text("Saving Goal") },
+                    label = { Text(stringResource(R.string.saving_goal_label)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
@@ -48,12 +50,12 @@ fun AddGroupFundDialog(
                     onSave(description, savingGoal)
                 }
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

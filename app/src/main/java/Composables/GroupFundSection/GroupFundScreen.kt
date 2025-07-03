@@ -149,43 +149,6 @@ fun GroupFundScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(
-                                Color.White,
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_notifications),
-                            contentDescription = stringResource(R.string.notifications),
-                            tint = Color(0xFF00D09E),
-                            modifier = Modifier.size(22.dp)
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .background(Color(0xFFFF6B6B), CircleShape)
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-4).dp, y = 4.dp)
-                        )
-                    }
-                }
-            }
-
-            // Action Buttons
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(modifier = Modifier.width(12.dp))
                     ActionButton(
                         iconRes = R.drawable.ic_more,
                         contentDescription = stringResource(R.string.add_group_fund),
@@ -312,7 +275,7 @@ fun GroupFundScreen(
                 ) {
                     // Tittle
                     Text(
-                        text = "Group Fund Details",
+                        text = stringResource(R.string.group_fund_details),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2E7D32)
@@ -356,7 +319,7 @@ fun GroupFundScreen(
                                     )
                                 )
                             ) {
-                                Text("Edit", color = Color.White)
+                                Text(stringResource(R.string.edit), color = Color.White)
                             }
 
                             Button(
@@ -370,7 +333,7 @@ fun GroupFundScreen(
                                     )
                                 )
                             ) {
-                                Text("Delete", color = Color.White)
+                                Text(stringResource(R.string.delete), color = Color.White)
                             }
                         }
 
@@ -436,12 +399,12 @@ fun GroupFundScreen(
                     showDeleteDialog = false
                     selectedFund = null
                 }) {
-                    Text("Delete", color = Color.Red)
+                    Text(stringResource(R.string.delete), color = Color.Red)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -523,6 +486,7 @@ fun InfoText(label: String, value: String, maxLines: Int = Int.MAX_VALUE) {
     }
 }
 
+@Composable
 fun formatDateTime(input: String): String {
     return try {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -530,6 +494,6 @@ fun formatDateTime(input: String): String {
         val outputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
         dateTime.format(outputFormatter)
     } catch (e: Exception) {
-        input
+        return stringResource(R.string.invalid_date)
     }
 }

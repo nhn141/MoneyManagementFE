@@ -95,14 +95,14 @@ fun GroupChatScreen(
                     modifier = Modifier.size(28.dp)
                 )
             }
-            Text("Group Messages", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(stringResource(R.string.group_chat_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             IconButton(
                 onClick = { showCreateDialog = true },
                 modifier = Modifier
                     .size(32.dp)
                     .background(Color.White, CircleShape)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Group", tint = Color(0xFF53dba9))
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.group_chat_add_group), tint = Color(0xFF53dba9))
             }
         }
 
@@ -124,7 +124,7 @@ fun GroupChatScreen(
 
         if (filteredGroups.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No groups found", fontSize = 16.sp)
+                Text(stringResource(R.string.group_chat_no_groups), fontSize = 16.sp)
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -149,24 +149,25 @@ fun GroupChatScreen(
     if (showCreateDialog) {
         AlertDialog(
             onDismissRequest = { showCreateDialog = false },
-            title = { Text("Create New Group") },
+            title = { Text(stringResource(R.string.group_chat_create_new_group)) },
             text = {
                 Column {
                     OutlinedTextField(
                         value = groupName,
                         onValueChange = { groupName = it },
-                        label = { Text("Group Name") },
+                        label = { Text(stringResource(R.string.group_chat_group_name)) },
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = groupDescription,
                         onValueChange = { groupDescription = it },
-                        label = { Text("Description") },
+                        label = { Text(stringResource(R.string.group_chat_description)) },
                         maxLines = 3
                     )
                 }
             },
             confirmButton = {
+                val txt = stringResource(R.string.group_chat_group_name_required)
                 TextButton(
                     onClick = {
                         if (groupName.isNotBlank()) {
@@ -177,16 +178,16 @@ fun GroupChatScreen(
                                 )
                             )
                         } else {
-                            Toast.makeText(context, "Group name is required", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, txt, Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {
-                    Text("Create")
+                    Text(stringResource(R.string.group_chat_create))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCreateDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.group_chat_cancel))
                 }
             }
         )
@@ -213,7 +214,7 @@ fun SearchBar(
         ) {
             Icon(
                 imageVector = Icons.Default.Search,
-                contentDescription = "Search",
+                contentDescription = stringResource(R.string.group_chat_search),
                 tint = Color.White,
                 modifier = Modifier.size(20.dp)
             )
@@ -233,7 +234,7 @@ fun SearchBar(
                 ) {
                     if (query.isEmpty()) {
                         Text(
-                            text = "Search groups",
+                            text = stringResource(R.string.group_chat_search_hint),
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 16.sp
                         )
@@ -253,7 +254,7 @@ fun SearchBar(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Clear",
+                        contentDescription = stringResource(R.string.group_chat_clear),
                         tint = Color.White
                     )
                 }
@@ -302,7 +303,7 @@ fun GroupMessageItem(
             if (time.isNotBlank()) {
                 Text(ChatTimeFormatter.formatTimestamp(time), fontSize = 12.sp)
             } else {
-                Text("No Massage Found", fontSize = 12.sp)
+                Text(stringResource(R.string.group_chat_no_message_found), fontSize = 12.sp)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Box(
