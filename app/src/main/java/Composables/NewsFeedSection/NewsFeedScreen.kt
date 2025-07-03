@@ -107,6 +107,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.net.toUri
 import androidx.navigation.NavController
@@ -138,23 +139,24 @@ fun NewsFeedScreen(
     var showCommentSheet by remember { mutableStateOf(false) }
     var selectedPostForComment by remember { mutableStateOf<Post?>(null) }
     val commentState by viewModel.commentState.collectAsState()
+    val notifications by viewModel.notifications.collectAsState()
+    val unreadNotificationCount by viewModel.unreadNotificationCount.collectAsState()
+    var showNotificationPopup by remember { mutableStateOf(false) }
+    val notificationSheetState = rememberModalBottomSheetState()
 
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount = { posts.size }
     )
 
-    // Thêm state để theo dõi việc hiển thị hướng dẫn
     var showPullGuide by remember { mutableStateOf(true) }
 
-    // Theo dõi việc kéo sheet một cách an toàn
     LaunchedEffect(sheetState.targetValue) {
         if (sheetState.targetValue == SheetValue.Expanded && showPullGuide) {
             showPullGuide = false
         }
     }
 
-    // Animation states
     val infiniteTransition = rememberInfiniteTransition()
     val arrowOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -181,7 +183,6 @@ fun NewsFeedScreen(
         )
     )
 
-    // Xử lý trạng thái tạo bài đăng
     LaunchedEffect(postCreationState) {
         when (postCreationState) {
             is ResultState.Success -> {
@@ -200,14 +201,12 @@ fun NewsFeedScreen(
         }
     }
 
-    // Tải thêm bài đăng khi cuộn đến gần cuối
     LaunchedEffect(pagerState.currentPage) {
         if (pagerState.currentPage >= posts.size - 2 && hasMore && !isLoading) {
             viewModel.loadNextPost()
         }
     }
 
-    // Cuộn đến bài post khi postIdToFocus có giá trị
     LaunchedEffect(postIdToFocus) {
         if (postIdToFocus != null) {
             val postIndex = posts.indexOfFirst { it.postId == postIdToFocus }
@@ -472,7 +471,6 @@ fun NewsFeedScreen(
             }
         }
 
-        // Nút back
         IconButton(
             onClick = { navController.popBackStack() },
             modifier = Modifier
@@ -492,9 +490,22 @@ fun NewsFeedScreen(
             )
         }
 
-        // Nút thông báo
-        IconButton(
-            onClick = { },
+        BadgedBox(
+            badge = {
+                if (unreadNotificationCount > 0) {
+                    Badge(
+                        modifier = Modifier.offset(x = (-8).dp, y = 8.dp),
+                        containerColor = Color(0xFFFF6B6B),
+                        contentColor = Color.White
+                    ) {
+                        Text(
+                            text = unreadNotificationCount.toString(),
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
+                }
+            },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
@@ -505,14 +516,14 @@ fun NewsFeedScreen(
                     shape = CircleShape
                 )
         ) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notifications",
-                tint = Color.White
-            )
+            IconButton(onClick = { showNotificationPopup = true }) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notifications",
+                    tint = Color.White
+                )
+            }
         }
-
-
 
         SnackbarHost(
             hostState = snackbarHostState,
@@ -539,59 +550,15 @@ fun NewsFeedScreen(
                 )
             }
         }
-    }
 
-    if (showCommentSheet && selectedPostForComment != null) {
-        ModalBottomSheet(
-            onDismissRequest = {
-                showCommentSheet = false
-                showPullGuide = true
-            },
-            sheetState = sheetState,
-            containerColor = Color(0xFF1A1A1A),
-            dragHandle = {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(vertical = 12.dp)
-                ) {
-                    AnimatedVisibility(
-                        visible = showPullGuide,
-                        enter = fadeIn(animationSpec = tween(600)) + slideInVertically(
-                            animationSpec = tween(600),
-                            initialOffsetY = { it / 2 }
-                        ),
-                        exit = fadeOut(animationSpec = tween(400)) + slideOutVertically(
-                            animationSpec = tween(400),
-                            targetOffsetY = { -it / 2 }
-                        )
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowUp,
-                                contentDescription = null,
-                                tint = Color(0xFF00D09E).copy(alpha = arrowAlpha),
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .offset(y = arrowOffset.dp)
-                                    .scale(arrowScale)
-                                    .graphicsLayer {
-                                        shadowElevation = 4.dp.toPx()
-                                    }
-                            )
-                            Text(
-                                text = "Kéo lên để nhập bình luận",
-                                color = Color(0xFF00D09E).copy(alpha = 0.8f * arrowAlpha),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .alpha(arrowAlpha)
-                            )
-                        }
-                    }
+        if (showNotificationPopup) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showNotificationPopup = false
+                },
+                sheetState = notificationSheetState,
+                containerColor = Color(0xFF1A1A1A),
+                dragHandle = {
                     Box(
                         modifier = Modifier
                             .width(48.dp)
@@ -600,17 +567,167 @@ fun NewsFeedScreen(
                                 Color(0xFF00D09E).copy(alpha = 0.6f),
                                 RoundedCornerShape(2.dp)
                             )
-                            .animateContentSize()
                     )
                 }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Thông báo",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    if (notifications.isEmpty()) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF2D1B1B)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Không có thông báo mới",
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 16.sp,
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    } else {
+                        LazyColumn {
+                            items(notifications) { notification ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable {
+                                            showNotificationPopup = false
+                                            viewModel.markNotificationAsRead(notification.id)
+                                            navController.navigate("newsfeed?postIdToFocus=${notification.postId}")
+                                        },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF2D1B1B)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(12.dp)
+                                            .fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        AsyncImage(
+                                            model = notification.userAvatarUrl,
+                                            contentDescription = "Avatar",
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.Gray),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column {
+                                            Text(
+                                                text = notification.content,
+                                                color = Color.White,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = notification.createdAt,
+                                                color = Color.White.copy(alpha = 0.6f),
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        ) {
-            CommentSection(
-                post = selectedPostForComment!!,
-                viewModel = viewModel,
-                profileViewModel = profileViewModel,
-                commentState = commentState
-            )
+        }
+
+        if (showCommentSheet && selectedPostForComment != null) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showCommentSheet = false
+                    showPullGuide = true
+                },
+                sheetState = sheetState,
+                containerColor = Color(0xFF1A1A1A),
+                dragHandle = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    ) {
+                        AnimatedVisibility(
+                            visible = showPullGuide,
+                            enter = fadeIn(animationSpec = tween(600)) + slideInVertically(
+                                animationSpec = tween(600),
+                                initialOffsetY = { it / 2 }
+                            ),
+                            exit = fadeOut(animationSpec = tween(400)) + slideOutVertically(
+                                animationSpec = tween(400),
+                                targetOffsetY = { -it / 2 }
+                            )
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowUp,
+                                    contentDescription = null,
+                                    tint = Color(0xFF00D09E).copy(alpha = arrowAlpha),
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .offset(y = arrowOffset.dp)
+                                        .scale(arrowScale)
+                                        .graphicsLayer {
+                                            shadowElevation = 4.dp.toPx()
+                                        }
+                                )
+                                Text(
+                                    text = "Kéo lên để nhập bình luận",
+                                    color = Color(0xFF00D09E).copy(alpha = 0.8f * arrowAlpha),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier
+                                        .padding(top = 4.dp)
+                                        .alpha(arrowAlpha)
+                                )
+                            }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .width(48.dp)
+                                .height(4.dp)
+                                .background(
+                                    Color(0xFF00D09E).copy(alpha = 0.6f),
+                                    RoundedCornerShape(2.dp)
+                                )
+                                .animateContentSize()
+                        )
+                    }
+                }
+            ) {
+                CommentSection(
+                    post = selectedPostForComment!!,
+                    viewModel = viewModel,
+                    profileViewModel = profileViewModel,
+                    commentState = commentState
+                )
+            }
         }
     }
 }

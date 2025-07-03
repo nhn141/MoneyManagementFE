@@ -3,12 +3,14 @@ package DI.ViewModels
 import DI.Models.NewsFeed.Comment
 import DI.Models.NewsFeed.CreateCommentRequest
 import DI.Models.NewsFeed.LatestSocialNotification
+import DI.Models.NewsFeed.Notification
 import DI.Models.NewsFeed.Post
 import DI.Models.NewsFeed.PostDetail
 import DI.Models.NewsFeed.ReplyCommentRequest
 import DI.Models.NewsFeed.ReplyCommentResponse
 import DI.Models.NewsFeed.ResultState
 import DI.Repositories.NewsFeedRepository
+import DI.Repositories.ProfileRepository
 import Utils.StringResourceProvider
 import android.net.Uri
 import android.util.Log
@@ -26,7 +28,8 @@ import javax.inject.Inject
 @HiltViewModel
 class NewsFeedViewModel @Inject constructor(
     private val repository: NewsFeedRepository,
-    private val stringProvider: StringResourceProvider
+    private val stringProvider: StringResourceProvider,
+    private val profileRepository: ProfileRepository
 ) : ViewModel() {
 
     private val _posts = MutableStateFlow<List<Post>>(emptyList())
@@ -62,9 +65,15 @@ class NewsFeedViewModel @Inject constructor(
     private val _deleteReplyState = MutableStateFlow<ResultState<Unit>?>(null)
     val deleteReplyState: StateFlow<ResultState<Unit>?> = _deleteReplyState.asStateFlow()
 
+    private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
+    val notifications: StateFlow<List<Notification>> = _notifications.asStateFlow()
 
+    private val _unreadNotificationCount = MutableStateFlow(0)
+    val unreadNotificationCount: StateFlow<Int> = _unreadNotificationCount.asStateFlow()
+
+    private val readNotificationIds = mutableSetOf<String>()
     private var currentPage = 1
-    private val pageSize = 1
+    private val pageSize = 10
 
     init {
         loadNextPost()
@@ -78,10 +87,8 @@ class NewsFeedViewModel @Inject constructor(
             )
         }
 
-        val latestPostContent =
-            "\"${latestPost.content}\""
-        val latestPostAuthor =
-            latestPost.authorName ?: stringProvider.getString(R.string.unknown_author)
+        val latestPostContent = "\"${latestPost.content}\""
+        val latestPostAuthor = latestPost.authorName ?: stringProvider.getString(R.string.unknown_author)
         return LatestSocialNotification(
             latestPost = stringProvider.getString(
                 R.string.latest_post_format,
@@ -104,6 +111,7 @@ class NewsFeedViewModel @Inject constructor(
                     _posts.update { it + data.posts }
                     _hasMorePosts.value = data.hasMorePosts
                     currentPage++
+                    checkNewNotifications()
                 }
 
                 is ResultState.Error -> {
@@ -123,7 +131,93 @@ class NewsFeedViewModel @Inject constructor(
         currentPage = 1
         _hasMorePosts.value = true
         _posts.value = emptyList()
+        _notifications.value = emptyList()
+        _unreadNotificationCount.value = 0
         loadNextPost()
+    }
+
+    private fun checkNewNotifications() {
+        viewModelScope.launch {
+            val profileResult = profileRepository.getProfile()
+            val currentUserId = if (profileResult.isSuccess) {
+                profileResult.getOrNull()?.id ?: run {
+                    _error.value = "Không thể lấy thông tin người dùng: ID rỗng"
+                    return@launch
+                }
+            } else {
+                _error.value = "Không thể lấy thông tin người dùng: ${profileResult.exceptionOrNull()?.message}"
+                return@launch
+            }
+
+            val notifications = mutableListOf<Notification>()
+            _posts.value
+                .filter { it.authorId == currentUserId }
+                .forEach { post ->
+                    when (val result = repository.getPostDetail(post.postId)) {
+                        is ResultState.Success -> {
+                            val postDetail = result.data
+                            postDetail.likes.forEach { like ->
+                                if (like.likeId !in readNotificationIds) {
+                                    notifications.add(
+                                        Notification(
+                                            id = like.likeId,
+                                            type = "like",
+                                            content = "${like.userName} đã thích bài viết của bạn",
+                                            createdAt = like.createdAt,
+                                            userName = like.userName,
+                                            userAvatarUrl = null,
+                                            postId = post.postId
+                                        )
+                                    )
+                                }
+                            }
+                            postDetail.comments.forEach { comment ->
+                                if (comment.commentId !in readNotificationIds) {
+                                    notifications.add(
+                                        Notification(
+                                            id = comment.commentId,
+                                            type = "comment",
+                                            content = "${comment.authorName} đã bình luận bài viết của bạn",
+                                            createdAt = comment.createdAt,
+                                            userName = comment.authorName,
+                                            userAvatarUrl = comment.authorAvatarUrl,
+                                            postId = post.postId
+                                        )
+                                    )
+                                }
+                                comment.replies
+                                    .filter { comment.authorId == currentUserId }
+                                    .forEach { reply ->
+                                        if (reply.replyId !in readNotificationIds) {
+                                            notifications.add(
+                                                Notification(
+                                                    id = reply.replyId,
+                                                    type = "reply",
+                                                    content = "${reply.authorName} đã phản hồi bình luận của bạn",
+                                                    createdAt = reply.createdAt,
+                                                    userName = reply.authorName,
+                                                    userAvatarUrl = reply.authorAvatarUrl,
+                                                    postId = post.postId
+                                                )
+                                            )
+                                        }
+                                    }
+                            }
+                        }
+                        is ResultState.Error -> {
+                            _error.value = result.message
+                        }
+                        else -> {}
+                    }
+                }
+            _notifications.value = notifications.sortedByDescending { it.createdAt }
+            _unreadNotificationCount.value = notifications.count { it.id !in readNotificationIds }
+        }
+    }
+
+    fun markNotificationAsRead(notificationId: String) {
+        readNotificationIds.add(notificationId)
+        _unreadNotificationCount.value = _notifications.value.count { it.id !in readNotificationIds }
     }
 
     fun clearPostCreationState() {
@@ -145,20 +239,22 @@ class NewsFeedViewModel @Inject constructor(
 
             if (result is ResultState.Success) {
                 _posts.update { listOf(result.data) + it }
+                checkNewNotifications()
             }
             Log.d("NewsFeedViewModel", "createPost: $result content: $content category: $category fileUri: $fileUri targetType: $targetType targetGroupIds: $targetGroupIds")
         }
     }
-
 
     fun loadPostDetail(postId: String) {
         viewModelScope.launch {
             _postDetail.value = ResultState.Loading
             val result = repository.getPostDetail(postId)
             _postDetail.value = result
+            if (result is ResultState.Success) {
+                checkNewNotifications()
+            }
         }
     }
-
 
     fun likePost(postId: String) {
         viewModelScope.launch {
@@ -169,7 +265,6 @@ class NewsFeedViewModel @Inject constructor(
             when (result) {
                 is ResultState.Success -> {
                     _likeState.value = result
-                    // Cập nhật thủ công vì không có dữ liệu từ server
                     _posts.update { posts ->
                         posts.map { post ->
                             if (post.postId == postId) {
@@ -182,6 +277,7 @@ class NewsFeedViewModel @Inject constructor(
                             }
                         }
                     }
+                    checkNewNotifications()
                 }
 
                 is ResultState.Error -> {
@@ -204,7 +300,6 @@ class NewsFeedViewModel @Inject constructor(
             when (result) {
                 is ResultState.Success -> {
                     _likeState.value = result
-                    // Cập nhật thủ công vì không có dữ liệu từ server
                     _posts.update { posts ->
                         posts.map { post ->
                             if (post.postId == postId) {
@@ -217,6 +312,7 @@ class NewsFeedViewModel @Inject constructor(
                             }
                         }
                     }
+                    checkNewNotifications()
                 }
 
                 is ResultState.Error -> {
@@ -244,9 +340,8 @@ class NewsFeedViewModel @Inject constructor(
                         } else post
                     }
                 }
-
-                // Gọi lại fetch để lấy comment mới
                 fetchComments(postId)
+                checkNewNotifications()
             } else if (result is ResultState.Error) {
                 _commentState.value = ResultState.Error(result.message ?: "Create comment failed")
             }
@@ -258,7 +353,6 @@ class NewsFeedViewModel @Inject constructor(
             val result = repository.deleteComment(commentId)
 
             if (result is ResultState.Success) {
-                // Cập nhật số lượng comment
                 _posts.update { posts ->
                     posts.map { post ->
                         if (post.postId == postId) {
@@ -266,15 +360,13 @@ class NewsFeedViewModel @Inject constructor(
                         } else post
                     }
                 }
-
-                // Gọi lại
                 fetchComments(postId)
+                checkNewNotifications()
             } else if (result is ResultState.Error) {
                 _commentState.value = ResultState.Error(result.message ?: "Delete comment failed")
             }
         }
     }
-
 
     fun fetchComments(postId: String) {
         viewModelScope.launch {
@@ -282,6 +374,7 @@ class NewsFeedViewModel @Inject constructor(
             when (val result = repository.getPostDetail(postId)) {
                 is ResultState.Success -> {
                     _commentState.value = ResultState.Success(result.data.comments)
+                    checkNewNotifications()
                 }
 
                 is ResultState.Error -> {
@@ -300,7 +393,6 @@ class NewsFeedViewModel @Inject constructor(
             _updateTargetState.value = result
             Log.d("NewsFeedViewModel", "updatePostTarget: $result postId: $postId targetType: $targetType targetGroupIds: $targetGroupIds")
             if (result is ResultState.Success) {
-                // Cập nhật _posts với targetType và targetGroupIds mới
                 _posts.update { posts ->
                     posts.map { post ->
                         if (post.postId == postId) {
@@ -313,7 +405,6 @@ class NewsFeedViewModel @Inject constructor(
                         }
                     }
                 }
-                // Hoặc làm mới từ backend
                 refreshPost(postId)
             }
         }
@@ -347,6 +438,7 @@ class NewsFeedViewModel @Inject constructor(
                             }
                         }
                     }
+                    checkNewNotifications()
                 }
                 is ResultState.Error -> {
                     _error.value = result.message
@@ -368,7 +460,6 @@ class NewsFeedViewModel @Inject constructor(
 
             _replyState.value = result.fold(
                 onSuccess = {
-                    // Cập nhật commentsCount
                     _posts.update { posts ->
                         posts.map { post ->
                             if (post.postId == postId) {
@@ -376,9 +467,8 @@ class NewsFeedViewModel @Inject constructor(
                             } else post
                         }
                     }
-
-                    // gọi lại fetch comment
                     fetchComments(postId)
+                    checkNewNotifications()
                     ResultState.Success(it)
                 },
                 onFailure = {
@@ -388,14 +478,12 @@ class NewsFeedViewModel @Inject constructor(
         }
     }
 
-
     fun deleteReply(replyId: String, postId: String) {
         viewModelScope.launch {
             _deleteReplyState.value = ResultState.Loading
             val result = repository.deleteReply(replyId)
             _deleteReplyState.value = result.fold(
                 onSuccess = {
-                    // Cập nhật số lượng comment
                     _posts.update { posts ->
                         posts.map { post ->
                             if (post.postId == postId) {
@@ -403,8 +491,8 @@ class NewsFeedViewModel @Inject constructor(
                             } else post
                         }
                     }
-                    // Gọi lại fetch comments
                     fetchComments(postId)
+                    checkNewNotifications()
                     ResultState.Success(Unit)
                 },
                 onFailure = {
