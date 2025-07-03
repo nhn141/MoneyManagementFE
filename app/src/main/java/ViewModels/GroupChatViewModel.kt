@@ -17,8 +17,6 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneymanagement_frontend.R
-import com.google.gson.Gson
 import com.microsoft.signalr.HubConnection
 import com.microsoft.signalr.HubConnectionBuilder
 import com.microsoft.signalr.HubConnectionState
@@ -35,7 +33,9 @@ import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
-class GroupChatViewModel @Inject constructor(
+class GroupChatViewModel
+@Inject
+constructor(
     private val repository: GroupChatRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -53,40 +53,52 @@ class GroupChatViewModel @Inject constructor(
         val token = AuthStorage.getToken(context)
         val userId = AuthStorage.getUserIdFromToken(context)
 
-        hubConnection = HubConnectionBuilder.create("http://143.198.208.227:5000/hubs/chat")
-            .withAccessTokenProvider(Single.defer {
-                if (token != null) Single.just(token)
-                else Single.error(Throwable("Token is null"))
-            })
-            .build()
+        hubConnection =
+            HubConnectionBuilder.create("http://143.198.208.227:5000/hubs/chat")
+                .withAccessTokenProvider(
+                    Single.defer {
+                        if (token != null) Single.just(token)
+                        else Single.error(Throwable("Token is null"))
+                    }
+                )
+                .build()
 
         // Lắng nghe sự kiện tin nhắn mới trong group
-        hubConnection?.on("ReceiveGroupMessage", { groupMessage: GroupMessage ->
-            try {
-                Log.d("SignalR", "Raw JSON message: $groupMessage")
+        hubConnection?.on(
+            "ReceiveGroupMessage",
+            { groupMessage: GroupMessage ->
+                try {
+                    Log.d("SignalR", "Raw JSON message: $groupMessage")
 
-                val updated = _groupMessages.value.toMutableList()
-                updated.add(groupMessage)
-                _groupMessages.value = updated
-            } catch (e: Exception) {
-                Log.e("SignalR", "Failed to parse GroupMessage", e)
-            }
-        }, GroupMessage::class.java)
+                    val updated = _groupMessages.value.toMutableList()
+                    updated.add(groupMessage)
+                    _groupMessages.value = updated
+                } catch (e: Exception) {
+                    Log.e("SignalR", "Failed to parse GroupMessage", e)
+                }
+            },
+            GroupMessage::class.java
+        )
 
         // Kết nối
-        signalRDisposable = hubConnection?.start()?.doOnComplete {
-            Log.d("SignalR", "Connected to hub")
-            if (hubConnection?.connectionState == HubConnectionState.CONNECTED) {
-                try {
-                    hubConnection?.invoke("JoinUserGroup", userId)
-                    Log.d("SignalR", "Joined user group: $userId")
-                } catch (e: Exception) {
-                    Log.e("SignalR", "Failed to join group: ${e.message}")
+        signalRDisposable =
+            hubConnection
+                ?.start()
+                ?.doOnComplete {
+                    Log.d("SignalR", "Connected to hub")
+                    if (hubConnection?.connectionState == HubConnectionState.CONNECTED) {
+                        try {
+                            hubConnection?.invoke("JoinUserGroup", userId)
+                            Log.d("SignalR", "Joined user group: $userId")
+                        } catch (e: Exception) {
+                            Log.e("SignalR", "Failed to join group: ${e.message}")
+                        }
+                    }
                 }
-            }
-        }?.subscribe({}, { error ->
-            Log.e("SignalR", "Connection failed: ${error.message}")
-        })
+                ?.subscribe(
+                    {},
+                    { error -> Log.e("SignalR", "Connection failed: ${error.message}") }
+                )
     }
 
     fun joinGroup(groupId: String) {
@@ -147,9 +159,7 @@ class GroupChatViewModel @Inject constructor(
 
     fun loadUserGroups() {
         viewModelScope.launch {
-            repository.getUserGroups().onSuccess {
-                _groups.value = it
-            }.onFailure {
+            repository.getUserGroups().onSuccess { _groups.value = it }.onFailure {
                 _error.value = "Failed to load groups: ${it.localizedMessage}"
             }
         }
@@ -157,25 +167,17 @@ class GroupChatViewModel @Inject constructor(
 
     fun loadGroupMessages(groupId: String) {
         viewModelScope.launch {
-            repository.getGroupMessages(groupId).onSuccess {
-                _groupMessages.value = it.messages
-                filterTransactionMessages()
-            }.onFailure {
-                _error.value = "Failed to load group messages: ${it.localizedMessage}"
-            }
+            repository
+                .getGroupMessages(groupId)
+                .onSuccess {
+                    _groupMessages.value = it.messages
+                    filterTransactionMessages()
+                }
+                .onFailure {
+                    _error.value = "Failed to load group messages: ${it.localizedMessage}"
+                }
         }
     }
-
-//    fun sendGroupMessage(groupId: String, content: String) {
-//        viewModelScope.launch {
-//            val request = SendGroupMessageRequest(groupId, content)
-//            repository.sendGroupMessage(request).onSuccess {
-//                loadGroupMessages(groupId)
-//            }.onFailure {
-//                _error.value = "Failed to send message: ${it.localizedMessage}"
-//            }
-//        }
-//    }
 
     fun sendGroupMessage(groupId: String, content: String) {
         if (hubConnection?.connectionState != HubConnectionState.CONNECTED) {
@@ -188,8 +190,7 @@ class GroupChatViewModel @Inject constructor(
             joinGroup(groupId)
 
             val dto = SendGroupMessageRequest(groupId, content)
-            loadGroupMessages(groupId)
-
+            // Do NOT call loadGroupMessages here to avoid duplicate messages
             hubConnection?.invoke("SendMessageToGroup", dto)
 
             Log.d("SignalR", "Sent message to group $groupId: $content")
@@ -209,7 +210,8 @@ class GroupChatViewModel @Inject constructor(
 
     fun createGroup(request: CreateGroupRequest) {
         viewModelScope.launch {
-            repository.createGroup(request)
+            repository
+                .createGroup(request)
                 .onSuccess {
                     _createGroupEvent.emit("Group created successfully")
                     simulateLatestGroupChats()
@@ -222,20 +224,22 @@ class GroupChatViewModel @Inject constructor(
 
     fun updateGroup(groupId: String, request: UpdateGroupRequest) {
         viewModelScope.launch {
-            repository.updateGroup(groupId, request).onSuccess {
-                _updateGroupEvent.emit("Group updated successfully")
-                loadGroupById(groupId)
-            }.onFailure {
-                _error.value = "Failed to update group: ${it.localizedMessage ?: "Unknown error"}"
-            }
+            repository
+                .updateGroup(groupId, request)
+                .onSuccess {
+                    _updateGroupEvent.emit("Group updated successfully")
+                    loadGroupById(groupId)
+                }
+                .onFailure {
+                    _error.value =
+                        "Failed to update group: ${it.localizedMessage ?: "Unknown error"}"
+                }
         }
     }
 
     fun loadGroupMembers(groupId: String) {
         viewModelScope.launch {
-            repository.getGroupMembers(groupId).onSuccess {
-                _groupMembers.value = it
-            }.onFailure {
+            repository.getGroupMembers(groupId).onSuccess { _groupMembers.value = it }.onFailure {
                 _error.value = "Failed to load group members: ${it.localizedMessage}"
             }
         }
@@ -243,32 +247,35 @@ class GroupChatViewModel @Inject constructor(
 
     fun loadMemberProfile(groupId: String, memberId: String) {
         viewModelScope.launch {
-            repository.getGroupMemberProfile(groupId, memberId).onSuccess {
-                _memberProfile.value = it
-            }.onFailure {
-                _error.value = "Failed to load member profile: ${it.localizedMessage}"
-            }
+            repository
+                .getGroupMemberProfile(groupId, memberId)
+                .onSuccess { _memberProfile.value = it }
+                .onFailure {
+                    _error.value = "Failed to load member profile: ${it.localizedMessage}"
+                }
         }
     }
 
     fun addUserToGroup(groupId: String, userId: String) {
         viewModelScope.launch {
-            repository.addUserToGroup(groupId, userId).onSuccess {
-                _groupMemberChangeEvent.emit("add")
-            }.onFailure {
-                _error.value = "Failed to add user to group: ${it.localizedMessage}"
-            }
+            repository
+                .addUserToGroup(groupId, userId)
+                .onSuccess { _groupMemberChangeEvent.emit("add") }
+                .onFailure {
+                    _error.value = "Failed to add user to group: ${it.localizedMessage}"
+                }
             loadGroupMembers(groupId)
         }
     }
 
     fun removeUserFromGroup(groupId: String, userId: String) {
         viewModelScope.launch {
-            repository.removeUserFromGroup(groupId, userId).onSuccess {
-                _groupMemberChangeEvent.emit("remove")
-            }.onFailure {
-                _error.value = "Failed to remove user from group: ${it.localizedMessage}"
-            }
+            repository
+                .removeUserFromGroup(groupId, userId)
+                .onSuccess { _groupMemberChangeEvent.emit("remove") }
+                .onFailure {
+                    _error.value = "Failed to remove user from group: ${it.localizedMessage}"
+                }
             loadGroupMembers(groupId)
         }
     }
@@ -294,13 +301,15 @@ class GroupChatViewModel @Inject constructor(
     fun adminLeaveGroup(groupId: String, onResult: (AdminLeaveResult?) -> Unit) {
         viewModelScope.launch {
             val result = repository.adminLeaveGroup(groupId)
-            result.onSuccess {
-                onResult(it)
-                loadGroupMembers(groupId)
-            }.onFailure {
-                _error.value = "Admin failed to leave group: ${it.localizedMessage}"
-                onResult(null)
-            }
+            result
+                .onSuccess {
+                    onResult(it)
+                    loadGroupMembers(groupId)
+                }
+                .onFailure {
+                    _error.value = "Admin failed to leave group: ${it.localizedMessage}"
+                    onResult(null)
+                }
         }
     }
 
@@ -308,47 +317,52 @@ class GroupChatViewModel @Inject constructor(
         viewModelScope.launch {
             val finalResult = mutableListOf<SimulatedLatestGroupChatDto>()
 
-            repository.getUserGroups().onSuccess { groups ->
-                groups.forEach { group ->
-                    repository.getGroupMessages(group.groupId).onSuccess { history ->
-                        val lastMsg = history.messages.lastOrNull()
-                        finalResult.add(
-                            SimulatedLatestGroupChatDto(
-                                groupId = group.groupId,
-                                groupName = group.name,
-                                groupImageUrl = group.imageUrl,
-                                latestMessageContent = lastMsg?.content,
-                                unreadCount = history.unreadCount,
-                                sendAt = lastMsg?.sentAt ?: "",
+            repository
+                .getUserGroups()
+                .onSuccess { groups ->
+                    groups.forEach { group ->
+                        repository.getGroupMessages(group.groupId).onSuccess { history ->
+                            val lastMsg = history.messages.lastOrNull()
+                            finalResult.add(
+                                SimulatedLatestGroupChatDto(
+                                    groupId = group.groupId,
+                                    groupName = group.name,
+                                    groupImageUrl = group.imageUrl,
+                                    latestMessageContent = lastMsg?.content,
+                                    unreadCount = history.unreadCount,
+                                    sendAt = lastMsg?.sentAt ?: "",
+                                )
                             )
-                        )
+                        }
                     }
+                    _simulatedGroupChats.value = finalResult
                 }
-                _simulatedGroupChats.value = finalResult
-            }.onFailure {
-                _error.value = "Failed to load group list: ${it.localizedMessage}"
-            }
+                .onFailure {
+                    _error.value = "Failed to load group list: ${it.localizedMessage}"
+                }
         }
     }
 
     fun loadGroupById(groupId: String) {
         viewModelScope.launch {
-            repository.getUserGroups().onSuccess { groupList ->
-                _selectedGroup.value = groupList.find { it.groupId == groupId }
-            }.onFailure {
-                _error.value = "Failed to load group: ${it.localizedMessage}"
-            }
+            repository
+                .getUserGroups()
+                .onSuccess { groupList ->
+                    _selectedGroup.value = groupList.find { it.groupId == groupId }
+                }
+                .onFailure { _error.value = "Failed to load group: ${it.localizedMessage}" }
         }
     }
 
     private fun filterTransactionMessages() {
         val rawMessages = _groupMessages.value
-        val filtered = rawMessages
-            .filter { it.content.contains("💰") || it.content.contains("💸") }
-            .mapNotNull { msg ->
-                val id = extractTransactionIdFromMessage(msg.content)
-                id?.let { TransactionMessageInfo(it, msg) }
-            }
+        val filtered =
+            rawMessages
+                .filter { it.content.contains("💰") || it.content.contains("💸") }
+                .mapNotNull { msg ->
+                    val id = extractTransactionIdFromMessage(msg.content)
+                    id?.let { TransactionMessageInfo(it, msg) }
+                }
         _transactionMessages.value = filtered
     }
 
@@ -360,53 +374,64 @@ class GroupChatViewModel @Inject constructor(
     fun getGroupAvatar(groupId: String) {
         viewModelScope.launch {
             _isAvatarLoading.value = true
-            repository.getGroupAvatar(groupId).onSuccess { avatarUrl ->
-                _groupAvatarUrl.value = avatarUrl
-                _isAvatarLoading.value = false
-            }.onFailure {
-                _error.value = "Failed to load group avatar: ${it.localizedMessage}"
-                _isAvatarLoading.value = false
-            }
+            repository
+                .getGroupAvatar(groupId)
+                .onSuccess { avatarUrl ->
+                    _groupAvatarUrl.value = avatarUrl
+                    _isAvatarLoading.value = false
+                }
+                .onFailure {
+                    _error.value = "Failed to load group avatar: ${it.localizedMessage}"
+                    _isAvatarLoading.value = false
+                }
         }
     }
 
     fun uploadGroupAvatar(groupId: String, file: File) {
         _isAvatarLoading.value = true
         viewModelScope.launch {
-            repository.uploadGroupAvatar(groupId, file).onSuccess { avatarUrl ->
-                _groupAvatarUrl.value = avatarUrl
-                _isAvatarLoading.value = false
-            }.onFailure { exception ->
-                _error.value =
-                    "Error uploading avatar: ${exception.localizedMessage}"
-                _isAvatarLoading.value = false
-            }
+            repository
+                .uploadGroupAvatar(groupId, file)
+                .onSuccess { avatarUrl ->
+                    _groupAvatarUrl.value = avatarUrl
+                    _isAvatarLoading.value = false
+                }
+                .onFailure { exception ->
+                    _error.value = "Error uploading avatar: ${exception.localizedMessage}"
+                    _isAvatarLoading.value = false
+                }
         }
     }
 
     fun updateGroupAvatar(groupId: String, avatarUrl: String) {
         viewModelScope.launch {
             _isAvatarLoading.value = true
-            repository.updateGroupAvatar(groupId, avatarUrl).onSuccess {
-                _groupAvatarUrl.value = avatarUrl
-                _isAvatarLoading.value = false
-            }.onFailure {
-                _error.value = "Failed to update group avatar: ${it.localizedMessage}"
-                _isAvatarLoading.value = false
-            }
+            repository
+                .updateGroupAvatar(groupId, avatarUrl)
+                .onSuccess {
+                    _groupAvatarUrl.value = avatarUrl
+                    _isAvatarLoading.value = false
+                }
+                .onFailure {
+                    _error.value = "Failed to update group avatar: ${it.localizedMessage}"
+                    _isAvatarLoading.value = false
+                }
         }
     }
 
     fun deleteGroupAvatar(groupId: String) {
         viewModelScope.launch {
             _isAvatarLoading.value = true
-            repository.deleteGroupAvatar(groupId).onSuccess {
-                _groupAvatarUrl.value = null
-                _isAvatarLoading.value = false
-            }.onFailure {
-                _error.value = "Failed to delete group avatar: ${it.localizedMessage}"
-                _isAvatarLoading.value = false
-            }
+            repository
+                .deleteGroupAvatar(groupId)
+                .onSuccess {
+                    _groupAvatarUrl.value = null
+                    _isAvatarLoading.value = false
+                }
+                .onFailure {
+                    _error.value = "Failed to delete group avatar: ${it.localizedMessage}"
+                    _isAvatarLoading.value = false
+                }
         }
     }
 

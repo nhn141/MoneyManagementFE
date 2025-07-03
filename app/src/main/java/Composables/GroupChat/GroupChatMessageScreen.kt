@@ -139,9 +139,10 @@ fun GroupChatMessageScreen(
         Log.e("GroupProfile", "User ID is null")
     }
 
-    LaunchedEffect(Unit) {
+
+    // Only join group and load messages when groupId changes
+    LaunchedEffect(groupId) {
         groupChatViewModel.joinGroup(groupId)
-        groupChatViewModel.connectToSignalR()
         groupChatViewModel.loadGroupMessages(groupId)
         groupChatViewModel.markMessagesRead(groupId)
         groupChatViewModel.loadGroupById(groupId)
