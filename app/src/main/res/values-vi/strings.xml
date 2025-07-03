@@ -455,6 +455,9 @@
     <string name="save_to_downloads">Save to Downloads</string>
     <string name="fail_to_save_file">Fail to save file</string>
     <string name="fail_to_generate_report">Fail to generate report</string>
+    <string name="create_financial_report_title">Tạo báo cáo tài chính</string>
+    <string name="export_report_description">Xuất báo cáo chi tiết và phân tích dữ liệu</string>
+    <string name="report_format_pdf">pdf</string>
     <!-- ================== GROUP FUND ================== -->
     <string name="group_fund_created_success">Tạo quỹ nhóm thành công</string>
     <string name="group_fund_updated_success">Cập nhật quỹ nhóm thành công</string>
@@ -517,4 +520,54 @@
 
     <!-- ================== SETTINGS SCREEN ================== -->
     <string name="settings_screen_title">Cài đặt</string>
+
+    <!-- ================== NEWSFEED ================== -->
+    <string name="no_posts_found">Không có bài đăng nào</string>
+    <string name="create_first_post_prompt">Hãy tạo bài đăng đầu tiên của bạn!</string>
+    <string name="loading_more">Đang tải thêm...</string>
+    <string name="add_post">Thêm bài đăng</string>
+    <string name="no_new_notifications">Không có thông báo mới</string>
+    <string name="pull_to_comment">Kéo lên để nhập bình luận</string>
+    <string name="avatar">Ảnh đại diện</string>
+    <string name="privacy_friends">Bạn bè</string>
+    <string name="privacy_private">Riêng tư</string>
+    <string name="privacy_public">Công khai</string>
+    <string name="privacy_group">Nhóm</string>
+    <string name="select_group">Chọn nhóm:</string>
+    <string name="___see_more">...Xem thêm</string>
+    <string name="collapse">Rút gọn</string>
+    <string name="image">Hình ảnh</string>
+    <string name="save_image">Lưu ảnh</string>
+    <string name="save_image_prompt">Bạn có muốn lưu ảnh này vào thư viện không?</string>
+    <string name="shared_post">Bài đăng được chia sẻ:</string>
+    <string name="from_label">Từ:</string>
+    <string name="like_action">Thích</string>
+    <string name="comments_action">Bình luận</string>
+    <string name="share_action">Chia sẻ</string>
+    <string name="share_label">Chia sẻ</string>
+    <string name="share_post_title">Chia sẻ bài viết</string>
+    <string name="share_with_friends">Chia sẻ với bạn bè</string>
+    <string name="share_with_groups">Chia sẻ với nhóm</string>
+    <string name="friend_avatar">Ảnh đại diện bạn bè</string>
+    <string name="group_avatar">Ảnh đại diện nhóm</string>
+    <string name="post_comments_title">Bình luận bài viết</string>
+    <string name="menu_action">Menu</string>
+    <string name="delete_action">Xóa</string>
+    <string name="reply_action">Trả lời</string>
+    <string name="reply_to_label">Trả lời</string>
+    <string name="enter_reply">Nhập phản hồi...</string>
+    <string name="send_reply">Gửi</string>
+    <string name="enter_comment">Nhập bình luận...</string>
+    <string name="send_comment">Gửi</string>
+    <string name="reply_to_comment_label">Trả lời bình luận của</string>
+    <string name="create_post_title">Tạo bài viết</string>
+    <string name="post_content_placeholder">Bạn đang nghĩ gì?</string>
+    <string name="add_image_label">Thêm ảnh</string>
+    <string name="select_image_action">Chọn ảnh</string>
+    <string name="remove_image_action">Xóa ảnh</string>
+    <string name="posting_label">Đang đăng...</string>
+    <string name="post_action">Đăng</string>
+    <string name="notification_like_content">%s đã thích bài viết của bạn</string>
+    <string name="notification_comment_content">%s đã bình luận bài viết của bạn</string>
+    <string name="notification_reply_content">%s đã phản hồi bình luận của bạn</string>
 </resources>

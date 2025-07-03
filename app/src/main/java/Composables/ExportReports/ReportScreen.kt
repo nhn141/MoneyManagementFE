@@ -93,14 +93,14 @@ fun ReportScreen(viewModel: ReportViewModel, navController: NavController) {
     )
 
     val currencyOptions = listOf(
-        "VND" to "VND",
-        "USD" to "USD"
+        stringResource(R.string.vnd_currency) to "VND",
+        stringResource(R.string.usd_currency) to "USD"
     )
 
     var selectedType by remember { mutableStateOf(typeOptions.first().second) }
     var selectedCurrency by remember { mutableStateOf(currencyOptions.first().second) }
 
-    val format = "pdf"
+    val format = stringResource(R.string.report_format_pdf)
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(false) }
 
@@ -330,14 +330,14 @@ private fun HeaderSection() {
 
                 Column {
                     Text(
-                        text = "Tạo báo cáo tài chính",
+                        text = stringResource(R.string.create_financial_report_title),
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                     )
                     Text(
-                        text = "Xuất báo cáo chi tiết và phân tích dữ liệu",
+                        text = stringResource(R.string.export_report_description),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = Color.White.copy(alpha = 0.9f)
                         )
@@ -455,8 +455,8 @@ fun DateTimePicker(
     MaterialDialog(
         dialogState = dateDialogState,
         buttons = {
-            positiveButton("OK")
-            negativeButton("Hủy")
+            positiveButton(stringResource(R.string.ok))
+            negativeButton(stringResource(R.string.cancel))
         }
     ) {
         datepicker(
@@ -476,10 +476,10 @@ fun DateTimePicker(
     MaterialDialog(
         dialogState = timeDialogState,
         buttons = {
-            positiveButton("OK") {
+            positiveButton(stringResource(R.string.ok)) {
                 onDateTimeChange(tempDateTime)
             }
-            negativeButton("Hủy")
+            negativeButton(stringResource(R.string.cancel))
         }
     ) {
         timepicker(
@@ -616,7 +616,7 @@ private fun GenerateButton(
                         strokeWidth = 2.dp
                     )
                     Text(
-                        "Đang tạo báo cáo...",
+                        stringResource(R.string.generating_report),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
@@ -635,7 +635,7 @@ private fun GenerateButton(
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
-                        "Tải báo cáo",
+                        stringResource(R.string.download_report),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color.White

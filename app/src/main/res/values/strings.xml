@@ -455,6 +455,9 @@
     <string name="save_to_downloads">Save to Downloads</string>
     <string name="fail_to_save_file">Fail to save file</string>
     <string name="fail_to_generate_report">Fail to generate report</string>
+    <string name="create_financial_report_title">Create Financial Report</string>
+    <string name="export_report_description">Export detailed reports and analyze data</string>
+    <string name="report_format_pdf">pdf</string>
     <!-- ================== GROUP FUND ================== -->
     <string name="group_fund_created_success">Group fund created successfully</string>
     <string name="group_fund_updated_success">Group fund updated successfully</string>
@@ -517,5 +520,55 @@
 
     <!-- ================== SETTINGS SCREEN ================== -->
     <string name="settings_screen_title">Settings</string>
+
+    <!-- ================== NEWSFEED ================== -->
+    <string name="no_posts_found">No posts found</string>
+    <string name="create_first_post_prompt">Create your first post!</string>
+    <string name="loading_more">Loading more...</string>
+    <string name="add_post">Add Post</string>
+    <string name="no_new_notifications">No new notifications</string>
+    <string name="pull_to_comment">Pull up to comment</string>
+    <string name="avatar">Avatar</string>
+    <string name="privacy_friends">Friends</string>
+    <string name="privacy_private">Private</string>
+    <string name="privacy_public">Public</string>
+    <string name="privacy_group">Group</string>
+    <string name="select_group">Select group:</string>
+    <string name="___see_more">...See more</string>
+    <string name="collapse">Collapse</string>
+    <string name="image">Image</string>
+    <string name="save_image">Save Image</string>
+    <string name="save_image_prompt">Do you want to save this image to your gallery?</string>
+    <string name="shared_post">Shared Post:</string>
+    <string name="from_label">From:</string>
+    <string name="like_action">Like</string>
+    <string name="comments_action">Comments</string>
+    <string name="share_action">Share</string>
+    <string name="share_label">Share</string>
+    <string name="share_post_title">Share Post</string>
+    <string name="share_with_friends">Share with Friends</string>
+    <string name="share_with_groups">Share with Groups</string>
+    <string name="friend_avatar">Friend Avatar</string>
+    <string name="group_avatar">Group Avatar</string>
+    <string name="post_comments_title">Post Comments</string>
+    <string name="menu_action">Menu</string>
+    <string name="delete_action">Delete</string>
+    <string name="reply_action">Reply</string>
+    <string name="reply_to_label">Reply to</string>
+    <string name="enter_reply">Enter reply...</string>
+    <string name="send_reply">Send</string>
+    <string name="enter_comment">Enter comment...</string>
+    <string name="send_comment">Send</string>
+    <string name="reply_to_comment_label">Replying to comment by</string>
+    <string name="create_post_title">Create Post</string>
+    <string name="post_content_placeholder">What is on your mind?</string>
+    <string name="add_image_label">Add Image</string>
+    <string name="select_image_action">Select Image</string>
+    <string name="remove_image_action">Remove Image</string>
+    <string name="posting_label">Posting...</string>
+    <string name="post_action">Post</string>
+    <string name="notification_like_content">%s liked your post</string>
+    <string name="notification_comment_content">%s commented on your post</string>
+    <string name="notification_reply_content">%s replied to your comment</string>
 </resources>
 

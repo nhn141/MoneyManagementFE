@@ -162,7 +162,6 @@ class NewsFeedViewModel @Inject constructor(
                                         Notification(
                                             id = like.likeId,
                                             type = "like",
-                                            content = "${like.userName} đã thích bài viết của bạn",
                                             createdAt = like.createdAt,
                                             userName = like.userName,
                                             userAvatarUrl = null,
@@ -177,7 +176,6 @@ class NewsFeedViewModel @Inject constructor(
                                         Notification(
                                             id = comment.commentId,
                                             type = "comment",
-                                            content = "${comment.authorName} đã bình luận bài viết của bạn",
                                             createdAt = comment.createdAt,
                                             userName = comment.authorName,
                                             userAvatarUrl = comment.authorAvatarUrl,
@@ -193,7 +191,6 @@ class NewsFeedViewModel @Inject constructor(
                                                 Notification(
                                                     id = reply.replyId,
                                                     type = "reply",
-                                                    content = "${reply.authorName} đã phản hồi bình luận của bạn",
                                                     createdAt = reply.createdAt,
                                                     userName = reply.authorName,
                                                     userAvatarUrl = reply.authorAvatarUrl,
