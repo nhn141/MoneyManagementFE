@@ -296,6 +296,7 @@ fun EditProfileScreen(navController: NavController, profileViewModel: ProfileVie
                 ) {
                     Box {
                         // Profile Image
+                        var isImageLoading by remember { mutableStateOf(false) }
                         Box(
                             modifier =
                             Modifier.size(130.dp)
@@ -308,7 +309,7 @@ fun EditProfileScreen(navController: NavController, profileViewModel: ProfileVie
                                 .background(MainColor.copy(alpha = 0.05f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (isLoadingAvatar.value) {
+                            if (isLoadingAvatar.value || isImageLoading) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(24.dp),
                                     color = MainColor,
@@ -316,7 +317,7 @@ fun EditProfileScreen(navController: NavController, profileViewModel: ProfileVie
                                 )
                             } else {
                                 if (avatarUrl != null) {
-                                    AvatarImage(avatarUrl, avatarVersion)
+                                    AvatarImage(avatarUrl, avatarVersion) { isImageLoading = false }
                                 } else {
                                     Icon(
                                         painter = painterResource(R.drawable.profile_image),

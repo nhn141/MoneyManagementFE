@@ -48,9 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,14 +74,6 @@ fun SettingsScreen(
     profileViewModel: ProfileViewModel,
     currencyConverterViewModel: CurrencyConverterViewModel = hiltViewModel()
 ) {
-    // Reload init data when token is refreshed
-    val refreshTokenState by authViewModel.refreshTokenState.collectAsState()
-    LaunchedEffect(refreshTokenState) {
-        if (refreshTokenState?.isSuccess == true) {
-            profileViewModel.getProfile()
-        }
-    }
-
     val profileResult = profileViewModel.profile.collectAsState()
     val profile = profileResult.value?.getOrNull()
 

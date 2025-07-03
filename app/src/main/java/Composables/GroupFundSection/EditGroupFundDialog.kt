@@ -1,6 +1,8 @@
 package DI.Composables.GroupFundSection
 
 import DI.Models.GroupFund.GroupFundDto
+import DI.Utils.CurrencyUtils
+import Utils.CurrencyInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,10 +27,21 @@ fun EditGroupFundDialog(
     fund: GroupFundDto,
     onDismiss: () -> Unit,
     onUpdate: (newDescription: String, newSavingGoal: Double) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    isVND: Boolean,
+    exchangeRate: Double? = 1.0
 ) {
     var description by remember { mutableStateOf(fund.description) }
-    var savingGoalText by remember { mutableStateOf(fund.savingGoal) }
+    var savingGoalText by remember {
+        mutableStateOf(
+            CurrencyUtils.formatAmount(
+                fund.savingGoal,
+                isVND,
+                exchangeRate
+            )
+        )
+    }
+    var savingGoalError by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -43,25 +56,30 @@ fun EditGroupFundDialog(
                     label = { Text("Description") },
                     singleLine = true
                 )
-                OutlinedTextField(
+                CurrencyInput(
+                    isVND = isVND,
+                    label = "Saving Goal",
                     value = savingGoalText,
                     onValueChange = { savingGoalText = it },
-                    label = { Text("Saving Goal") },
-                    singleLine = true,
-                    isError = savingGoalText.toDoubleOrNull() == null
+                    onValidationResult = { savingGoalError = it }
                 )
+                if (savingGoalError != null) {
+                    Text(savingGoalError ?: "", color = androidx.compose.ui.graphics.Color.Red)
+                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    val goal = savingGoalText.toDoubleOrNull()
+                    val goal = CurrencyUtils.parseAmount(savingGoalText)
                     if (goal != null) {
                         onUpdate(description.trim(), goal)
                         onDismiss()
                     }
                 },
-                enabled = savingGoalText.toDoubleOrNull() != null
+                enabled = savingGoalError == null && savingGoalText.isNotBlank() && CurrencyUtils.parseAmount(
+                    savingGoalText
+                ) != null
             ) {
                 Text("Save")
             }

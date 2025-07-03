@@ -423,7 +423,8 @@ private fun InnerNavHost(
             GroupFundScreen(
                 navController = navController,
                 groupFundViewModel = hiltViewModel(),
-                groupId = groupId
+                groupId = groupId,
+                currencyConverterViewModel = currencyViewModel
             )
         }
     }

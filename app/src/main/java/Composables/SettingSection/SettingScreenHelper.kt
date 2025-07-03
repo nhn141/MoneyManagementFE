@@ -72,8 +72,11 @@ fun FriendAvatar(url: String) {
 }
 
 @Composable
-fun AvatarImage(url: String, version: String = "v1", )
-{
+fun AvatarImage(
+    url: String,
+    version: String = "v1",
+    onImageLoaded: (() -> Unit)? = null
+) {
     Log.d("AvatarImageCall", "URL: $url, Version: $version")
     val context = LocalContext.current
     AndroidView(
@@ -97,6 +100,7 @@ fun AvatarImage(url: String, version: String = "v1", )
                         isFirstResource: Boolean
                     ): Boolean {
                         Log.d("OnAvatarLoadFailed", "Failed to loaded avatar")
+                        onImageLoaded?.invoke()
                         return false // Glide will show the error placeholder
                     }
 
@@ -108,6 +112,7 @@ fun AvatarImage(url: String, version: String = "v1", )
                         isFirstResource: Boolean
                     ): Boolean {
                         Log.d("OnAvatarLoad", "Successfully loaded avatar")
+                        onImageLoaded?.invoke()
                         return false // Glide will set the image into the ImageView
                     }
                 })

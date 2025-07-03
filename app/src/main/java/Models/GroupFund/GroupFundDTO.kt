@@ -7,7 +7,7 @@ data class GroupFundDto(
     val totalFundsIn: Double,
     val totalFundsOut: Double,
     val balance: Double,
-    val savingGoal: String,
+    val savingGoal: Double,
     val createdAt: String,
     val updatedAt: String,
     // val groupTransactions: List<GroupTransactionDto>? = null

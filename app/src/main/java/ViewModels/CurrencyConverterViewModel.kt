@@ -1,7 +1,7 @@
 package DI.ViewModels
 
 import DI.CurrencyApi
-import Utils.LanguageManager
+import Utils.CurrencyManager
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -24,14 +24,20 @@ class CurrencyConverterViewModel @Inject constructor(
     private val _isVND = MutableStateFlow(true)
     val isVND: StateFlow<Boolean> = _isVND
 
-    fun refreshAllData() {
-        loadCurrentLanguage()
+    init {
+        loadCurrencyPreference()
         loadExchangeRate()
     }
 
-    fun loadCurrentLanguage() {
-        val language = LanguageManager.getLanguagePreferenceSync(context)
-        _isVND.value = (language == "vi")
+    fun refreshAllData() {
+        loadCurrencyPreference()
+        loadExchangeRate()
+    }
+
+    fun loadCurrencyPreference() {
+        // Try to get currency preference, fallback to VND if not set
+        val pref = CurrencyManager.getCurrencyPreference(context)
+        _isVND.value = (pref == null || pref == "vnd")
     }
 
     fun loadExchangeRate() {
@@ -42,8 +48,11 @@ class CurrencyConverterViewModel @Inject constructor(
         }
     }
 
+
     fun toggleCurrency() {
         _isVND.value = !_isVND.value
+        // Save to preferences
+        CurrencyManager.setCurrencyPreference(context, if (_isVND.value) "vnd" else "usd")
     }
 
     fun convert(amount: Double, toVND: Boolean): Double? {
