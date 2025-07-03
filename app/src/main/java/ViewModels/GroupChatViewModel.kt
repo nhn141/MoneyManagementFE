@@ -12,13 +12,13 @@ import DI.Models.Group.SimulatedLatestGroupChatDto
 import DI.Models.Group.TransactionMessageInfo
 import DI.Models.Group.UpdateGroupRequest
 import DI.Models.GroupTransactionComment.GroupTransactionCommentDto
-import DI.Models.UiEvent.UiEvent
 import DI.Repositories.GroupChatRepository
 import Utils.StringResourceProvider
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.moneymanagement_frontend.R
 import com.microsoft.signalr.HubConnection
 import com.microsoft.signalr.HubConnectionBuilder
 import com.microsoft.signalr.HubConnectionState
@@ -50,6 +50,7 @@ constructor(
     private var hubConnection: HubConnection? = null
 
     init {
+        connectToSignalR()
         simulateLatestGroupChats()
     }
 
@@ -154,6 +155,22 @@ constructor(
     private val _isAvatarLoading = MutableStateFlow(false)
     val isAvatarLoading: StateFlow<Boolean> = _isAvatarLoading
 
+    fun loadGroupById(groupId: String) {
+        viewModelScope.launch {
+            repository.getUserGroups().onSuccess { groupList ->
+                _selectedGroup.value = groupList.find { it.groupId == groupId }
+            }.onFailure {
+                _error.value = "Failed to load group: ${it.localizedMessage}"
+            }
+            repository
+                .getUserGroups()
+                .onSuccess { groupList ->
+                    _selectedGroup.value = groupList.find { it.groupId == groupId }
+                }
+                .onFailure { _error.value = "Failed to load group: ${it.localizedMessage}" }
+        }
+    }
+
     fun loadUserGroups() {
         viewModelScope.launch {
             repository.getUserGroups().onSuccess {
@@ -172,6 +189,58 @@ constructor(
             }.onFailure {
                 logAndEmitError("loadGroupMessages", it)
             }
+        }
+    }
+
+    fun getGroupAvatar(groupId: String) {
+        viewModelScope.launch {
+            _isAvatarLoading.value = true
+            repository.getGroupAvatar(groupId).onSuccess { avatarUrl ->
+                _groupAvatarUrl.value = avatarUrl
+                _isAvatarLoading.value = false
+            }.onFailure {
+                logAndEmitError("getGroupAvatar", it)
+                _isAvatarLoading.value = false
+            }
+        }
+    }
+
+    fun uploadGroupAvatar(groupId: String, file: File) {
+        _isAvatarLoading.value = true
+        viewModelScope.launch {
+            repository.uploadGroupAvatar(groupId, file).onSuccess { avatarUrl ->
+                _groupAvatarUrl.value = avatarUrl
+                _isAvatarLoading.value = false
+            }.onFailure {
+                logAndEmitError("uploadGroupAvatar", it)
+                _isAvatarLoading.value = false
+            }
+        }
+    }
+
+    fun deleteGroupAvatar(groupId: String) {
+        viewModelScope.launch {
+            _isAvatarLoading.value = true
+            repository.deleteGroupAvatar(groupId).onSuccess {
+                _groupAvatarUrl.value = null
+                _isAvatarLoading.value = false
+            }.onFailure {
+                logAndEmitError("deleteGroupAvatar", it)
+                _isAvatarLoading.value = false
+            }
+        }
+    }
+
+    private suspend fun logAndEmitError(method: String, error: Throwable?) {
+        Log.e(TAG, "Error in $method", error)
+        _error.emit(
+            stringProvider.getString(R.string.operation_failed_try_again)
+        )
+    }
+
+    private fun logAndEmitError(method: String, error: Throwable) {
+        viewModelScope.launch {
+            logAndEmitError(method, error as Throwable?)
         }
     }
 
@@ -302,59 +371,14 @@ constructor(
         }
     }
 
-    fun simulateLatestGroupChats() {
-        viewModelScope.launch {
-            val finalResult = mutableListOf<SimulatedLatestGroupChatDto>()
-
-            repository
-                .getUserGroups()
-                .onSuccess { groups ->
-                    groups.forEach { group ->
-                        repository.getGroupMessages(group.groupId).onSuccess { history ->
-                            val lastMsg = history.messages.lastOrNull()
-                            finalResult.add(
-                                SimulatedLatestGroupChatDto(
-                                    groupId = group.groupId,
-                                    groupName = group.name,
-                                    groupImageUrl = group.imageUrl,
-                                    latestMessageContent = lastMsg?.content,
-                                    unreadCount = history.unreadCount,
-                                    sendAt = lastMsg?.sentAt ?: "",
-                                )
-                            )
-                        }
-                    }
-                    _simulatedGroupChats.value = finalResult
-                }
-                .onFailure {
-                    _error.value = "Failed to load group list: ${it.localizedMessage}"
-                }
-                _simulatedGroupChats.value = finalResult
-            }.onFailure {
-                logAndEmitError("simulateLatestGroupChats", it)
-            }
-        }
-    }
-
-    fun loadGroupById(groupId: String) {
-        viewModelScope.launch {
-            repository.getUserGroups().onSuccess { groupList ->
-                _selectedGroup.value = groupList.find { it.groupId == groupId }
-            }.onFailure {
-                logAndEmitError("loadGroupById", it)
-            }
-        }
-    }
-
     private fun filterTransactionMessages() {
         val rawMessages = _groupMessages.value
-        val filtered =
-            rawMessages
-                .filter { it.content.contains("💰") || it.content.contains("💸") }
-                .mapNotNull { msg ->
-                    val id = extractTransactionIdFromMessage(msg.content)
-                    id?.let { TransactionMessageInfo(it, msg) }
-                }
+        val filtered = rawMessages
+            .filter { it.content.contains("💰") || it.content.contains("💸") }
+            .mapNotNull { msg ->
+                val id = extractTransactionIdFromMessage(msg.content)
+                id?.let { TransactionMessageInfo(it, msg) }
+            }
         _transactionMessages.value = filtered
     }
 
@@ -363,78 +387,32 @@ constructor(
         return pattern.find(content)?.groupValues?.getOrNull(1)
     }
 
-    fun getGroupAvatar(groupId: String) {
+    fun simulateLatestGroupChats() {
         viewModelScope.launch {
-            _isAvatarLoading.value = true
-            repository.getGroupAvatar(groupId).onSuccess { avatarUrl ->
-                _groupAvatarUrl.value = avatarUrl
-                _isAvatarLoading.value = false
+            val finalResult = mutableListOf<SimulatedLatestGroupChatDto>()
+
+            repository.getUserGroups().onSuccess { groups ->
+                groups.forEach { group ->
+                    repository.getGroupMessages(group.groupId).onSuccess { history ->
+                        val lastMsg = history.messages.lastOrNull()
+                        finalResult.add(
+                            SimulatedLatestGroupChatDto(
+                                groupId = group.groupId,
+                                groupName = group.name,
+                                groupImageUrl = group.imageUrl,
+                                latestMessageContent = lastMsg?.content,
+                                unreadCount = history.unreadCount,
+                                sendAt = lastMsg?.sentAt ?: "",
+                            )
+                        )
+                    }
+                }
+                _simulatedGroupChats.value = finalResult
             }.onFailure {
-                logAndEmitError("getGroupAvatar", it)
-                _isAvatarLoading.value = false
+                logAndEmitError("simulateLatestGroupChats", it)
             }
-        }
-    }
-
-    fun uploadGroupAvatar(groupId: String, file: File) {
-        _isAvatarLoading.value = true
-        viewModelScope.launch {
-            repository.uploadGroupAvatar(groupId, file).onSuccess { avatarUrl ->
-                _groupAvatarUrl.value = avatarUrl
-                _isAvatarLoading.value = false
-            }.onFailure {
-                logAndEmitError("uploadGroupAvatar", it)
-                _isAvatarLoading.value = false
-            }
-        }
-    }
-
-    fun updateGroupAvatar(groupId: String, avatarUrl: String) {
-        viewModelScope.launch {
-            _isAvatarLoading.value = true
-            repository.updateGroupAvatar(groupId, avatarUrl).onSuccess {
-                _groupAvatarUrl.value = avatarUrl
-                _isAvatarLoading.value = false
-            }.onFailure {
-                logAndEmitError("updateGroupAvatar", it)
-                _isAvatarLoading.value = false
-            }
-        }
-    }
-
-    fun deleteGroupAvatar(groupId: String) {
-        viewModelScope.launch {
-            _isAvatarLoading.value = true
-            repository.deleteGroupAvatar(groupId).onSuccess {
-                _groupAvatarUrl.value = null
-                _isAvatarLoading.value = false
-            }.onFailure {
-                logAndEmitError("deleteGroupAvatar", it)
-                _isAvatarLoading.value = false
-            }
-        }
-    }
-
-    fun clearError() {
-        _error.value = null
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        signalRDisposable?.dispose()
-        hubConnection?.stop()
-    }
-
-    private suspend fun logAndEmitError(method: String, error: Throwable?) {
-        Log.e(TAG, "Error in $method", error)
-        _error.emit(
-            stringProvider.getString(R.string.operation_failed_try_again)
-        )
-    }
-
-    private fun logAndEmitError(method: String, error: Throwable) {
-        viewModelScope.launch {
-            logAndEmitError(method, error as Throwable?)
         }
     }
 }
+
+
