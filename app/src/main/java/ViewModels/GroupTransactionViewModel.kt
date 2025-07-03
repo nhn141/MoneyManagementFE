@@ -54,12 +54,12 @@ class GroupTransactionViewModel @Inject constructor(
                     UiEvent.ShowMessage(stringProvider.getString(R.string.group_transaction_created_success))
                 )
             } else {
+                val error = result.exceptionOrNull()
+                Log.e("GroupTransactionVM", "Error creating group transaction", error)
+
                 _addGroupTransactionEvent.emit(
                     UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
+                        stringProvider.getString(R.string.operation_failed_try_again)
                     )
                 )
             }
@@ -75,12 +75,12 @@ class GroupTransactionViewModel @Inject constructor(
                     UiEvent.ShowMessage(stringProvider.getString(R.string.group_transaction_updated_success))
                 )
             } else {
+                val error = result.exceptionOrNull()
+                Log.e("GroupTransactionVM", "Error updating group transaction", error)
+
                 _updateGroupTransactionEvent.emit(
                     UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
+                        stringProvider.getString(R.string.operation_failed_try_again)
                     )
                 )
             }
@@ -96,12 +96,12 @@ class GroupTransactionViewModel @Inject constructor(
                     UiEvent.ShowMessage(stringProvider.getString(R.string.transaction_deleted_success))
                 )
             } else {
+                val error = result.exceptionOrNull()
+                Log.e("GroupTransactionVM", "Error deleting group transaction", error)
+
                 _deleteGroupTransactionEvent.emit(
                     UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
+                        stringProvider.getString(R.string.operation_failed_try_again)
                     )
                 )
             }

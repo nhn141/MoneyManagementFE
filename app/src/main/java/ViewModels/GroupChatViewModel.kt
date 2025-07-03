@@ -12,7 +12,9 @@ import DI.Models.Group.SimulatedLatestGroupChatDto
 import DI.Models.Group.TransactionMessageInfo
 import DI.Models.Group.UpdateGroupRequest
 import DI.Models.GroupTransactionComment.GroupTransactionCommentDto
+import DI.Models.UiEvent.UiEvent
 import DI.Repositories.GroupChatRepository
+import Utils.StringResourceProvider
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -37,8 +39,13 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupChatViewModel @Inject constructor(
     private val repository: GroupChatRepository,
+    private val stringProvider: StringResourceProvider,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "GroupChatViewModel"
+    }
 
     private var hubConnection: HubConnection? = null
 
@@ -63,29 +70,29 @@ class GroupChatViewModel @Inject constructor(
         // Lắng nghe sự kiện tin nhắn mới trong group
         hubConnection?.on("ReceiveGroupMessage", { groupMessage: GroupMessage ->
             try {
-                Log.d("SignalR", "Raw JSON message: $groupMessage")
+                Log.d(TAG, "Raw JSON message: $groupMessage")
 
                 val updated = _groupMessages.value.toMutableList()
                 updated.add(groupMessage)
                 _groupMessages.value = updated
             } catch (e: Exception) {
-                Log.e("SignalR", "Failed to parse GroupMessage", e)
+                Log.e(TAG, "Failed to parse GroupMessage", e)
             }
         }, GroupMessage::class.java)
 
         // Kết nối
         signalRDisposable = hubConnection?.start()?.doOnComplete {
-            Log.d("SignalR", "Connected to hub")
+            Log.d(TAG, "Connected to hub")
             if (hubConnection?.connectionState == HubConnectionState.CONNECTED) {
                 try {
                     hubConnection?.invoke("JoinUserGroup", userId)
-                    Log.d("SignalR", "Joined user group: $userId")
+                    Log.d(TAG, "Joined user group: $userId")
                 } catch (e: Exception) {
-                    Log.e("SignalR", "Failed to join group: ${e.message}")
+                    Log.e(TAG, "Failed to join group: ${e.message}")
                 }
             }
         }?.subscribe({}, { error ->
-            Log.e("SignalR", "Connection failed: ${error.message}")
+            Log.e(TAG, "Connection failed: ${error.message}")
         })
     }
 
@@ -93,9 +100,9 @@ class GroupChatViewModel @Inject constructor(
         if (hubConnection?.connectionState == HubConnectionState.CONNECTED) {
             try {
                 hubConnection?.invoke("JoinGroup", groupId)
-                Log.d("SignalR", "Joined SignalR group: $groupId")
+                Log.d(TAG, "Joined SignalR group: $groupId")
             } catch (e: Exception) {
-                Log.e("SignalR", "Error joining group: ${e.message}")
+                Log.e(TAG, "Error joining group: ${e.message}")
             }
         }
     }
@@ -150,7 +157,7 @@ class GroupChatViewModel @Inject constructor(
             repository.getUserGroups().onSuccess {
                 _groups.value = it
             }.onFailure {
-                _error.value = "Failed to load groups: ${it.localizedMessage}"
+                logAndEmitError("loadUserGroups", it)
             }
         }
     }
@@ -161,21 +168,10 @@ class GroupChatViewModel @Inject constructor(
                 _groupMessages.value = it.messages
                 filterTransactionMessages()
             }.onFailure {
-                _error.value = "Failed to load group messages: ${it.localizedMessage}"
+                logAndEmitError("loadGroupMessages", it)
             }
         }
     }
-
-//    fun sendGroupMessage(groupId: String, content: String) {
-//        viewModelScope.launch {
-//            val request = SendGroupMessageRequest(groupId, content)
-//            repository.sendGroupMessage(request).onSuccess {
-//                loadGroupMessages(groupId)
-//            }.onFailure {
-//                _error.value = "Failed to send message: ${it.localizedMessage}"
-//            }
-//        }
-//    }
 
     fun sendGroupMessage(groupId: String, content: String) {
         if (hubConnection?.connectionState != HubConnectionState.CONNECTED) {
@@ -195,14 +191,14 @@ class GroupChatViewModel @Inject constructor(
             Log.d("SignalR", "Sent message to group $groupId: $content")
         } catch (e: Exception) {
             Log.e("SignalR", "Failed to send group message: ${e.message}")
-            _error.value = "Failed to send group message: ${e.localizedMessage}"
+            logAndEmitError("sendGroupMessage", e)
         }
     }
 
     fun markMessagesRead(groupId: String) {
         viewModelScope.launch {
             repository.markGroupMessagesRead(groupId).onFailure {
-                _error.value = "Failed to mark messages as read: ${it.localizedMessage}"
+                logAndEmitError("markMessagesRead", it)
             }
         }
     }
@@ -215,7 +211,7 @@ class GroupChatViewModel @Inject constructor(
                     simulateLatestGroupChats()
                 }
                 .onFailure {
-                    _createGroupEvent.emit("Failed to create group: ${it.localizedMessage}")
+                    logAndEmitError("createGroup", it)
                 }
         }
     }
@@ -226,7 +222,7 @@ class GroupChatViewModel @Inject constructor(
                 _updateGroupEvent.emit("Group updated successfully")
                 loadGroupById(groupId)
             }.onFailure {
-                _error.value = "Failed to update group: ${it.localizedMessage ?: "Unknown error"}"
+                logAndEmitError("updateGroup", it)
             }
         }
     }
@@ -236,7 +232,7 @@ class GroupChatViewModel @Inject constructor(
             repository.getGroupMembers(groupId).onSuccess {
                 _groupMembers.value = it
             }.onFailure {
-                _error.value = "Failed to load group members: ${it.localizedMessage}"
+                logAndEmitError("loadGroupMembers", it)
             }
         }
     }
@@ -246,7 +242,7 @@ class GroupChatViewModel @Inject constructor(
             repository.getGroupMemberProfile(groupId, memberId).onSuccess {
                 _memberProfile.value = it
             }.onFailure {
-                _error.value = "Failed to load member profile: ${it.localizedMessage}"
+                logAndEmitError("loadMemberProfile", it)
             }
         }
     }
@@ -256,7 +252,7 @@ class GroupChatViewModel @Inject constructor(
             repository.addUserToGroup(groupId, userId).onSuccess {
                 _groupMemberChangeEvent.emit("add")
             }.onFailure {
-                _error.value = "Failed to add user to group: ${it.localizedMessage}"
+                logAndEmitError("addUserToGroup", it)
             }
             loadGroupMembers(groupId)
         }
@@ -267,7 +263,7 @@ class GroupChatViewModel @Inject constructor(
             repository.removeUserFromGroup(groupId, userId).onSuccess {
                 _groupMemberChangeEvent.emit("remove")
             }.onFailure {
-                _error.value = "Failed to remove user from group: ${it.localizedMessage}"
+                logAndEmitError("removeUserFromGroup", it)
             }
             loadGroupMembers(groupId)
         }
@@ -276,7 +272,7 @@ class GroupChatViewModel @Inject constructor(
     fun assignCollaborator(groupId: String, userId: String) {
         viewModelScope.launch {
             repository.assignCollaboratorRole(groupId, userId).onFailure {
-                _error.value = "Failed to assign collaborator role: ${it.localizedMessage}"
+                logAndEmitError("assignCollaborator", it)
             }
             loadGroupMembers(groupId)
         }
@@ -285,7 +281,7 @@ class GroupChatViewModel @Inject constructor(
     fun leaveGroup(groupId: String) {
         viewModelScope.launch {
             repository.leaveGroup(groupId).onFailure {
-                _error.value = "Failed to leave group: ${it.localizedMessage}"
+                logAndEmitError("leaveGroup", it)
             }
             loadGroupMembers(groupId)
         }
@@ -298,7 +294,7 @@ class GroupChatViewModel @Inject constructor(
                 onResult(it)
                 loadGroupMembers(groupId)
             }.onFailure {
-                _error.value = "Admin failed to leave group: ${it.localizedMessage}"
+                logAndEmitError("adminLeaveGroup", it)
                 onResult(null)
             }
         }
@@ -326,7 +322,7 @@ class GroupChatViewModel @Inject constructor(
                 }
                 _simulatedGroupChats.value = finalResult
             }.onFailure {
-                _error.value = "Failed to load group list: ${it.localizedMessage}"
+                logAndEmitError("simulateLatestGroupChats", it)
             }
         }
     }
@@ -336,7 +332,7 @@ class GroupChatViewModel @Inject constructor(
             repository.getUserGroups().onSuccess { groupList ->
                 _selectedGroup.value = groupList.find { it.groupId == groupId }
             }.onFailure {
-                _error.value = "Failed to load group: ${it.localizedMessage}"
+                logAndEmitError("loadGroupById", it)
             }
         }
     }
@@ -364,7 +360,7 @@ class GroupChatViewModel @Inject constructor(
                 _groupAvatarUrl.value = avatarUrl
                 _isAvatarLoading.value = false
             }.onFailure {
-                _error.value = "Failed to load group avatar: ${it.localizedMessage}"
+                logAndEmitError("getGroupAvatar", it)
                 _isAvatarLoading.value = false
             }
         }
@@ -376,9 +372,8 @@ class GroupChatViewModel @Inject constructor(
             repository.uploadGroupAvatar(groupId, file).onSuccess { avatarUrl ->
                 _groupAvatarUrl.value = avatarUrl
                 _isAvatarLoading.value = false
-            }.onFailure { exception ->
-                _error.value =
-                    "Error uploading avatar: ${exception.localizedMessage}"
+            }.onFailure {
+                logAndEmitError("uploadGroupAvatar", it)
                 _isAvatarLoading.value = false
             }
         }
@@ -391,7 +386,7 @@ class GroupChatViewModel @Inject constructor(
                 _groupAvatarUrl.value = avatarUrl
                 _isAvatarLoading.value = false
             }.onFailure {
-                _error.value = "Failed to update group avatar: ${it.localizedMessage}"
+                logAndEmitError("updateGroupAvatar", it)
                 _isAvatarLoading.value = false
             }
         }
@@ -404,7 +399,7 @@ class GroupChatViewModel @Inject constructor(
                 _groupAvatarUrl.value = null
                 _isAvatarLoading.value = false
             }.onFailure {
-                _error.value = "Failed to delete group avatar: ${it.localizedMessage}"
+                logAndEmitError("deleteGroupAvatar", it)
                 _isAvatarLoading.value = false
             }
         }
@@ -418,5 +413,18 @@ class GroupChatViewModel @Inject constructor(
         super.onCleared()
         signalRDisposable?.dispose()
         hubConnection?.stop()
+    }
+
+    private suspend fun logAndEmitError(method: String, error: Throwable?) {
+        Log.e(TAG, "Error in $method", error)
+        _error.emit(
+            stringProvider.getString(R.string.operation_failed_try_again)
+        )
+    }
+
+    private fun logAndEmitError(method: String, error: Throwable) {
+        viewModelScope.launch {
+            logAndEmitError(method, error as Throwable?)
+        }
     }
 }

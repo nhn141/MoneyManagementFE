@@ -10,6 +10,7 @@ import DI.Models.RemoveMessageReactionDTO
 import DI.Repositories.MessageEnhancementRepository
 import DI.Models.UiEvent.UiEvent
 import Utils.StringResourceProvider
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneymanagement_frontend.R
@@ -66,12 +67,12 @@ class MessageEnhancementViewModel @Inject constructor(
                 )
                 getMessageReactions(dto.messageId, dto.messageType)
             } else {
+                val error = result.exceptionOrNull()
+                Log.e(TAG, "Error adding reaction", error)
+
                 _uiEvent.emit(
                     UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
+                        stringProvider.getString(R.string.operation_failed_try_again)
                     )
                 )
             }
@@ -89,12 +90,12 @@ class MessageEnhancementViewModel @Inject constructor(
                 )
                 getMessageReactions(dto.messageId, dto.messageType)
             } else {
+                val error = result.exceptionOrNull()
+                Log.e(TAG, "Error removing reaction", error)
+
                 _uiEvent.emit(
                     UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
+                        stringProvider.getString(R.string.operation_failed_try_again)
                     )
                 )
             }
@@ -142,12 +143,12 @@ class MessageEnhancementViewModel @Inject constructor(
                 )
                 getUnreadMentions()
             } else {
+                val error = result.exceptionOrNull()
+                Log.e(TAG, "Error marking mention as read", error)
+
                 _uiEvent.emit(
                     UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
+                        stringProvider.getString(R.string.operation_failed_try_again)
                     )
                 )
             }
@@ -165,12 +166,12 @@ class MessageEnhancementViewModel @Inject constructor(
                 )
                 getUnreadMentions()
             } else {
+                val error = result.exceptionOrNull()
+                Log.e(TAG, "Error marking all mentions as read", error)
+
                 _uiEvent.emit(
                     UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
+                        stringProvider.getString(R.string.operation_failed_try_again)
                     )
                 )
             }

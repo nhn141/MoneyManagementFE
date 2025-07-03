@@ -21,16 +21,9 @@ class GroupFundViewModel @Inject constructor(
     private val stringProvider: StringResourceProvider
 ) : ViewModel() {
 
-//    init {
-//        Log.d("GroupFundViewModel", "ViewModel initialized")
-//        viewModelScope.launch {
-//            val response = repository.getGroupFundsByGroupId("727b116f-140c-4e1c-ad5a-ab35bc0ff089")
-////            val response = repository.createGroupFund(CreateGroupFundDto("727b116f-140c-4e1c-ad5a-ab35bc0ff089", "YEP"))
-////            val response = repository.updateGroupFund("aaef3a4f-f7b4-486b-b0bb-aa37aecf91f4", UpdateGroupFundDto("aaef3a4f-f7b4-486b-b0bb-aa37aecf91f4", "Hello", 100000.0))
-////            val response = repository.deleteGroupFund("aaef3a4f-f7b4-486b-b0bb-aa37aecf91f4")
-//              Log.d("TEST", "Fetch result: $response")
-//        }
-//    }
+    companion object {
+        private const val TAG = "GroupFundViewModel"
+    }
 
     private val _groupFunds = MutableStateFlow<Result<List<GroupFundDto>>?>(null)
     val groupFunds: StateFlow<Result<List<GroupFundDto>>?> = _groupFunds.asStateFlow()
@@ -45,14 +38,14 @@ class GroupFundViewModel @Inject constructor(
     val deleteGroupFundEvent = _deleteGroupFundEvent.asSharedFlow()
 
     fun fetchGroupFunds(groupId: String) {
-        Log.d("GroupFundViewModel", "Calling fetchGroupFunds with id: $groupId")
+        Log.d(TAG, "Calling fetchGroupFunds with id: $groupId")
         viewModelScope.launch {
             try {
                 val result = repository.getGroupFundsByGroupId(groupId)
-                Log.d("GroupFundViewModel", "Fetch result: ${result.isSuccess}")
+                Log.d(TAG, "Fetch result: ${result.isSuccess}")
                 _groupFunds.value = result
             } catch (e: Exception) {
-                Log.e("GroupFundViewModel", "Error fetching funds", e)
+                logError("fetchGroupFunds", e)
             }
         }
     }
@@ -66,14 +59,7 @@ class GroupFundViewModel @Inject constructor(
                     UiEvent.ShowMessage(stringProvider.getString(R.string.group_fund_created_success))
                 )
             } else {
-                _addGroupFundEvent.emit(
-                    UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
-                    )
-                )
+                logAndEmitError("createGroupFund", result.exceptionOrNull(), _addGroupFundEvent)
             }
         }
     }
@@ -87,14 +73,7 @@ class GroupFundViewModel @Inject constructor(
                     UiEvent.ShowMessage(stringProvider.getString(R.string.group_fund_updated_success))
                 )
             } else {
-                _updateGroupFundEvent.emit(
-                    UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
-                    )
-                )
+                logAndEmitError("updateGroupFund", result.exceptionOrNull(), _updateGroupFundEvent)
             }
         }
     }
@@ -108,15 +87,25 @@ class GroupFundViewModel @Inject constructor(
                     UiEvent.ShowMessage(stringProvider.getString(R.string.group_fund_deleted_success))
                 )
             } else {
-                _deleteGroupFundEvent.emit(
-                    UiEvent.ShowMessage(
-                        stringProvider.getString(
-                            R.string.error_message,
-                            result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
-                        )
-                    )
-                )
+                logAndEmitError("deleteGroupFund", result.exceptionOrNull(), _deleteGroupFundEvent)
             }
         }
+    }
+
+    private suspend fun logAndEmitError(
+        method: String,
+        error: Throwable?,
+        flow: MutableSharedFlow<UiEvent>
+    ) {
+        Log.e(TAG, "Error in $method", error)
+        flow.emit(
+            UiEvent.ShowMessage(
+                stringProvider.getString(R.string.operation_failed_try_again)
+            )
+        )
+    }
+
+    private fun logError(method: String, error: Throwable?) {
+        Log.e(TAG, "Error in $method", error)
     }
 }

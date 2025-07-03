@@ -78,6 +78,9 @@ fun EditGroupTransactionDialog(
     var walletExpanded by remember { mutableStateOf(false) }
     var categoryExpanded by remember { mutableStateOf(false) }
 
+    val transactionTypes = listOf("Income", "Expense")
+    var typeExpanded by remember { mutableStateOf(false) }
+
     val calendar = remember { mutableStateOf(Calendar.getInstance()) }
 
     LaunchedEffect(Unit) {
@@ -326,27 +329,54 @@ fun EditGroupTransactionDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Type field
-                OutlinedTextField(
-                    value = type,
-                    onValueChange = { type = it },
-                    label = {
-                        Text(
-                            text = stringResource(R.string.type),
-                            color = Color(0xFF00D09E)
-                        )
-                    },
-                    singleLine = true,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF00D09E),
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        focusedLabelColor = Color(0xFF00D09E),
-                        unfocusedLabelColor = Color(0xFF00D09E),
-                        cursorColor = Color(0xFF00D09E)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Type selector
+                ExposedDropdownMenuBox(
+                    expanded = typeExpanded,
+                    onExpandedChange = { typeExpanded = !typeExpanded }
+                ) {
+                    OutlinedTextField(
+                        readOnly = true,
+                        value = type.ifEmpty { stringResource(R.string.select_type) },
+                        onValueChange = {},
+                        label = {
+                            Text(
+                                text = stringResource(R.string.type),
+                                color = Color(0xFF00D09E)
+                            )
+                        },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded)
+                        },
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00D09E),
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedLabelColor = Color(0xFF00D09E),
+                            unfocusedLabelColor = Color(0xFF00D09E),
+                            cursorColor = Color(0xFF00D09E)
+                        ),
+                        modifier = Modifier
+                            .menuAnchor(
+                                type = MenuAnchorType.PrimaryEditable,
+                                enabled = true
+                            )
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = typeExpanded,
+                        onDismissRequest = { typeExpanded = false }
+                    ) {
+                        transactionTypes.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.replaceFirstChar { it.uppercase() }) },
+                                onClick = {
+                                    type = option
+                                    typeExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     )

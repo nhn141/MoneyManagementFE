@@ -5,6 +5,7 @@ import DI.API.TokenHandler.AuthStorage
 import DI.Composables.ChatSection.MessageInputBar
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Models.CreateMessageReactionDTO
+import DI.Models.Group.GroupMember
 import DI.Models.Group.GroupMessage
 import DI.Models.GroupTransactionComment.CreateGroupTransactionCommentDto
 import DI.Models.GroupTransactionComment.GroupTransactionCommentDto
@@ -141,7 +142,6 @@ fun GroupChatMessageScreen(
 
     LaunchedEffect(Unit) {
         groupChatViewModel.joinGroup(groupId)
-        groupChatViewModel.connectToSignalR()
         groupChatViewModel.loadGroupMessages(groupId)
         groupChatViewModel.markMessagesRead(groupId)
         groupChatViewModel.loadGroupById(groupId)
@@ -243,7 +243,7 @@ fun GroupChatMessageScreen(
             CommentDialog(
                 transactionId = transactionId,
                 comments = filteredComments,
-                profile = profile,
+                members = members,
                 onAdd = { newContent ->
                     groupTransactionCommentViewModel.addComment(
                         CreateGroupTransactionCommentDto(transactionId, newContent)
@@ -592,7 +592,7 @@ fun extractTransactionId(content: String): String? {
 fun CommentDialog(
     transactionId: String,
     comments: List<GroupTransactionCommentDto>,
-    profile: Result<Profile>?,
+    members: List<GroupMember>,
     onAdd: (String) -> Unit,
     onEdit: (String, String) -> Unit,
     onDelete: (String) -> Unit,
@@ -677,7 +677,12 @@ fun CommentDialog(
                                         )
                                     }
 
-                                    val currentUserId = (profile?.getOrNull()?.id ?: "")
+                                    val currentUserId = AuthStorage.getUserIdFromToken(LocalContext.current)
+
+                                    val currentUser = members.find { it.userId == currentUserId }
+
+                                    val currentUserRole = currentUser?.role ?: -1
+
                                     if (comment.userId == currentUserId) {
                                         if (editingCommentId != comment.commentId) {
                                             IconButton(onClick = {
