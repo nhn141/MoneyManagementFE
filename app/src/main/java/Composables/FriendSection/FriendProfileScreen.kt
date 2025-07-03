@@ -2,8 +2,10 @@ package DI.Composables.FriendSection
 
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Composables.ProfileSection.MainColor
+import DI.Models.Friend.AddFriendRequest
 import DI.ViewModels.FriendViewModel
 import DI.ViewModels.ProfileViewModel
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,7 +31,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
@@ -79,14 +80,15 @@ fun FriendProfileScreen(
     val friends = friendViewModel.friends.collectAsState().value?.getOrNull()
     val isOnline = friends?.find { it.userId == friendId }?.isOnline == true
 
-    val isFriend = false
+    val isFriend = friends?.find { it.userId == friendId } != null
 
+    Log.d("FriendProfileScreen", "Friend ID: $friendId, isFriend: $isFriend")
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF53dba9))
     ) {
-        IconButton(onClick = { }) {
+        IconButton(onClick = { navController.popBackStack() }) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
@@ -198,13 +200,12 @@ fun FriendProfileScreen(
                 ActionButton(
                     icon = if (isFriend) Icons.Default.PersonRemove else Icons.Default.PersonAdd,
                     label = if (isFriend) stringResource(R.string.unfriend) else stringResource(R.string.add_friend),
-                    onClick = { friendViewModel.deleteFriend(friendId) }
-                )
-
-                ActionButton(
-                    icon = Icons.Default.MoreVert,
-                    label = stringResource(R.string.more_options),
-                    onClick = { /* Show more options */ }
+                    onClick = {
+                        if (isFriend)
+                            friendViewModel.deleteFriend(friendId)
+                        else
+                            friendViewModel.addFriend(AddFriendRequest(friendId))
+                    }
                 )
             }
 
