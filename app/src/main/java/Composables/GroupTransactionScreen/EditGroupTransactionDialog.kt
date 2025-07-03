@@ -3,12 +3,14 @@ package DI.Composables.GroupTransactionScreen
 import DI.Models.Category.Category
 import DI.Models.GroupTransaction.GroupTransactionDto
 import DI.Models.Wallet.Wallet
+import DI.Utils.CurrencyUtils
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
@@ -31,8 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.moneymanagement_frontend.R
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
@@ -49,10 +52,20 @@ fun EditGroupTransactionDialog(
     transaction: GroupTransactionDto,
     onDismiss: () -> Unit,
     onUpdate: (String, String, Double, String, String, String) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    isVND: Boolean,
+    exchangeRate: Double? = 1.0
 ) {
     var description by remember { mutableStateOf(transaction.description) }
-    var amountRaw by remember { mutableStateOf(transaction.amount.toLong().toString()) }
+    var amountRaw by remember {
+        mutableStateOf(
+            CurrencyUtils.formatAmount(
+                transaction.amount,
+                isVND,
+                exchangeRate
+            )
+        )
+    }
     var type by remember { mutableStateOf(transaction.type) }
 
     var selectedWallet by remember {
@@ -72,7 +85,8 @@ fun EditGroupTransactionDialog(
             val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             val parsed = inputFormat.parse(transaction.transactionDate)
             parsed?.let { calendar.value.time = it }
-        } catch (_: Exception) { }
+        } catch (_: Exception) {
+        }
     }
 
     val dateDialogState = rememberMaterialDialogState()
@@ -90,38 +104,52 @@ fun EditGroupTransactionDialog(
         }
     }
 
-    val formattedAmount by remember(amountRaw) {
-        mutableStateOf(formatAmount(amountRaw))
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
                 onClick = {
-                    val parsedAmount = amountRaw.toDoubleOrNull() ?: 0.0
+                    val parsedAmount = CurrencyUtils.parseAmount(amountRaw) ?: 0.0
                     val walletID = selectedWallet?.walletID ?: ""
                     val categoryID = selectedCategory?.categoryID ?: ""
                     onUpdate(walletID, categoryID, parsedAmount, description, storageDate, type)
                 }
             ) {
-                Text("Save")
+                Text(
+                    text = stringResource(R.string.save),
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                )
             }
         },
         dismissButton = {
             Row {
                 TextButton(onClick = onDelete) {
-                    Text("Delete", color = Color.Red)
+                    Text(
+                        text = stringResource(R.string.delete),
+                        color = Color.Red
+                    )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         },
-        title = { Text("Edit Group Transaction") },
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        title = {
+            Text(
+                text = stringResource(R.string.edit_group_transaction),
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                style = androidx.compose.material3.MaterialTheme.typography.headlineSmall
+            )
+        },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Wallet dropdown
                 ExposedDropdownMenuBox(
                     expanded = walletExpanded,
@@ -129,12 +157,26 @@ fun EditGroupTransactionDialog(
                 ) {
                     OutlinedTextField(
                         readOnly = true,
-                        value = selectedWallet?.walletName ?: "Select Wallet",
+                        value = selectedWallet?.walletName
+                            ?: stringResource(R.string.select_wallet),
                         onValueChange = {},
-                        label = { Text("Wallet") },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.select_wallet),
+                                color = Color(0xFF00D09E)
+                            )
+                        },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = walletExpanded)
                         },
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00D09E),
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedLabelColor = Color(0xFF00D09E),
+                            unfocusedLabelColor = Color(0xFF00D09E),
+                            cursorColor = Color(0xFF00D09E)
+                        ),
                         modifier = Modifier
                             .menuAnchor(
                                 type = MenuAnchorType.PrimaryEditable,
@@ -165,12 +207,25 @@ fun EditGroupTransactionDialog(
                 ) {
                     OutlinedTextField(
                         readOnly = true,
-                        value = selectedCategory?.name ?: "Select Category",
+                        value = selectedCategory?.name ?: stringResource(R.string.select_category),
                         onValueChange = {},
-                        label = { Text("Category") },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.select_category),
+                                color = Color(0xFF00D09E)
+                            )
+                        },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded)
                         },
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00D09E),
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedLabelColor = Color(0xFF00D09E),
+                            unfocusedLabelColor = Color(0xFF00D09E),
+                            cursorColor = Color(0xFF00D09E)
+                        ),
                         modifier = Modifier
                             .menuAnchor(
                                 type = MenuAnchorType.PrimaryEditable,
@@ -194,19 +249,41 @@ fun EditGroupTransactionDialog(
                     }
                 }
 
-                OutlinedTextField(
-                    value = formattedAmount,
-                    onValueChange = { input ->
-                        amountRaw = input.filter { char -> char.isDigit() }
+                Utils.CurrencyInput(
+                    isVND = isVND,
+                    label = {
+                        Text(
+                            text = stringResource(R.string.amount),
+                            color = Color(0xFF00D09E)
+                        )
                     },
-                    label = { Text("Amount") },
-                    modifier = Modifier.fillMaxWidth()
+                    value = amountRaw,
+                    onValueChange = { amountRaw = it },
+                    onValidationResult = { /* Optionally handle error */ }
                 )
 
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = {
+                        Text(
+                            text = stringResource(R.string.description),
+                            color = Color(0xFF00D09E)
+                        )
+                    },
+                    singleLine = true,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    textStyle = androidx.compose.material3.MaterialTheme.typography.bodyLarge.copy(
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00D09E),
+                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                        errorBorderColor = Color.Red,
+                        focusedLabelColor = Color(0xFF00D09E),
+                        unfocusedLabelColor = Color(0xFF00D09E),
+                        cursorColor = Color(0xFF00D09E)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -215,24 +292,59 @@ fun EditGroupTransactionDialog(
                     value = displayDate,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Date & Time") },
+                    label = {
+                        Text(
+                            text = stringResource(R.string.date_and_time),
+                            color = Color(0xFF00D09E)
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            tint = Color(0xFF00D09E),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
                     trailingIcon = {
                         IconButton(onClick = { dateDialogState.show() }) {
                             Icon(
                                 imageVector = Icons.Default.DateRange,
-                                contentDescription = "Pick Date",
+                                contentDescription = stringResource(R.string.pick_date),
                                 tint = Color(0xFF00D09E)
                             )
                         }
                     },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00D09E),
+                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                        focusedLabelColor = Color(0xFF00D09E),
+                        unfocusedLabelColor = Color(0xFF00D09E),
+                        cursorColor = Color(0xFF00D09E)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Type field
                 OutlinedTextField(
                     value = type,
                     onValueChange = { type = it },
-                    label = { Text("Type") },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                    label = {
+                        Text(
+                            text = stringResource(R.string.type),
+                            color = Color(0xFF00D09E)
+                        )
+                    },
+                    singleLine = true,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00D09E),
+                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                        focusedLabelColor = Color(0xFF00D09E),
+                        unfocusedLabelColor = Color(0xFF00D09E),
+                        cursorColor = Color(0xFF00D09E)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -242,8 +354,8 @@ fun EditGroupTransactionDialog(
     MaterialDialog(
         dialogState = dateDialogState,
         buttons = {
-            positiveButton("OK")
-            negativeButton("Cancel")
+            positiveButton(stringResource(R.string.ok))
+            negativeButton(stringResource(R.string.cancel))
         }
     ) {
         datepicker { date ->
@@ -257,8 +369,8 @@ fun EditGroupTransactionDialog(
     MaterialDialog(
         dialogState = timeDialogState,
         buttons = {
-            positiveButton("OK")
-            negativeButton("Cancel")
+            positiveButton(stringResource(R.string.ok))
+            negativeButton(stringResource(R.string.cancel))
         }
     ) {
         timepicker { time ->

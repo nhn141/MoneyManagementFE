@@ -373,7 +373,9 @@ fun TransactionEditBody(
 
                     CurrencyInput(
                         isVND = isVND,
-                        label = stringResource(R.string.amount, if (isVND) "₫" else "$"),
+                        label = {
+                            Text(stringResource(R.string.amount, if (isVND) "₫" else "$"))
+                        },
                         value = amount,
                         onValueChange = { newAmount ->
                             amount = newAmount

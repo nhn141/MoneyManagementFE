@@ -17,6 +17,8 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.moneymanagement_frontend.R
+import com.google.gson.Gson
 import com.microsoft.signalr.HubConnection
 import com.microsoft.signalr.HubConnectionBuilder
 import com.microsoft.signalr.HubConnectionState
@@ -74,9 +76,6 @@ class GroupChatViewModel @Inject constructor(
         // Kết nối
         signalRDisposable = hubConnection?.start()?.doOnComplete {
             Log.d("SignalR", "Connected to hub")
-            val testGroupId = "25a71c1e-bac7-457c-ad03-354378e47b7d"
-            val testContent = "Tin nhắn test lúc ${System.currentTimeMillis()}"
-            val messageMap = mapOf("groupId" to testGroupId, "content" to testContent)
             if (hubConnection?.connectionState == HubConnectionState.CONNECTED) {
                 try {
                     hubConnection?.invoke("JoinUserGroup", userId)
@@ -128,6 +127,9 @@ class GroupChatViewModel @Inject constructor(
 
     private val _createGroupEvent = MutableSharedFlow<String>()
     val createGroupEvent = _createGroupEvent.asSharedFlow()
+
+    private val _groupMemberChangeEvent = MutableSharedFlow<String>()
+    val groupMemberChangeEvent = _groupMemberChangeEvent.asSharedFlow()
 
     private val _transactionMessages = MutableStateFlow<List<TransactionMessageInfo>>(emptyList())
     val transactionMessages: StateFlow<List<TransactionMessageInfo>> = _transactionMessages
@@ -181,10 +183,6 @@ class GroupChatViewModel @Inject constructor(
             connectToSignalR()
             return
         }
-
-        val userId = AuthStorage.getUserIdFromToken(context) ?: return
-        val userName = "Me"
-        val avatar = "" // hoặc load từ Profile nếu có
 
         try {
             joinGroup(groupId)
@@ -255,7 +253,9 @@ class GroupChatViewModel @Inject constructor(
 
     fun addUserToGroup(groupId: String, userId: String) {
         viewModelScope.launch {
-            repository.addUserToGroup(groupId, userId).onFailure {
+            repository.addUserToGroup(groupId, userId).onSuccess {
+                _groupMemberChangeEvent.emit("add")
+            }.onFailure {
                 _error.value = "Failed to add user to group: ${it.localizedMessage}"
             }
             loadGroupMembers(groupId)
@@ -264,7 +264,9 @@ class GroupChatViewModel @Inject constructor(
 
     fun removeUserFromGroup(groupId: String, userId: String) {
         viewModelScope.launch {
-            repository.removeUserFromGroup(groupId, userId).onFailure {
+            repository.removeUserFromGroup(groupId, userId).onSuccess {
+                _groupMemberChangeEvent.emit("remove")
+            }.onFailure {
                 _error.value = "Failed to remove user from group: ${it.localizedMessage}"
             }
             loadGroupMembers(groupId)
@@ -339,7 +341,7 @@ class GroupChatViewModel @Inject constructor(
         }
     }
 
-    fun filterTransactionMessages() {
+    private fun filterTransactionMessages() {
         val rawMessages = _groupMessages.value
         val filtered = rawMessages
             .filter { it.content.contains("💰") || it.content.contains("💸") }
@@ -351,7 +353,7 @@ class GroupChatViewModel @Inject constructor(
     }
 
     private fun extractTransactionIdFromMessage(content: String): String? {
-        val pattern = Regex("transactionId=([a-fA-F0-9\\-]+)") // điều chỉnh theo format thực tế
+        val pattern = Regex("transactionId=([a-fA-F0-9\\-]+)")
         return pattern.find(content)?.groupValues?.getOrNull(1)
     }
 
@@ -369,14 +371,14 @@ class GroupChatViewModel @Inject constructor(
     }
 
     fun uploadGroupAvatar(groupId: String, file: File) {
-        _isAvatarLoading.value = true  // Đánh dấu trạng thái đang tải avatar
+        _isAvatarLoading.value = true
         viewModelScope.launch {
             repository.uploadGroupAvatar(groupId, file).onSuccess { avatarUrl ->
-                _groupAvatarUrl.value = avatarUrl  // Cập nhật URL avatar
+                _groupAvatarUrl.value = avatarUrl
                 _isAvatarLoading.value = false
             }.onFailure { exception ->
                 _error.value =
-                    "Error uploading avatar: ${exception.localizedMessage}"  // Thông báo lỗi
+                    "Error uploading avatar: ${exception.localizedMessage}"
                 _isAvatarLoading.value = false
             }
         }
@@ -386,7 +388,7 @@ class GroupChatViewModel @Inject constructor(
         viewModelScope.launch {
             _isAvatarLoading.value = true
             repository.updateGroupAvatar(groupId, avatarUrl).onSuccess {
-                _groupAvatarUrl.value = avatarUrl // Cập nhật avatar mới
+                _groupAvatarUrl.value = avatarUrl
                 _isAvatarLoading.value = false
             }.onFailure {
                 _error.value = "Failed to update group avatar: ${it.localizedMessage}"
@@ -399,7 +401,7 @@ class GroupChatViewModel @Inject constructor(
         viewModelScope.launch {
             _isAvatarLoading.value = true
             repository.deleteGroupAvatar(groupId).onSuccess {
-                _groupAvatarUrl.value = null // Set lại ảnh avatar mặc định
+                _groupAvatarUrl.value = null
                 _isAvatarLoading.value = false
             }.onFailure {
                 _error.value = "Failed to delete group avatar: ${it.localizedMessage}"

@@ -82,8 +82,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.moneymanagement_frontend.R
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalTime
@@ -661,9 +659,11 @@ fun TransactionRow(
                 Log.d("TransactionRow", "ID: ${transaction.transactionID}")
             }
     ) {
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -685,9 +685,11 @@ fun TransactionRow(
                     )
                 }
 
-                Column(modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp)
+                ) {
                     Text(
                         text = transaction.title,
                         style = MaterialTheme.typography.titleMedium,
@@ -721,42 +723,6 @@ fun TransactionRow(
             )
         }
     }
-}
-
-@Composable
-fun formatAmount(amount: Double, isVND: Boolean, exchangeRate: Double?): String {
-    val displayAmount =
-        if (isVND || exchangeRate == null) {
-            amount
-        } else {
-            amount / exchangeRate
-        }
-
-    val symbols =
-        if (isVND) {
-            DecimalFormatSymbols().apply {
-                groupingSeparator = '.'
-                decimalSeparator = ','
-            }
-        } else {
-            DecimalFormatSymbols().apply {
-                groupingSeparator = ','
-                decimalSeparator = '.'
-            }
-        }
-
-    val formatter =
-        if (isVND) {
-            DecimalFormat("#,##0.##", symbols)
-        } else {
-            DecimalFormat("#,##0.00", symbols)
-        }
-
-    val formatted = formatter.format(displayAmount)
-    val currencySymbol = if (isVND) "VND" else "USD"
-
-    Log.d("formatAmount", "Exchange Rate: $exchangeRate")
-    return "$formatted $currencySymbol"
 }
 
 @Composable
@@ -942,9 +908,11 @@ fun SearchDialog(
             colors = CardDefaults.cardColors(containerColor = Color(0xFF85E0B3)),
             elevation = CardDefaults.cardElevation(defaultElevation = 20.dp)
         ) {
-            Column(modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp)
+            ) {
                 // Header with search design
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1263,9 +1231,11 @@ fun SearchSection(title: String, icon: ImageVector, content: @Composable () -> U
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FFF1)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 12.dp)

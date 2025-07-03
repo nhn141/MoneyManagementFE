@@ -471,12 +471,34 @@
     <string name="add_group_fund">Add Group Fund</string>
     <string name="no_group_funds_found">No Group Funds Found</string>
     <string name="recent_group_funds">Recent Group Funds</string>
+    <string name="description_label">Description</string>
+    <string name="saving_goal_label">Saving Goal</string>
+    <string name="income_label">Income</string>
+    <string name="expense_label">Expense</string>
+    <string name="balance_label">Balance</string>
+    <string name="created_at_label">Created At</string>
+    <string name="view_group_transaction">View Group Transaction</string>
+    <string name="delete_fund">Delete Fund</string>
+    <string name="are_you_sure_you_want_delete_this_group_fund">Are You Sure You Want Delete This Group Fund?</string>
+
+    <string name="group_fund_details">Group Fund Details</string>
+    <string name="info_label_template">%1$s:</string>
+
+    <string name="edit_group_fund">Edit Group Fund</string>
 
     <!-- ================== GROUP TRANSACTION ================== -->
     <string name="group_transaction_created_success">Group transaction created successfully</string>
     <string name="group_transaction_updated_success">Group transaction updated successfully</string>
     <string name="group_transaction_deleted_success">Group transaction deleted successfully</string>
     <string name="group_transaction">Group Transaction</string>
+
+    <string name="edit_group_transaction">Edit Group Transaction</string>
+    <string name="description">Description</string>
+    <string name="date_and_time">Date &amp; Time</string>
+    <string name="pick_date">Pick Date</string>
+
+    <string name="add_group_transaction">Add Group Transaction</string>
+    <string name="select_type">Select Type</string>
 
     <!-- ================== GROUP CHAT ================== -->
     <string name="members">members</string>
@@ -486,6 +508,127 @@
     <string name="group_member">Group Member</string>
     <string name="joined_at">Joined At: %1$s</string>
     <string name="role">Role: %1$s</string>
+
+    <string name="group_chat">Group Chat</string>
+    <string name="group_chat_title">Group Messages</string>
+    <string name="group_chat_add_group">Add Group</string>
+    <string name="group_chat_no_groups">No groups found</string>
+    <string name="group_chat_create_new_group">Create New Group</string>
+    <string name="group_chat_group_name">Group Name</string>
+    <string name="group_chat_description">Description</string>
+    <string name="group_chat_group_name_required">Group name is required</string>
+    <string name="group_chat_create">Create</string>
+    <string name="group_chat_cancel">Cancel</string>
+    <string name="group_chat_search">Search</string>
+    <string name="group_chat_search_hint">Search groups</string>
+    <string name="group_chat_clear">Clear</string>
+    <string name="group_chat_no_message_found">No message found</string>
+
+    <string name="loading">Loading...</string>
+    <string name="you_are_muted">You are muted</string>
+    <string name="mute_reason">Reason: %1$s</string>
+    <string name="muted_until">Muted until: %1$s</string>
+    <string name="comment">Comment</string>
+    <string name="reactions">Reactions</string>
+    <string name="transaction_comments">Transaction Comments</string>
+    <string name="edit_comment">Edit comment</string>
+    <string name="new_comment">New comment</string>
+    <string name="add">Add</string>
+    <string name="reactions_for_message">Reactions for message</string>
+    <string name="add_reaction">Add Reaction</string>
+    <string name="current_reactions">Current Reactions</string>
+    <string name="no_reactions_yet">No reactions yet.</string>
+    <string name="invalid_date">Invalid date</string>
+
+    <string name="group_profile_mute_success">User muted successfully.</string>
+    <string name="group_profile_mute_error">Failed to mute user.</string>
+
+    <string name="group_profile_unmute_success">User unmuted successfully.</string>
+    <string name="group_profile_unmute_error">Failed to unmute user.</string>
+
+    <string name="group_profile_ban_success">User banned successfully.</string>
+    <string name="group_profile_ban_error">Failed to ban user.</string>
+
+    <string name="group_profile_unban_success">User unbanned successfully.</string>
+    <string name="group_profile_unban_error">Failed to unban user.</string>
+
+    <string name="group_profile_grant_mod_success">Moderator role granted successfully.</string>
+    <string name="group_profile_grant_mod_error">Failed to grant moderator role.</string>
+
+    <string name="group_profile_revoke_mod_success">Moderator role revoked successfully.</string>
+    <string name="group_profile_revoke_mod_error">Failed to revoke moderator role.</string>
+
+    <string name="group_profile_group_member_add_success">Member added to the group successfully.</string>
+    <string name="group_profile_group_member_remove_success">Member removed from the group successfully.</string>
+    <string name="group_profile_group_member_error">An error occurred while managing group members.</string>
+
+    <string name="group_profile_leave_group_success">You have left the group.</string>
+    <string name="group_profile_admin_leave_success">You have left the group. Admin rights have been transferred.</string>
+    <string name="group_profile_group_deleted">You have deleted the group.</string>
+    <string name="group_profile_leave_group_error">Failed to leave the group.</string>
+    <string name="group_profile_unknown_action">Unknown action.</string>
+
+    <string name="group_profile_confirm_leave_title">Leave Group</string>
+    <string name="group_profile_confirm_leave">Are you sure you want to leave this group?</string>
+    <string name="group_profile_add_user_title">Select a friend to add to the group</string>
+
+    <string name="group_profile_generic_error">An error occurred. Please try again later.</string>
+
+    <string name="group_profile_members">Group Members</string>
+    <string name="group_profile_edit_group">Edit Group</string>
+    <string name="group_profile_info">Group Info</string>
+    <string name="group_profile_id">Group ID</string>
+    <string name="group_profile_description">Description</string>
+    <string name="group_profile_description_empty">No description provided</string>
+    <string name="group_profile_mute_member">Mute Member</string>
+    <string name="group_profile_ban_member">Ban Member</string>
+    <string name="group_profile_reason">Reason</string>
+    <string name="group_profile_mute_time">Mute Time (minutes)</string>
+    <string name="group_profile_confirm">Confirm</string>
+    <string name="group_profile_cancel">Cancel</string>
+    <string name="group_profile_close">Close</string>
+    <string name="group_profile_save">Save</string>
+    <string name="group_profile_remove_user">Remove User</string>
+    <string name="group_profile_add_user">Add User</string>
+
+    <string name="group_profile_group_name">Group Name</string>
+    <string name="group_profile_reason_time_required">Please provide a reason and time.</string>
+    <string name="group_profile_reason_required">Please provide a reason.</string>
+    <string name="group_profile_leave_notice">You will leave this group and stop receiving new messages.</string>
+    <string name="group_profile_leave_group">Leave Group</string>
+    <string name="group_profile_group_id_copied">Group ID copied</string>
+    <string name="group_profile_choose_user_remove">Choose a user to remove</string>
+    <string name="group_profile_all_friends_in_group">All your friends are already in this group.</string>
+    <string name="group_profile_loading_friends">Loading friend list...</string>
+    <string name="group_profile_load_friends_error">Failed to load friend list.</string>
+
+    <string name="group_profile_member_me">%1$s (Me)</string>
+
+    <string name="group_profile_default_name">Group Name</string>
+
+    <string name="group_profile_description_label">Group Description</string>
+
+    <string name="group_profile_member_count">%1$d members</string>
+
+    <string name="group_profile_members_tab">Members</string>
+    <string name="group_profile_funds_tab">Funds</string>
+
+    <string name="group_profile_change_avatar">Change group avatar</string>
+    <string name="group_profile_delete_avatar">Delete Group Avatar</string>
+    <string name="group_profile_copy">Copy</string>
+    <string name="group_profile_unmute">Unmute</string>
+    <string name="group_profile_mute">Mute</string>
+    <string name="group_profile_unban">Unban</string>
+    <string name="group_profile_ban">Ban</string>
+    <string name="group_profile_grant_mod">Grant Mod</string>
+    <string name="group_profile_revoke_mod">Revoke Mod</string>
+
+    <string name="group_profile_role_member">Member</string>
+    <string name="group_profile_role_collaborator">Collaborator</string>
+    <string name="group_profile_role_admin">Admin</string>
+    <string name="group_profile_role_unknown">Unknown</string>
+
+    <string name="group_profile_back">Back</string>
 
     <!-- ================== GROUP TRANSACTION COMMENT ================== -->
     <string name="comment_added">Comment Added</string>
@@ -525,6 +668,12 @@
 
     <!-- ================== SETTINGS SCREEN ================== -->
     <string name="settings_screen_title">Settings</string>
+
+    <!-- ================== MESSAGE ENHANCEMENT ================== -->
+    <string name="reaction_added_successfully">Reaction Added Successfully</string>
+    <string name="reaction_removed_successfully">Reaction Removed Successfully</string>
+    <string name="mention_marked_read_successfully">Mention Marked Read Successfully</string>
+    <string name="all_mentions_marked_read_successfully">All Mention Marked Read Successfully</string>
 
     <!-- ================== NEWSFEED ================== -->
     <string name="no_posts_found">No posts found</string>

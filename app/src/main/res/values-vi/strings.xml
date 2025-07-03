@@ -471,12 +471,34 @@
     <string name="add_group_fund">Thêm Quỹ Nhóm</string>
     <string name="no_group_funds_found">Không Tìm Thấy Qũy Nhóm</string>
     <string name="recent_group_funds">Qũy Nhóm Gần Đây</string>
+    <string name="description_label">Mô Tả</string>
+    <string name="saving_goal_label">Mục Tiêu Tiết Kiệm</string>
+    <string name="income_label">Thu Nhập</string>
+    <string name="expense_label">Chi Tiêu</string>
+    <string name="balance_label">Số Dư</string>
+    <string name="created_at_label">Thời Gian Tạo</string>
+    <string name="view_group_transaction">Xem Giao Dịch Nhóm</string>
+    <string name="delete_fund">Xóa Qũy Nhóm</string>
+    <string name="are_you_sure_you_want_delete_this_group_fund">Bạn Có Muốn Xóa Qũy Nhóm Này?</string>
+
+    <string name="group_fund_details">Chi tiết quỹ nhóm</string>
+    <string name="info_label_template">%1$s:</string>
+
+    <string name="edit_group_fund">Chỉnh sửa quỹ nhóm</string>
 
     <!-- ================== GROUP TRANSACTION ================== -->
     <string name="group_transaction_created_success">Tạo giao dịch nhóm thành công</string>
     <string name="group_transaction_updated_success">Cập nhật giao dịch nhóm thành công</string>
     <string name="group_transaction_deleted_success">Xóa giao dịch nhóm thành công</string>
     <string name="group_transaction">Giao dịch nhóm</string>
+
+    <string name="edit_group_transaction">Chỉnh sửa giao dịch nhóm</string>
+    <string name="description">Mô tả</string>
+    <string name="date_and_time">Ngày &amp; giờ</string>
+    <string name="pick_date">Chọn ngày</string>
+
+    <string name="add_group_transaction">Thêm giao dịch nhóm</string>
+    <string name="select_type">Chọn loại</string>
 
     <!-- ================== GROUP CHAT ================== -->
     <string name="members">Thành viên</string>
@@ -486,6 +508,127 @@
     <string name="group_member">Thành viên nhóm</string>
     <string name="joined_at">Tham gia vào</string>
     <string name="role">Vai trò\n</string>
+
+    <string name="group_chat">Trò chuyện nhóm</string>
+    <string name="group_chat_title">Tin nhắn nhóm</string>
+    <string name="group_chat_add_group">Tạo nhóm</string>
+    <string name="group_chat_no_groups">Không tìm thấy nhóm nào</string>
+    <string name="group_chat_create_new_group">Tạo nhóm mới</string>
+    <string name="group_chat_group_name">Tên nhóm</string>
+    <string name="group_chat_description">Mô tả</string>
+    <string name="group_chat_group_name_required">Vui lòng nhập tên nhóm</string>
+    <string name="group_chat_create">Tạo</string>
+    <string name="group_chat_cancel">Hủy</string>
+    <string name="group_chat_search">Tìm kiếm</string>
+    <string name="group_chat_search_hint">Tìm kiếm nhóm</string>
+    <string name="group_chat_clear">Xóa</string>
+    <string name="group_chat_no_message_found">Không có tin nhắn</string>
+
+    <string name="loading">Đang tải...</string>
+    <string name="you_are_muted">Bạn đang bị tắt tiếng</string>
+    <string name="mute_reason">Lý do: %1$s</string>
+    <string name="muted_until">Tắt tiếng đến: %1$s</string>
+    <string name="comment">Bình luận</string>
+    <string name="reactions">Phản ứng</string>
+    <string name="transaction_comments">Bình luận giao dịch</string>
+    <string name="edit_comment">Chỉnh sửa bình luận</string>
+    <string name="new_comment">Bình luận mới</string>
+    <string name="add">Thêm</string>
+    <string name="reactions_for_message">Phản ứng cho tin nhắn</string>
+    <string name="add_reaction">Thêm phản ứng</string>
+    <string name="current_reactions">Phản ứng hiện tại</string>
+    <string name="no_reactions_yet">Chưa có phản ứng nào.</string>
+    <string name="invalid_date">Ngày không hợp lệ</string>
+
+    <string name="group_profile_mute_success">Tắt tiếng người dùng thành công.</string>
+    <string name="group_profile_mute_error">Tắt tiếng người dùng thất bại.</string>
+
+    <string name="group_profile_unmute_success">Bỏ tắt tiếng người dùng thành công.</string>
+    <string name="group_profile_unmute_error">Bỏ tắt tiếng người dùng thất bại.</string>
+
+    <string name="group_profile_ban_success">Cấm người dùng thành công.</string>
+    <string name="group_profile_ban_error">Cấm người dùng thất bại.</string>
+
+    <string name="group_profile_unban_success">Bỏ cấm người dùng thành công.</string>
+    <string name="group_profile_unban_error">Bỏ cấm người dùng thất bại.</string>
+
+    <string name="group_profile_grant_mod_success">Cấp quyền quản trị viên thành công.</string>
+    <string name="group_profile_grant_mod_error">Cấp quyền quản trị viên thất bại.</string>
+
+    <string name="group_profile_revoke_mod_success">Thu hồi quyền quản trị viên thành công.</string>
+    <string name="group_profile_revoke_mod_error">Thu hồi quyền quản trị viên thất bại.</string>
+
+    <string name="group_profile_group_member_add_success">Thêm thành viên vào nhóm thành công.</string>
+    <string name="group_profile_group_member_remove_success">Xóa thành viên khỏi nhóm thành công.</string>
+    <string name="group_profile_group_member_error">Thao tác với thành viên nhóm thất bại.</string>
+
+    <string name="group_profile_leave_group_success">Bạn đã rời nhóm.</string>
+    <string name="group_profile_admin_leave_success">Bạn đã rời nhóm. Quyền admin đã chuyển.</string>
+    <string name="group_profile_group_deleted">Bạn đã xóa nhóm.</string>
+    <string name="group_profile_leave_group_error">Thoát nhóm thất bại.</string>
+    <string name="group_profile_unknown_action">Hành động không xác định.</string>
+
+    <string name="group_profile_confirm_leave_title">Thoát nhóm</string>
+    <string name="group_profile_confirm_leave">Bạn chắc chắn muốn thoát nhóm này?</string>
+    <string name="group_profile_add_user_title">Chọn bạn để thêm vào nhóm</string>
+
+    <string name="group_profile_generic_error">Đã có lỗi xảy ra. Vui lòng thử lại sau</string>
+
+    <string name="group_profile_members">Thành viên nhóm</string>
+    <string name="group_profile_edit_group">Chỉnh sửa nhóm</string>
+    <string name="group_profile_info">Thông tin nhóm</string>
+    <string name="group_profile_id">Mã nhóm</string>
+    <string name="group_profile_description">Mô tả</string>
+    <string name="group_profile_description_empty">Không có mô tả</string>
+    <string name="group_profile_mute_member">Tắt tiếng thành viên</string>
+    <string name="group_profile_ban_member">Cấm thành viên</string>
+    <string name="group_profile_reason">Lý do</string>
+    <string name="group_profile_mute_time">Thời gian tắt tiếng (phút)</string>
+    <string name="group_profile_confirm">Xác nhận</string>
+    <string name="group_profile_cancel">Hủy</string>
+    <string name="group_profile_close">Đóng</string>
+    <string name="group_profile_save">Lưu</string>
+    <string name="group_profile_remove_user">Xóa thành viên</string>
+    <string name="group_profile_add_user">Thm thành viên</string>
+
+    <string name="group_profile_group_name">Tên nhóm</string>
+    <string name="group_profile_reason_time_required">Vui lòng nhập lý do và thời gian.</string>
+    <string name="group_profile_reason_required">Vui lòng nhập lý do.</string>
+    <string name="group_profile_leave_notice">Bạn sẽ rời khỏi nhóm này và không nhận được tin nhắn mới.</string>
+    <string name="group_profile_leave_group">Thoát nhóm</string>
+    <string name="group_profile_group_id_copied">Đã sao chép ID nhóm</string>
+    <string name="group_profile_choose_user_remove">Chọn thành viên cần xóa</string>
+    <string name="group_profile_all_friends_in_group">Tất cả bạn bè của bạn đã có trong nhóm.</string>
+    <string name="group_profile_loading_friends">Đang tải danh sách bạn bè...</string>
+    <string name="group_profile_load_friends_error">Tải danh sách bạn bè thất bại.</string>
+
+    <string name="group_profile_member_me">%1$s (Tôi)</string>
+
+    <string name="group_profile_default_name">Tên nhóm</string>
+
+    <string name="group_profile_description_label">Mô tả</string>
+
+    <string name="group_profile_member_count">%1$d thành viên</string>
+
+    <string name="group_profile_members_tab">Thành viên</string>
+    <string name="group_profile_funds_tab">Qũy</string>
+
+    <string name="group_profile_change_avatar">Đổi ảnh nhóm</string>
+    <string name="group_profile_delete_avatar">Xóa ảnh nhóm</string>
+    <string name="group_profile_copy">Sao chép</string>
+    <string name="group_profile_unmute">Bỏ tắt tiếng</string>
+    <string name="group_profile_mute">Tắt tiếng</string>
+    <string name="group_profile_unban">Bỏ chặn</string>
+    <string name="group_profile_ban">Chặn</string>
+    <string name="group_profile_grant_mod">Cấp quyền cộng tác viên</string>
+    <string name="group_profile_revoke_mod">Thu hồi quyền cộng tác viên</string>
+
+    <string name="group_profile_role_member">Thành viên</string>
+    <string name="group_profile_role_collaborator">Cộng tác viên</string>
+    <string name="group_profile_role_admin">Quản trị viên</string>
+    <string name="group_profile_role_unknown">Không xác định</string>
+
+    <string name="group_profile_back">Quay lại</string>
 
     <!-- ================== GROUP TRANSACTION COMMENT ================== -->
     <string name="comment_added">Đã thêm bình luận</string>
@@ -525,6 +668,12 @@
 
     <!-- ================== SETTINGS SCREEN ================== -->
     <string name="settings_screen_title">Cài đặt</string>
+    
+    <!-- ================== MESSAGE ENHANCEMENT ================== -->
+    <string name="reaction_added_successfully">Thêm Biểu Cảm Thành Công</string>
+    <string name="reaction_removed_successfully">Xóa Biểu Cảm Thành Công</string>
+    <string name="mention_marked_read_successfully">Đánh Dấu Đã Đọc Đề Cập Thành Công</string>
+    <string name="all_mentions_marked_read_successfully">Đánh Dấu Tất Cả Đã Đọc Đề Cập Thành Công</string>
 
     <!-- ================== NEWSFEED ================== -->
     <string name="no_posts_found">Không có bài đăng nào</string>

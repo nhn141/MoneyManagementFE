@@ -1,31 +1,60 @@
 package DI.Composables.ChatSection
 
+import ChatTimeFormatter
 import DI.API.TokenHandler.AuthStorage
+import DI.Composables.GroupChat.ReactionDialog
 import DI.Composables.ProfileSection.FriendAvatar
 import DI.Models.Chat.ChatMessage
+import DI.Models.CreateMessageReactionDTO
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.FriendViewModel
+import DI.ViewModels.MessageEnhancementViewModel
 import DI.ViewModels.ProfileViewModel
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +64,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
@@ -66,7 +96,8 @@ fun ChatMessageScreen(
     chatViewModel: ChatViewModel,
     friendId: String,
     profileViewModel: ProfileViewModel,
-    friendViewModel: FriendViewModel
+    friendViewModel: FriendViewModel,
+    messageEnhancementViewModel: MessageEnhancementViewModel
 ) {
     val currentUserId = AuthStorage.getUserIdFromToken(LocalContext.current)
     var messageContent by remember { mutableStateOf("") }
@@ -85,6 +116,9 @@ fun ChatMessageScreen(
     val friendsResult = friendViewModel.friends.collectAsState()
     val friends = friendsResult.value?.getOrNull() ?: emptyList()
     val friendName = chatMessages.firstOrNull { it.senderId == friendId }?.senderName ?: ""
+
+    var activeReactionMessageId by remember { mutableStateOf<String?>(null) }
+    val reactionSummary by messageEnhancementViewModel.reactionSummary.collectAsState()
 
     Scaffold(
         topBar = {
@@ -127,11 +161,35 @@ fun ChatMessageScreen(
                     isSentByCurrentUser = message.senderId == currentUserId,
                     friendAvatarUrl = friendAvatar.avatarUrl,
                     isLoadingAvatar = isLoadingAvatar.value,
-                    navController = navController // Truyền NavController
+                    navController = navController, // Truyền NavController
+                    onReactionClick = { messageId ->
+                        activeReactionMessageId = messageId
+                        messageEnhancementViewModel.getMessageReactions(messageId, "private")
+                    }
                 )
             }
         }
     }
+
+    activeReactionMessageId?.let { messageId ->
+        ReactionDialog(
+            messageId = messageId,
+            summaryResult = reactionSummary,
+            onAddReaction = { reactionType ->
+                messageEnhancementViewModel.addReaction(
+                    CreateMessageReactionDTO(
+                        messageId = messageId,
+                        reactionType = reactionType,
+                        messageType = "direct"
+                    )
+                )
+            },
+            onDismiss = {
+                activeReactionMessageId = null
+            }
+        )
+    }
+
 }
 
 @OptIn(ExperimentalTextApi::class)
@@ -141,7 +199,8 @@ fun MessageBubble(
     isSentByCurrentUser: Boolean,
     friendAvatarUrl: String,
     isLoadingAvatar: Boolean,
-    navController: NavController
+    navController: NavController,
+    onReactionClick: (String) -> Unit
 ) {
     val bubbleShape = RoundedCornerShape(
         topStart = 20.dp,
@@ -171,7 +230,12 @@ fun MessageBubble(
             val endIndex = postMatch.range.last + 1
             append(content.substring(0, startIndex))
             withAnnotation("postId", postId) {
-                withStyle(style = SpanStyle(color = Color(0xFF667EEA), textDecoration = TextDecoration.Underline)) {
+                withStyle(
+                    style = SpanStyle(
+                        color = Color(0xFF667EEA),
+                        textDecoration = TextDecoration.Underline
+                    )
+                ) {
                     append("\n[Xem bài viết]")
                 }
             }
@@ -180,10 +244,16 @@ fun MessageBubble(
             val transactionId = transactionMatch.groupValues[1]
             val startIndex = transactionMatch.range.first
             val endIndex = transactionMatch.range.last + 1
-            val transactionContent = content.substring(0, startIndex).trim() // Lấy nội dung trước [transaction]
+            val transactionContent =
+                content.substring(0, startIndex).trim() // Lấy nội dung trước [transaction]
             append(transactionContent)
             withAnnotation("transactionId", transactionId) {
-                withStyle(style = SpanStyle(color = Color(0xFF667EEA), textDecoration = TextDecoration.Underline)) {
+                withStyle(
+                    style = SpanStyle(
+                        color = Color(0xFF667EEA),
+                        textDecoration = TextDecoration.Underline
+                    )
+                ) {
                     append("\n[Xem giao dịch]")
                 }
             }
@@ -234,8 +304,14 @@ fun MessageBubble(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    val hasAnnotation = annotatedString.getStringAnnotations("postId", 0, annotatedString.length).isNotEmpty() ||
-                            annotatedString.getStringAnnotations("transactionId", 0, annotatedString.length).isNotEmpty()
+                    val hasAnnotation =
+                        annotatedString.getStringAnnotations("postId", 0, annotatedString.length)
+                            .isNotEmpty() ||
+                                annotatedString.getStringAnnotations(
+                                    "transactionId",
+                                    0,
+                                    annotatedString.length
+                                ).isNotEmpty()
 
                     if (hasAnnotation) {
                         BasicText(
@@ -245,10 +321,18 @@ fun MessageBubble(
                                     detectTapGestures { offset ->
                                         textLayoutResult?.let { layout ->
                                             val position = layout.getOffsetForPosition(offset)
-                                            annotatedString.getStringAnnotations("postId", position, position)
+                                            annotatedString.getStringAnnotations(
+                                                "postId",
+                                                position,
+                                                position
+                                            )
                                                 .firstOrNull()?.let { annotation ->
                                                     navController.navigate("newsfeed?postIdToFocus=${annotation.item}")
-                                                } ?: annotatedString.getStringAnnotations("transactionId", position, position)
+                                                } ?: annotatedString.getStringAnnotations(
+                                                "transactionId",
+                                                position,
+                                                position
+                                            )
                                                 .firstOrNull()?.let { annotation ->
                                                     val encodedContent = Uri.encode(message.content)
                                                     navController.navigate("temporary_transaction?content=$encodedContent")
@@ -278,6 +362,14 @@ fun MessageBubble(
                         fontSize = 11.sp,
                         color = if (isSentByCurrentUser) Color.White.copy(alpha = 0.7f) else Color.Gray,
                         modifier = Modifier.align(Alignment.End)
+                    )
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_reaction),
+                        contentDescription = stringResource(R.string.reactions),
+                        tint = Color.Gray,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable { onReactionClick(message.messageID) }
                     )
                 }
             }
@@ -322,7 +414,7 @@ fun ChatTopBar(
                     .padding(4.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if(isLoadingAvatar) {
+                if (isLoadingAvatar) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = PrimaryColor,
