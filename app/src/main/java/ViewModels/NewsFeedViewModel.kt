@@ -413,5 +413,4 @@ class NewsFeedViewModel @Inject constructor(
             )
         }
     }
-
 }
