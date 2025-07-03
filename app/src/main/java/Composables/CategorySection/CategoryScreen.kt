@@ -629,7 +629,7 @@ fun ModernCategoriesScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.category),
+                                contentDescription = stringResource(R.string.back),
                                 tint = Color.White,
                                 modifier = Modifier.size(28.dp)
                             )
