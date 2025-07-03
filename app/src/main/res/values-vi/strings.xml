@@ -501,6 +501,8 @@
     <string name="add_group_transaction">Thêm giao dịch nhóm</string>
     <string name="select_type">Chọn loại</string>
 
+    <string name="operation_failed_try_again">Thao tác thất bại. Vui lòng thử lại.</string>
+
     <!-- ================== GROUP CHAT ================== -->
     <string name="members">Thành viên</string>
     <string name="Member">Thành viên</string>

@@ -501,6 +501,8 @@
     <string name="add_group_transaction">Add Group Transaction</string>
     <string name="select_type">Select Type</string>
 
+    <string name="operation_failed_try_again">Operation failed. Please try again.</string>
+
     <!-- ================== GROUP CHAT ================== -->
     <string name="members">members</string>
     <string name="Member">Member</string>

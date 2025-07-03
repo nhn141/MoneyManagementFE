@@ -6,10 +6,14 @@ import DI.Models.GroupModeration.GroupUserActionRequest
 import DI.Models.GroupModeration.ModerationLogResponse
 import DI.Models.GroupModeration.MuteUserRequest
 import DI.Models.GroupModeration.UserGroupStatusDTO
+import DI.Models.UiEvent.UiEvent
 import DI.Repositories.GroupChatRepository
 import DI.Repositories.GroupModerationRepository
+import Utils.StringResourceProvider
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.moneymanagement_frontend.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +25,12 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupModerationViewModel @Inject constructor(
     private val repository: GroupModerationRepository,
+    private val stringProvider: StringResourceProvider
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "GroupModerationVM"
+    }
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
@@ -62,6 +71,9 @@ class GroupModerationViewModel @Inject constructor(
     fun muteUser(request: MuteUserRequest) {
         viewModelScope.launch {
             val result = repository.muteUser(request)
+            if (result.isFailure) {
+                logAndEmitError("muteUser", result.exceptionOrNull())
+            }
             getAllMemberStatuses(request.groupId)
             _muteUserResult.emit(result)
         }
@@ -70,6 +82,9 @@ class GroupModerationViewModel @Inject constructor(
     fun unmuteUser(request: GroupUserActionRequest) {
         viewModelScope.launch {
             val result = repository.unmuteUser(request)
+            if (result.isFailure) {
+                logAndEmitError("unmuteUser", result.exceptionOrNull())
+            }
             getAllMemberStatuses(request.groupId)
             _unmuteUserResult.emit(result)
         }
@@ -78,6 +93,9 @@ class GroupModerationViewModel @Inject constructor(
     fun banUser(request: BanKickUserRequest) {
         viewModelScope.launch {
             val result = repository.banUser(request)
+            if (result.isFailure) {
+                logAndEmitError("banUser", result.exceptionOrNull())
+            }
             getAllMemberStatuses(request.groupId)
             _banUserResult.emit(result)
         }
@@ -86,6 +104,9 @@ class GroupModerationViewModel @Inject constructor(
     fun unbanUser(request: GroupUserActionRequest) {
         viewModelScope.launch {
             val result = repository.unbanUser(request)
+            if (result.isFailure) {
+                logAndEmitError("unbanUser", result.exceptionOrNull())
+            }
             getAllMemberStatuses(request.groupId)
             _unbanUserResult.emit(result)
         }
@@ -94,6 +115,9 @@ class GroupModerationViewModel @Inject constructor(
     fun kickUser(request: BanKickUserRequest) {
         viewModelScope.launch {
             val result = repository.kickUser(request)
+            if (result.isFailure) {
+                logAndEmitError("kickUser", result.exceptionOrNull())
+            }
             _kickUserResult.emit(result)
         }
     }
@@ -101,6 +125,9 @@ class GroupModerationViewModel @Inject constructor(
     fun deleteMessage(request: DeleteMessageRequest) {
         viewModelScope.launch {
             val result = repository.deleteMessage(request)
+            if (result.isFailure) {
+                logAndEmitError("deleteMessage", result.exceptionOrNull())
+            }
             _deleteMessageResult.emit(result)
         }
     }
@@ -108,6 +135,9 @@ class GroupModerationViewModel @Inject constructor(
     fun grantModeratorRole(request: GroupUserActionRequest) {
         viewModelScope.launch {
             val result = repository.grantModeratorRole(request)
+            if (result.isFailure) {
+                logAndEmitError("grantModeratorRole", result.exceptionOrNull())
+            }
             getAllMemberStatuses(request.groupId)
             _grantModeratorRoleResult.emit(result)
         }
@@ -116,6 +146,9 @@ class GroupModerationViewModel @Inject constructor(
     fun revokeModeratorRole(request: GroupUserActionRequest) {
         viewModelScope.launch {
             val result = repository.revokeModeratorRole(request)
+            if (result.isFailure) {
+                logAndEmitError("revokeModeratorRole", result.exceptionOrNull())
+            }
             getAllMemberStatuses(request.groupId)
             _revokeModeratorRoleResult.emit(result)
         }
@@ -124,6 +157,9 @@ class GroupModerationViewModel @Inject constructor(
     fun getModerationLogs(groupId: String, page: Int, pageSize: Int) {
         viewModelScope.launch {
             val result = repository.getModerationLogs(groupId, page, pageSize)
+            if (result.isFailure) {
+                logAndEmitError("getModerationLogs", result.exceptionOrNull())
+            }
             _moderationLogs.emit(result)
         }
     }
@@ -133,7 +169,7 @@ class GroupModerationViewModel @Inject constructor(
             repository.getUserGroupStatus(groupId).onSuccess {
                 _userGroupStatus.value = it
             }.onFailure {
-                _error.value = "Failed to load user status: ${it.localizedMessage}"
+                logAndEmitError("getUserGroupStatus", it)
             }
         }
     }
@@ -143,8 +179,15 @@ class GroupModerationViewModel @Inject constructor(
             repository.getAllGroupMemberStatuses(groupId).onSuccess {
                 _allMemberStatuses.value = it
             }.onFailure {
-                _error.value = "Failed to load group members status: ${it.localizedMessage}"
+                logAndEmitError("getAllMemberStatuses", it)
             }
         }
+    }
+
+    private suspend fun logAndEmitError(method: String, error: Throwable?) {
+        Log.e(TAG, "Error in $method", error)
+        _error.emit(
+            stringProvider.getString(R.string.operation_failed_try_again)
+        )
     }
 }

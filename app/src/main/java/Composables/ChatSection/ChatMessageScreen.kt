@@ -164,7 +164,7 @@ fun ChatMessageScreen(
                     navController = navController, // Truyền NavController
                     onReactionClick = { messageId ->
                         activeReactionMessageId = messageId
-                        messageEnhancementViewModel.getMessageReactions(messageId, "private")
+                        messageEnhancementViewModel.getMessageReactions(messageId, "direct")
                     }
                 )
             }

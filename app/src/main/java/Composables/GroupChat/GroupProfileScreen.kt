@@ -514,28 +514,6 @@ fun GroupProfileScreen(
                 }
             }
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.group_profile_leave_notice),
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
-
             Button(
                 onClick = {
                     showConfirmDialog = true
@@ -619,7 +597,21 @@ fun GroupProfileScreen(
                         }
                     },
                     title = { Text(stringResource(R.string.group_profile_confirm_leave_title)) },
-                    text = { Text(stringResource(R.string.group_profile_confirm_leave)) }
+                    text = {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.group_profile_leave_notice),
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.group_profile_confirm_leave),
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
                 )
             }
         }
