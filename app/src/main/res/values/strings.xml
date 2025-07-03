@@ -458,6 +458,11 @@
     <string name="create_financial_report_title">Create Financial Report</string>
     <string name="export_report_description">Export detailed reports and analyze data</string>
     <string name="report_format_pdf">pdf</string>
+    <string name="report_generated_success">Report generated successfully</string>
+    <string name="report_generation_failed">Failed to generate report: %s</string>
+    <string name="report_saved_success">Saved to Downloads</string>
+    <string name="report_save_failed">Failed to save file</string>
+
     <!-- ================== GROUP FUND ================== -->
     <string name="group_fund_created_success">Group fund created successfully</string>
     <string name="group_fund_updated_success">Group fund updated successfully</string>
@@ -570,5 +575,26 @@
     <string name="notification_like_content">%s liked your post</string>
     <string name="notification_comment_content">%s commented on your post</string>
     <string name="notification_reply_content">%s replied to your comment</string>
+    <string name="post_created_success">Post created successfully</string>
+    <string name="post_creation_failed">Failed to create post: %s</string>
+    <string name="post_liked_success">Post liked successfully</string>
+    <string name="post_like_failed">Failed to like post: %s</string>
+    <string name="post_unliked_success">Post unliked successfully</string>
+    <string name="post_unlike_failed">Failed to unlike post: %s</string>
+    <string name="comment_created_success">Comment added successfully</string>
+    <string name="comment_creation_failed">Failed to add comment: %s</string>
+    <string name="comment_deleted_success">Comment deleted successfully</string>
+    <string name="comment_deletion_failed">Failed to delete comment: %s</string>
+    <string name="reply_created_success">Reply added successfully</string>
+    <string name="reply_creation_failed">Failed to add reply: %s</string>
+    <string name="reply_deleted_success">Reply deleted successfully</string>
+    <string name="reply_deletion_failed">Failed to delete reply: %s</string>
+    <string name="post_target_updated_success">Post target updated successfully</string>
+    <string name="post_target_update_failed">Failed to update post target: %s</string>
+    <string name="error_loading_posts">Failed to load posts: %s</string>
+    <string name="error_fetching_user_info">Unable to fetch user information</string>
+    <string name="error_fetching_user_info_with_message">Unable to fetch user information: %s</string>
+    <string name="error_fetching_post_detail">Failed to fetch post details: %s</string>
+    <string name="error_fetching_comments">Failed to fetch comments: %s</string>
 </resources>
 

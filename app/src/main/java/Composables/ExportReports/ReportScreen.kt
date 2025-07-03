@@ -1,6 +1,7 @@
 package DI.Composables.ExportReports
 
 import DI.Models.Reports.ReportRequest
+import DI.Models.UiEvent.UiEvent
 import DI.ViewModels.ReportViewModel
 import android.util.Log
 import android.widget.Toast
@@ -82,6 +83,8 @@ fun ReportScreen(viewModel: ReportViewModel, navController: NavController) {
     var startDate by remember { mutableStateOf(LocalDateTime.now()) }
     var endDate by remember { mutableStateOf(LocalDateTime.now()) }
     val dateFormatter = DateTimeFormatter.ISO_DATE_TIME
+    val context = LocalContext.current
+    var isLoading by remember { mutableStateOf(false) }
 
     val typeOptions = listOf(
         stringResource(R.string.cash_flow) to "cash-flow",
@@ -101,8 +104,6 @@ fun ReportScreen(viewModel: ReportViewModel, navController: NavController) {
     var selectedCurrency by remember { mutableStateOf(currencyOptions.first().second) }
 
     val format = stringResource(R.string.report_format_pdf)
-    val context = LocalContext.current
-    var isLoading by remember { mutableStateOf(false) }
 
     // Primary colors
     val primaryGreen = Color(0xFF00D09E)
@@ -111,31 +112,31 @@ fun ReportScreen(viewModel: ReportViewModel, navController: NavController) {
     val backgroundColor = Color(0xFFF8FFFE)
     val cardBackground = Color.White
 
-    // Handle report result
+    // Handle report events
+    LaunchedEffect(Unit) {
+        viewModel.reportEvent.collect { event ->
+            when (event) {
+                is UiEvent.ShowMessage -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    // Handle report result for saving PDF
     LaunchedEffect(reportResult, isLoading) {
         if (isLoading && reportResult != null) {
             isLoading = false
             reportResult?.let { result ->
                 if (result.isSuccess) {
-                    val responseBody = result.getOrNull()
-                    responseBody?.let {
+                    result.getOrNull()?.let { responseBody ->
                         val saved = savePdfToDownloads(
                             context = context,
-                            responseBody = it,
+                            responseBody = responseBody,
                             filename = "report_${System.currentTimeMillis()}.pdf"
                         )
-                        Toast.makeText(
-                            context,
-                            if (saved) "Save to Downloads" else "Fail to save file",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        viewModel.onReportSaved(saved)
                     }
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Fail to generate report",
-                        Toast.LENGTH_LONG
-                    ).show()
                 }
             }
         }

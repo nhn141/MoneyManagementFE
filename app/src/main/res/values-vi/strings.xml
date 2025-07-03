@@ -458,6 +458,11 @@
     <string name="create_financial_report_title">Tạo báo cáo tài chính</string>
     <string name="export_report_description">Xuất báo cáo chi tiết và phân tích dữ liệu</string>
     <string name="report_format_pdf">pdf</string>
+    <string name="report_generated_success">Báo cáo được tạo thành công</string>
+    <string name="report_generation_failed">Không thể tạo báo cáo: %s</string>
+    <string name="report_saved_success">Đã lưu vào Downloads</string>
+    <string name="report_save_failed">Không thể lưu file</string>
+
     <!-- ================== GROUP FUND ================== -->
     <string name="group_fund_created_success">Tạo quỹ nhóm thành công</string>
     <string name="group_fund_updated_success">Cập nhật quỹ nhóm thành công</string>
@@ -570,4 +575,25 @@
     <string name="notification_like_content">%s đã thích bài viết của bạn</string>
     <string name="notification_comment_content">%s đã bình luận bài viết của bạn</string>
     <string name="notification_reply_content">%s đã phản hồi bình luận của bạn</string>
+    <string name="post_created_success">Đăng bài thành công</string>
+    <string name="post_creation_failed">Không thể đăng bài: %s</string>
+    <string name="post_liked_success">Đã thích bài viết</string>
+    <string name="post_like_failed">Không thể thích bài viết: %s</string>
+    <string name="post_unliked_success">Đã bỏ thích bài viết</string>
+    <string name="post_unlike_failed">Không thể bỏ thích bài viết: %s</string>
+    <string name="comment_created_success">Đã thêm bình luận</string>
+    <string name="comment_creation_failed">Không thể thêm bình luận: %s</string>
+    <string name="comment_deleted_success">Đã xóa bình luận</string>
+    <string name="comment_deletion_failed">Không thể xóa bình luận: %s</string>
+    <string name="reply_created_success">Đã thêm phản hồi</string>
+    <string name="reply_creation_failed">Không thể thêm phản hồi: %s</string>
+    <string name="reply_deleted_success">Đã xóa phản hồi</string>
+    <string name="reply_deletion_failed">Không thể xóa phản hồi: %s</string>
+    <string name="post_target_updated_success">Đã cập nhật đối tượng bài viết</string>
+    <string name="post_target_update_failed">Không thể cập nhật đối tượng bài viết: %s</string>
+    <string name="error_loading_posts">Không thể tải bài viết: %s</string>
+    <string name="error_fetching_user_info">Không thể lấy thông tin người dùng</string>
+    <string name="error_fetching_user_info_with_message">Không thể lấy thông tin người dùng: %s</string>
+    <string name="error_fetching_post_detail">Không thể lấy chi tiết bài viết: %s</string>
+    <string name="error_fetching_comments">Không thể tải bình luận: %s</string>
 </resources>
