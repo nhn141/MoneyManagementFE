@@ -92,7 +92,7 @@ fun HomeScreen(
 
     val profile =
         profileViewModel.profile.collectAsStateWithLifecycle().value?.getOrNull() ?: Profile()
-    val avatarUrl = profile.avatarUrl
+    val avatarUrl = profile.avatarUrl ?: ""
     val avatarVersion = profileViewModel.avatarVersion.collectAsState().value
     val userProfile = remember(profile, avatarUrl, avatarVersion, isVND) {
         UserProfile(

@@ -5,12 +5,14 @@ import DI.Composables.CategorySection.getCategoryIcon
 import DI.Models.Chat.LatestChat
 import DI.Models.Group.Group
 import DI.Models.NewsFeed.Post
+import DI.Models.UiEvent.UiEvent
 import DI.Utils.CurrencyUtils
 import DI.ViewModels.CategoryViewModel
 import DI.ViewModels.ChatViewModel
 import DI.ViewModels.CurrencyConverterViewModel
 import DI.ViewModels.GroupChatViewModel
 import DI.ViewModels.ProfileViewModel
+import DI.ViewModels.TransactionAction
 import DI.ViewModels.TransactionViewModel
 import DI.ViewModels.WalletViewModel
 import android.content.Context
@@ -68,6 +70,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,6 +87,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.moneymanagement_frontend.R
+import kotlinx.coroutines.launch
 
 @Composable
 fun TransactionDetailScreen(
@@ -268,22 +272,24 @@ fun TransactionDetailBody(
     val typeIcon = if (type.equals("Income", ignoreCase = true))
         Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
 
+    val coroutineScope = rememberCoroutineScope()
+
     val currentUserId = profileViewModel.profile.value?.getOrNull()?.id ?: ""
 
     val formattedAmount = CurrencyUtils.formatAmount(amount.toDoubleOrNull() ?: 0.0, isVND, exchangeRate)
 
     val shareMessage = """
-        Shared Transaction:
-        Title: $title
-        Type: $type
-        Amount: $formattedAmount
-        Date: $date
-        Category: $categoryName
-        Wallet: $walletName
+        ${stringResource(R.string.shared_transaction)}
+        ${stringResource(R.string.title_label)} $title
+        ${stringResource(R.string.type_label)} $type
+        ${stringResource(R.string.amount_label1)} $formattedAmount
+        ${stringResource(R.string.date_label)} $date
+        ${stringResource(R.string.category_label)} $categoryName
+        ${stringResource(R.string.wallet_label)} $walletName
         [transaction:$transactionId]
     """.trimIndent()
 
-    var showShareDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog chia sẻ
+    var showShareDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     val latestChats by chatViewModel.latestChats.collectAsState(initial = null)
@@ -292,6 +298,18 @@ fun TransactionDetailBody(
     LaunchedEffect(Unit) {
         groupChatViewModel.loadUserGroups()
         chatViewModel.getLatestChats()
+    }
+
+    LaunchedEffect(Unit) {
+        launch {
+            viewModel._transactionEvent.collect { event ->
+                when (event) {
+                    is UiEvent.ShowMessage -> {
+                        Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     }
 
     Box(
@@ -392,7 +410,7 @@ fun TransactionDetailBody(
                                 icon = Icons.Default.Title,
                                 label = stringResource(R.string.title),
                                 value = title,
-                                iconTint = Color(0xFF667eea)
+                                iconTint = Color(0xFF667EEA)
                             )
 
                             DetailItem(
@@ -465,14 +483,15 @@ fun TransactionDetailBody(
             DeleteDialog(
                 onDismiss = { showDeleteDialog = false },
                 onConfirm = {
-                    showDeleteDialog = false
-                    viewModel.deleteTransaction(transactionId) { success ->
-                        if (success) {
-                            showToast(context, "Transaction deleted successfully ✓")
+                    coroutineScope.launch {
+                        try {
+                            viewModel.deleteTransaction(transactionId) { }
+                            viewModel.notifyTransactionAction(TransactionAction.DELETE, success = true)
                             navController.popBackStack()
-                        } else {
-                            showToast(context, "Failed to delete transaction ✗")
+                        } catch (e: Exception) {
+                            viewModel.notifyTransactionAction(TransactionAction.DELETE, success = false)
                         }
+                        showDeleteDialog = false
                     }
                 }
             )
@@ -486,14 +505,28 @@ fun TransactionDetailBody(
                 groups = groups,
                 currentUserId = currentUserId,
                 onShareToFriend = { friendId ->
-                    chatViewModel.sendMessage(friendId, shareMessage)
-                    showShareDialog = false
+                    coroutineScope.launch {
+                        try {
+                            chatViewModel.sendMessage(friendId, shareMessage)
+                            viewModel.notifyShareAction(success = true, isGroup = false)
+                        } catch (e: Exception) {
+                            viewModel.notifyShareAction(success = false, isGroup = false)
+                        }
+                        showShareDialog = false
+                    }
                 },
                 onShareToGroup = { groupId ->
-                    groupChatViewModel.sendGroupMessage(groupId, shareMessage)
-                    showShareDialog = false
+                    coroutineScope.launch {
+                        try {
+                            groupChatViewModel.sendGroupMessage(groupId, shareMessage)
+                            viewModel.notifyShareAction(success = true, isGroup = true)
+                        } catch (e: Exception) {
+                            viewModel.notifyShareAction(success = false, isGroup = true)
+                        }
+                        showShareDialog = false
+                    }
                 },
-                transactionId = transactionId // Truyền transactionId để sử dụng nếu cần
+                transactionId = transactionId
             )
         }
     }
@@ -767,10 +800,5 @@ fun DeleteDialog(
         dismissButton = null,
         modifier = Modifier.padding(16.dp)
     )
-}
-
-// Toast utility function
-fun showToast(context: Context, message: String) {
-    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 }
 
