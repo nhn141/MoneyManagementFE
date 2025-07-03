@@ -1705,7 +1705,6 @@ fun ShareDialog(
             Column {
                 Text(
                     text = "Chia sẻ với bạn bè",
-                    color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -1745,7 +1744,7 @@ fun ShareDialog(
                                 } else {
                                     latestMessage.senderName ?: "Unknown"
                                 },
-                                color = Color.White,
+                                color = Color(0xFF00D09E),
                                 fontSize = 14.sp
                             )
                         }
@@ -1756,7 +1755,6 @@ fun ShareDialog(
 
                 Text(
                     text = "Chia sẻ với nhóm",
-                    color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -1786,7 +1784,7 @@ fun ShareDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = group.name,
-                                color = Color.White,
+                                color = Color(0xFF00D09E),
                                 fontSize = 14.sp
                             )
                         }
