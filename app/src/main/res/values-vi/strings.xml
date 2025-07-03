@@ -746,4 +746,11 @@
     <string name="error_fetching_user_info_with_message">Không thể lấy thông tin người dùng: %s</string>
     <string name="error_fetching_post_detail">Không thể lấy chi tiết bài viết: %s</string>
     <string name="error_fetching_comments">Không thể tải bình luận: %s</string>
+    <string name="group_selection_required">Vui lòng chọn ít nhất một nhóm</string>
+    <string name="share_to_friend_success">Đã chia sẻ với bạn bè thành công</string>
+    <string name="share_to_friend_failed">Không thể chia sẻ với bạn bè</string>
+    <string name="share_to_group_success">Đã chia sẻ với nhóm thành công</string>
+    <string name="share_to_group_failed">Không thể chia sẻ với nhóm</string>
+    <string name="save_image_success">Đã lưu ảnh thành công</string>
+    <string name="save_image_failed">Không thể lưu ảnh</string>
 </resources>
