@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Monee</string>
 
     <!-- ================== COMMON ACTIONS & UI ELEMENTS ================== -->
     <string name="ok">OK</string>
@@ -668,7 +669,7 @@
 
     <!-- ================== SETTINGS SCREEN ================== -->
     <string name="settings_screen_title">Cài đặt</string>
-    
+
     <!-- ================== MESSAGE ENHANCEMENT ================== -->
     <string name="reaction_added_successfully">Thêm Biểu Cảm Thành Công</string>
     <string name="reaction_removed_successfully">Xóa Biểu Cảm Thành Công</string>

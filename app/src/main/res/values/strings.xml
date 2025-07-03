@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Monee</string>
 
     <!-- ================== COMMON ACTIONS & UI ELEMENTS ================== -->
     <string name="ok">OK</string>
