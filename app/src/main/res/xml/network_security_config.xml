@@ -2,11 +2,12 @@
 <network-security-config>
     <!-- Allow HTTP to public IP -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">143.198.208.227</domain>
+        <!-- config for emulator -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
     </domain-config>
 
-    <!-- Still allow local host (real device) -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">192.168.1.14</domain>
-    </domain-config>
+    <!--    &lt;!&ndash; Still allow local host (real device) &ndash;&gt;-->
+    <!--    <domain-config cleartextTrafficPermitted="true">-->
+    <!--        <domain includeSubdomains="true">192.168.1.14</domain>-->
+    <!--    </domain-config>-->
 </network-security-config>
