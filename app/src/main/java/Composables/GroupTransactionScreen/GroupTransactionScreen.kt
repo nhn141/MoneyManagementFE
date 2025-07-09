@@ -298,7 +298,8 @@ fun GroupTransactionScreen(
                 )
                 showAddDialog = false
             },
-            isVND = isVND
+            isVND = isVND,
+            exchangeRate = exchangeRate
         )
     }
 

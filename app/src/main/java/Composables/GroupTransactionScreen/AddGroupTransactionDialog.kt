@@ -1,5 +1,7 @@
 package DI.Composables.GroupTransactionScreen
 
+import DI.Composables.TransactionSection.DropdownSelector
+import DI.Composables.TransactionSection.TransactionTextField
 import DI.Models.Category.Category
 import DI.Models.Wallet.Wallet
 import Utils.CurrencyInput
@@ -8,17 +10,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.moneymanagement_frontend.R
@@ -40,7 +41,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddGroupTransactionDialog(
     walletList: List<Wallet>,
@@ -48,19 +48,19 @@ fun AddGroupTransactionDialog(
     onDismiss: () -> Unit,
     onSave: (String, String, Double, String, String, String) -> Unit,
     isVND: Boolean,
+    exchangeRate: Double? = null
 ) {
+    val context = LocalContext.current
+
     var selectedWallet by remember { mutableStateOf<Wallet?>(null) }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
 
-    var walletExpanded by remember { mutableStateOf(false) }
-    var categoryExpanded by remember { mutableStateOf(false) }
 
     var description by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
+    var amountRaw by remember { mutableStateOf("") }
     var type by remember { mutableStateOf("") }
 
     val transactionTypes = listOf("Income", "Expense")
-    var typeExpanded by remember { mutableStateOf(false) }
 
     val calendar = remember { mutableStateOf(Calendar.getInstance()) }
 
@@ -78,19 +78,77 @@ fun AddGroupTransactionDialog(
         derivedStateOf { storageFormatter.format(calendar.value.time) }
     }
 
+    var walletError by remember { mutableStateOf<String?>(null) }
+    var categoryError by remember { mutableStateOf<String?>(null) }
+    var amountError by remember { mutableStateOf<String?>(null) }
+    var titleError by remember { mutableStateOf<String?>(null) }
+    var typeError by remember { mutableStateOf<String?>(null) }
+
     val dateDialogState = rememberMaterialDialogState()
     val timeDialogState = rememberMaterialDialogState()
+
+    fun validateForm(): Boolean {
+        var isValid = true
+
+        if (selectedWallet == null) {
+            walletError = context.getString(R.string.please_select_wallet)
+            isValid = false
+        } else {
+            walletError = null
+        }
+
+        if (selectedCategory == null) {
+            categoryError = context.getString(R.string.please_select_category)
+            isValid = false
+        } else {
+            categoryError = null
+        }
+
+        val parsedAmount = DI.Utils.CurrencyUtils.parseAmount(amountRaw)
+        if (parsedAmount == null) {
+            amountError = context.getString(R.string.amount_invalid_error)
+            isValid = false
+        } else {
+            amountError = null
+        }
+
+        if (description.trim().isEmpty()) {
+            titleError = context.getString(R.string.please_enter_title)
+            isValid = false
+        } else {
+            titleError = null
+        }
+
+        if (type.isEmpty()) {
+            typeError = context.getString(R.string.please_select_type)
+            isValid = false
+        } else {
+            typeError = null
+        }
+
+        return isValid
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
                 onClick = {
-                    val parsedAmount = DI.Utils.CurrencyUtils.parseAmount(amount) ?: 0.0
-                    val walletId = selectedWallet?.walletID ?: ""
-                    val categoryId = selectedCategory?.categoryID ?: ""
+                    if (validateForm()) {
 
-                    onSave(walletId, categoryId, parsedAmount, description, storageDate, type)
+                        val parsedAmount = DI.Utils.CurrencyUtils.parseAmount(amountRaw) ?: 0.0
+
+                        val amountToSave = if (isVND) {
+                            parsedAmount
+                        } else {
+                            val rate = exchangeRate ?: 1.0
+                            DI.Utils.CurrencyUtils.usdToVnd(parsedAmount, rate)
+                        }
+                        val walletId = selectedWallet?.walletID ?: ""
+                        val categoryId = selectedCategory?.categoryID ?: ""
+
+                        onSave(walletId, categoryId, amountToSave, description, storageDate, type)
+                    }
                 }
             ) {
                 Text(
@@ -123,222 +181,94 @@ fun AddGroupTransactionDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Wallet Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = walletExpanded,
-                    onExpandedChange = { walletExpanded = !walletExpanded }
-                ) {
-                    OutlinedTextField(
-                        readOnly = true,
-                        value = selectedWallet?.walletName
-                            ?: stringResource(R.string.select_wallet),
-                        onValueChange = {},
-                        label = {
-                            Text(
-                                text = stringResource(R.string.wallet),
-                                color = Color(0xFF00D09E)
-                            )
-                        },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(walletExpanded) },
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF00D09E),
-                            unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedLabelColor = Color(0xFF00D09E),
-                            unfocusedLabelColor = Color(0xFF00D09E),
-                            cursorColor = Color(0xFF00D09E)
-                        ),
-                        modifier = Modifier
-                            .menuAnchor(
-                                type = MenuAnchorType.PrimaryEditable,
-                                enabled = true
-                            )
-                            .fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = walletExpanded,
-                        onDismissRequest = { walletExpanded = false }
-                    ) {
-                        walletList.forEach { wallet ->
-                            DropdownMenuItem(
-                                text = { Text(wallet.walletName) },
-                                onClick = {
-                                    selectedWallet = wallet
-                                    walletExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
+                DropdownSelector(
+                    label = stringResource(R.string.wallet),
+                    selectedName = selectedWallet?.walletName ?: "",
+                    options = walletList.map { it.walletName to it.walletID },
+                    onSelect = { _, id ->
+                        selectedWallet = walletList.firstOrNull { it.walletID == id }
+                        walletError = null
+                    },
+                    icon = Icons.Default.AccountBalance,
+                    placeholder = stringResource(R.string.select_wallet),
+                    error = walletError
+                )
 
                 // Category Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = categoryExpanded,
-                    onExpandedChange = { categoryExpanded = !categoryExpanded }
-                ) {
-                    OutlinedTextField(
-                        readOnly = true,
-                        value = selectedCategory?.name ?: stringResource(R.string.select_category),
-                        onValueChange = {},
-                        label = {
-                            Text(
-                                text = stringResource(R.string.category),
-                                color = Color(0xFF00D09E)
-                            )
-                        },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF00D09E),
-                            unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedLabelColor = Color(0xFF00D09E),
-                            unfocusedLabelColor = Color(0xFF00D09E),
-                            cursorColor = Color(0xFF00D09E)
-                        ),
-                        modifier = Modifier
-                            .menuAnchor(
-                                type = MenuAnchorType.PrimaryEditable,
-                                enabled = true
-                            )
-                            .fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = categoryExpanded,
-                        onDismissRequest = { categoryExpanded = false }
-                    ) {
-                        categoryList.forEach { cat ->
-                            DropdownMenuItem(
-                                text = { Text(cat.name) },
-                                onClick = {
-                                    selectedCategory = cat
-                                    categoryExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
+                DropdownSelector(
+                    label = stringResource(R.string.category),
+                    selectedName = selectedCategory?.name ?: "",
+                    options = categoryList.map { it.name to it.categoryID },
+                    onSelect = { _, id ->
+                        selectedCategory = categoryList.firstOrNull { it.categoryID == id }
+                        categoryError = null
+                    },
+                    icon = Icons.Default.Category,
+                    placeholder = stringResource(R.string.select_category),
+                    error = categoryError
+                )
 
                 CurrencyInput(
-                    isVND = isVND, // or pass a prop if you want to support USD
+                    isVND = isVND,
                     label = {
                         Text(
                             text = stringResource(R.string.amount),
                             color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
-                    value = amount,
-                    onValueChange = { amount = it },
-                    onValidationResult = { /* Optionally handle error */ }
+                    value = amountRaw,
+                    onValueChange = { newRaw ->
+                        amountRaw = newRaw
+                    },
+                    onValidationResult = { error ->
+                        amountError = error
+                    }
                 )
 
-                OutlinedTextField(
+                TransactionTextField(
+                    label = stringResource(R.string.description),
                     value = description,
-                    onValueChange = { description = it },
-                    label = {
-                        Text(
-                            text = stringResource(R.string.description),
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    onValueChange = {
+                        description = it
+                        titleError = null
                     },
-                    singleLine = true,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    textStyle = androidx.compose.material3.MaterialTheme.typography.bodyLarge.copy(
-                        androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF00D09E),
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        errorBorderColor = Color.Red,
-                        focusedLabelColor = Color(0xFF00D09E),
-                        unfocusedLabelColor = Color(0xFF00D09E),
-                        cursorColor = Color(0xFF00D09E)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                    placeholder = stringResource(R.string.enter_transaction_title),
+                    leadingIcon = Icons.Default.Title,
+                    error = titleError
                 )
 
                 // Date/Time Field
-                OutlinedTextField(
+                TransactionTextField(
+                    label = stringResource(R.string.date_time),
                     value = displayDate,
                     onValueChange = {},
-                    readOnly = true,
-                    label = {
-                        Text(
-                            text = stringResource(R.string.date_time),
-                            color = Color(0xFF00D09E)
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.CalendarToday,
-                            contentDescription = null,
-                            tint = Color(0xFF00D09E),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
+                    isDropdown = true,
+                    leadingIcon = Icons.Default.CalendarToday,
                     trailingIcon = {
                         IconButton(onClick = { dateDialogState.show() }) {
                             Icon(
                                 imageVector = Icons.Default.DateRange,
                                 contentDescription = stringResource(R.string.select_date),
-                                tint = Color(0xFF00D09E)
-                            )
-                        }
-                    },
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF00D09E),
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        focusedLabelColor = Color(0xFF00D09E),
-                        unfocusedLabelColor = Color(0xFF00D09E),
-                        cursorColor = Color(0xFF00D09E)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Type Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = typeExpanded,
-                    onExpandedChange = { typeExpanded = !typeExpanded }
-                ) {
-                    OutlinedTextField(
-                        readOnly = true,
-                        value = type.ifEmpty { stringResource(R.string.select_type) },
-                        onValueChange = {},
-                        label = {
-                            Text(
-                                text = stringResource(R.string.type),
-                                color = Color(0xFF00D09E)
-                            )
-                        },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(typeExpanded) },
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF00D09E),
-                            unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedLabelColor = Color(0xFF00D09E),
-                            unfocusedLabelColor = Color(0xFF00D09E),
-                            cursorColor = Color(0xFF00D09E)
-                        ),
-                        modifier = Modifier
-                            .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true)
-                            .fillMaxWidth()
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = typeExpanded,
-                        onDismissRequest = { typeExpanded = false }
-                    ) {
-                        transactionTypes.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    type =
-                                        option.lowercase() // giữ nguyên 'income' hoặc 'expense' đúng định dạng backend
-                                    typeExpanded = false
-                                }
+                                tint = Color(0xFF00D09E),
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
-                }
+                )
+
+                // Type Dropdown
+                DropdownSelector(
+                    label = stringResource(R.string.type),
+                    selectedName = if (type.isNotEmpty()) type.replaceFirstChar { it.uppercase() } else "",
+                    options = transactionTypes.map { it to it.lowercase() },
+                    onSelect = { _, value ->
+                        type = value
+                        typeError = null
+                    },
+                    icon = Icons.Default.Payments,
+                    placeholder = stringResource(R.string.select_type),
+                    error = typeError
+                )
             }
         }
     )
