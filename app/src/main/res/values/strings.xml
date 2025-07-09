@@ -34,6 +34,7 @@
     <string name="manage_wallets">Manage your digital wallets with ease</string>
     <string name="add_wallet">Add Wallet</string>
     <string name="add_new_wallet">Add New Wallet</string>
+    <string name="plus_wallet">Add Money</string>
     <string name="wallet_name">Wallet Name</string>
     <string name="initial_balance">Initial Balance</string>
     <string name="total_balance">Total Balance</string>

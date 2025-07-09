@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -105,8 +106,10 @@ fun WalletScreen(
     val context = LocalContext.current
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var showPlusDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var editingWallet by remember { mutableStateOf<Wallet?>(null) }
+    var plusWallet by remember { mutableStateOf<Wallet?>(null) }
 
     LaunchedEffect(Unit) {
         walletViewModel.getWallets()
@@ -187,6 +190,10 @@ fun WalletScreen(
                         isVND = isVND,
                         exchangeRates = exchangeRates,
                         onAddWallet = { showAddDialog = true },
+                        onPlusWallet = { wallet ->
+                            plusWallet = wallet
+                            showPlusDialog = true
+                        },
                         onEditWallet = { wallet ->
                             editingWallet = wallet
                             showEditDialog = true
@@ -220,11 +227,26 @@ fun WalletScreen(
             )
         }
 
+        if (showPlusDialog && plusWallet != null) {
+            PLusWalletDialog(
+                wallet = plusWallet!!,
+                isVND = isVND,
+                exchangeRates = exchangeRates,
+                onDismiss = {
+                    showPlusDialog = false
+                    plusWallet = null
+                },
+                onConfirm = { updatedWallet ->
+                    walletViewModel.updateWallet(updatedWallet)
+                    showPlusDialog = false
+                    plusWallet = null
+                }
+            )
+        }
+
         if (showEditDialog && editingWallet != null) {
             EditWalletDialog(
                 wallet = editingWallet!!,
-                isVND = isVND,
-                exchangeRates = exchangeRates,
                 onDismiss = {
                     showEditDialog = false
                     editingWallet = null
@@ -282,6 +304,7 @@ private fun WalletContent(
     isVND: Boolean,
     exchangeRates: Double?,
     onAddWallet: () -> Unit,
+    onPlusWallet: (Wallet) -> Unit,
     onEditWallet: (Wallet) -> Unit,
     onDeleteWallet: (String) -> Unit
 ) {
@@ -309,6 +332,7 @@ private fun WalletContent(
                 wallet = wallet,
                 isVND = isVND,
                 exchangeRates = exchangeRates,
+                onPlus = { onPlusWallet(wallet) },
                 onEdit = { onEditWallet(wallet) },
                 onDelete = {
                     walletToDelete = wallet
@@ -475,6 +499,7 @@ private fun WalletCard(
     wallet: Wallet,
     isVND: Boolean,
     exchangeRates: Double?,
+    onPlus: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -526,6 +551,17 @@ private fun WalletCard(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    IconButton(
+                        onClick = onPlus,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddCircleOutline,
+                            contentDescription = stringResource(R.string.add),
+                            tint = WalletColors.Primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                     IconButton(
                         onClick = onEdit,
                         modifier = Modifier.size(32.dp)
@@ -729,30 +765,127 @@ private fun AddWalletDialog(
 }
 
 @Composable
-private fun EditWalletDialog(
+private fun PLusWalletDialog(
     wallet: Wallet,
     isVND: Boolean,
     exchangeRates: Double?,
     onDismiss: () -> Unit,
     onConfirm: (Wallet) -> Unit
 ) {
-    var walletName by remember { mutableStateOf(wallet.walletName) }
-
-    // Convert wallet balance for display based on current currency mode
-    val displayBalance = if (isVND) {
-        wallet.balance
-    } else {
-        exchangeRates?.let { rates ->
-            CurrencyUtils.vndToUsd(wallet.balance, rates)
-        } ?: wallet.balance
-    }
-
-    var amountTextFieldValue by remember {
-        mutableStateOf(TextFieldValue(CurrencyUtils.formatForInput(displayBalance, isVND)))
-    }
-    var parsedAmount by remember { mutableDoubleStateOf(displayBalance) }
+    var amountTextFieldValue by remember { mutableStateOf(TextFieldValue("")) }
+    var parsedAmount by remember { mutableDoubleStateOf(0.0) }
     var showUSDPreview by remember { mutableStateOf(false) }
     var isAmountFieldFocused by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = WalletColors.Surface)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.enter_amount),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = WalletColors.OnSurface
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Amount Input with Currency Support
+                Column {
+                    CurrencyInputTextField(
+                        value = amountTextFieldValue,
+                        onValueChange = { newValue -> amountTextFieldValue = newValue },
+                        isVND = isVND,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { focusState ->
+                                isAmountFieldFocused = focusState.isFocused
+                            },
+                        placeholder = stringResource(R.string.plus_wallet),
+                        onFormatted = { _, amount ->
+                            parsedAmount = amount ?: 0.0
+                        }
+                    )
+
+                    // Track focus state for USD preview
+                    LaunchedEffect(amountTextFieldValue.text, isVND, isAmountFieldFocused) {
+                        showUSDPreview =
+                            !isVND && isAmountFieldFocused && amountTextFieldValue.text.isNotEmpty()
+                    }
+
+                    if (showUSDPreview) {
+                        USDInputPreview(
+                            inputText = amountTextFieldValue.text,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            // Convert the amount to VND if currently in USD mode
+                            val balanceInVND = if (isVND) {
+                                parsedAmount
+                            } else {
+                                exchangeRates?.let { rates ->
+                                    CurrencyUtils.usdToVnd(parsedAmount, rates)
+                                } ?: parsedAmount
+                            }
+
+                            val updatedWallet = wallet.copy(
+                                walletName = wallet.walletName,
+                                balance = balanceInVND
+                            )
+                            onConfirm(updatedWallet)
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = WalletColors.Primary
+                        ),
+                        enabled = parsedAmount > 0
+                    ) {
+                        Text(stringResource(R.string.plus_wallet))
+                    }
+
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(0.8f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = WalletColors.OnSurfaceVariant
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            WalletColors.OnSurfaceVariant.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditWalletDialog(
+    wallet: Wallet,
+    onDismiss: () -> Unit,
+    onConfirm: (Wallet) -> Unit
+) {
+    var walletName by remember { mutableStateOf(wallet.walletName) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -786,57 +919,15 @@ private fun EditWalletDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Amount Input with Currency Support
-                Column {
-                    CurrencyInputTextField(
-                        value = amountTextFieldValue,
-                        onValueChange = { newValue -> amountTextFieldValue = newValue },
-                        isVND = isVND,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onFocusChanged { focusState ->
-                                isAmountFieldFocused = focusState.isFocused
-                            },
-                        placeholder = stringResource(R.string.wallet_form_amount),
-                        onFormatted = { _, amount ->
-                            parsedAmount = amount ?: 0.0
-                        }
-                    )
-
-                    // Track focus state for USD preview
-                    LaunchedEffect(amountTextFieldValue.text, isVND, isAmountFieldFocused) {
-                        showUSDPreview =
-                            !isVND && isAmountFieldFocused && amountTextFieldValue.text.isNotEmpty()
-                    }
-
-                    if (showUSDPreview) {
-                        USDInputPreview(
-                            inputText = amountTextFieldValue.text,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
                         onClick = {
-                            // Convert the amount to VND if currently in USD mode
-                            val balanceInVND = if (isVND) {
-                                parsedAmount
-                            } else {
-                                exchangeRates?.let { rates ->
-                                    CurrencyUtils.usdToVnd(parsedAmount, rates)
-                                } ?: parsedAmount
-                            }
-
                             val updatedWallet = wallet.copy(
                                 walletName = walletName.trim(),
-                                balance = balanceInVND
+                                balance = 0.0
                             )
                             onConfirm(updatedWallet)
                         },
@@ -844,7 +935,7 @@ private fun EditWalletDialog(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = WalletColors.Primary
                         ),
-                        enabled = walletName.isNotBlank() && parsedAmount > 0
+                        enabled = walletName.isNotBlank()
                     ) {
                         Text(stringResource(R.string.save))
                     }
