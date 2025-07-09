@@ -1,8 +1,8 @@
 package DI.ViewModels
 
+import DI.Models.UiEvent.UiEvent
 import DI.Models.Wallet.AddWalletRequest
 import DI.Models.Wallet.Wallet
-import DI.Models.UiEvent.UiEvent
 import DI.Repositories.WalletRepository
 import Utils.StringResourceProvider
 import androidx.lifecycle.ViewModel
@@ -55,10 +55,12 @@ class WalletViewModel @Inject constructor(
                 getWallets()
                 _addWalletEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.wallet_form_add_success)))
             } else {
-                _addWalletEvent.emit(UiEvent.ShowMessage(
-                    stringProvider.getString(
-                        R.string.wallet_form_add_error,
-                        result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                _addWalletEvent.emit(
+                    UiEvent.ShowMessage(
+                        stringProvider.getString(
+                            R.string.wallet_form_add_error,
+                            result.exceptionOrNull()?.message
+                                ?: stringProvider.getString(R.string.unknown_error)
                         )
                     )
                 )
@@ -80,10 +82,12 @@ class WalletViewModel @Inject constructor(
                 getWallets()
                 _updateWalletEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.wallet_form_update_success)))
             } else {
-                _updateWalletEvent.emit(UiEvent.ShowMessage(
-                    stringProvider.getString(
-                        R.string.wallet_form_update_error,
-                        result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                _updateWalletEvent.emit(
+                    UiEvent.ShowMessage(
+                        stringProvider.getString(
+                            R.string.wallet_form_update_error,
+                            result.exceptionOrNull()?.message
+                                ?: stringProvider.getString(R.string.unknown_error)
                         )
                     )
                 )
@@ -98,10 +102,12 @@ class WalletViewModel @Inject constructor(
                 getWallets()
                 _deleteWalletEvent.emit(UiEvent.ShowMessage(stringProvider.getString(R.string.wallet_form_delete_success)))
             } else {
-                _deleteWalletEvent.emit(UiEvent.ShowMessage(
-                    stringProvider.getString(
-                        R.string.wallet_form_delete_error,
-                        result.exceptionOrNull()?.message ?: stringProvider.getString(R.string.unknown_error)
+                _deleteWalletEvent.emit(
+                    UiEvent.ShowMessage(
+                        stringProvider.getString(
+                            R.string.wallet_form_delete_error,
+                            result.exceptionOrNull()?.message
+                                ?: stringProvider.getString(R.string.unknown_error)
                         )
                     )
                 )

@@ -23,9 +23,9 @@ import javax.net.ssl.X509TrustManager
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    //    private const val BASE_URL = "http://10.0.2.2:5215/api/" // Emulator localhost
-    //    private const val BASE_URL = "http://192.168.1.14:8080/api/"
-    private const val BASE_URL = "http://143.198.208.227:5000/api/"
+    private const val BASE_URL = "http://10.0.2.2:5000/api/" // Emulator localhost
+    //    private const val BASE_URL = "http://192.168.1.14:8080/api/" --> Real device
+//    private const val BASE_URL = "http://143.198.208.227:5000/api/" --> VPS server
 
     @Provides
     @Singleton

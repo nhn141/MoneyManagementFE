@@ -34,6 +34,7 @@
     <string name="manage_wallets">Quản lý ví điện tử của bạn dễ dàng</string>
     <string name="add_wallet">Thêm ví</string>
     <string name="add_new_wallet">Thêm ví mới</string>
+    <string name="plus_wallet">Thêm tiền</string>
     <string name="wallet_name">Tên ví</string>
     <string name="initial_balance">Số dư ban đầu</string>
     <string name="total_balance">Tổng số dư</string>
